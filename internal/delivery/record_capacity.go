@@ -6,7 +6,21 @@ import (
 	"strings"
 )
 
+// ReservedBytes includes the largest v1 transition metadata for every batch.
+// An enclosing notice must add its own source/disposition overhead to this bound.
+func (r Record) ReservedBytes() (int, error) {
+	if r.data == nil {
+		return 0, &Error{"record", "invalid"}
+	}
+	return reservedRecordBytes(r.data)
+}
+
 func recordCapacity(d *recordData) error {
+	_, err := reservedRecordBytes(d)
+	return err
+}
+
+func reservedRecordBytes(d *recordData) (int, error) {
 	// Encode a closed upper-bound state, not a transition or valid receipt.
 	// All optional times are present; ASCII fields never need JSON escaping.
 	header := *d
@@ -28,8 +42,8 @@ func recordCapacity(d *recordData) error {
 			size++
 		} // Comma between array members.
 		if size > maxRecordBytes {
-			return &Error{"record", "too_large"}
+			return 0, &Error{"record", "too_large"}
 		}
 	}
-	return nil
+	return size, nil
 }

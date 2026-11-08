@@ -7,12 +7,12 @@ of resource IDs.
 
 Status: implementation in progress. Deployment-settings validation, notice
 normalization with stable revision IDs, ownership-based routing decisions,
-recipient-specific message drafts, delivery-state/recovery rules, and a bounded
-OCI Object Storage adapter are implemented in Go. Saved-record encoding preserves
-messages and retry history across reloads. The storage adapter supports conditional
-writes and reports conflicting or uncertain outcomes; it has been tested against
-local TLS fixtures. Complete notice-state coordination and PagerDuty transport
-are still to be connected and tested in OCI. Customer scope, tags,
+recipient-specific message drafts, delivery-state/recovery rules, and complete
+notice records are implemented in Go. Source observations, resource assignments,
+saved messages and outcomes share one conditional Object Storage write. Local TLS
+tests cover concurrent updates and lost write responses. Scan coordination,
+activation, secret retrieval and PagerDuty transport still need implementation
+and testing in OCI. Customer scope, tags,
 destinations and environment settings come from validated configuration. Unresolved
 resources and messages exceeding application limits remain visible for review.
 There is no runnable router or deployment package yet.

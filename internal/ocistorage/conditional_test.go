@@ -12,6 +12,14 @@ import (
 // A synthetic implementation of the documented single-object conditional API.
 // It verifies the actual adapter's requests; it is not a router coordinator.
 func conditionalServer(t *testing.T, dropFirstResponse bool) (*Client, *atomic.Int32) {
+	drop := 0
+	if dropFirstResponse {
+		drop = 1
+	}
+	return conditionalServerAt(t, drop)
+}
+
+func conditionalServerAt(t *testing.T, dropVersion int) (*Client, *atomic.Int32) {
 	t.Helper()
 	var mu sync.Mutex
 	var body []byte
@@ -35,7 +43,7 @@ func conditionalServer(t *testing.T, dropFirstResponse bool) (*Client, *atomic.I
 			}
 			body = candidate
 			version++
-			if dropFirstResponse && version == 1 {
+			if dropVersion == version {
 				conn, _, err := w.(http.Hijacker).Hijack()
 				if err != nil {
 					t.Error(err)
