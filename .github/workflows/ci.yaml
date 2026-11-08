@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  validate:
+    name: Go validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GOENV: 'off'
+      GOWORK: 'off'
+      GOTOOLCHAIN: local
+      GOPROXY: https://proxy.golang.org
+      GOSUMDB: sum.golang.org
+    steps:
+      - name: Check out the tested revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up the pinned Go version
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Keep tooling outside the checkout
+        run: |
+          printf '%s\n' \
+            "GOPATH=$RUNNER_TEMP/oci-router/gopath" \
+            "GOMODCACHE=$RUNNER_TEMP/oci-router/modules" \
+            "GOCACHE=$RUNNER_TEMP/oci-router/build-cache" \
+            "GOBIN=$RUNNER_TEMP/oci-router/bin" \
+            "GOTELEMETRYDIR=$RUNNER_TEMP/oci-router/telemetry" >> "$GITHUB_ENV"
+
+      - name: Check repository hygiene
+        run: |
+          blocked=$(git ls-files --cached --ignored --exclude-standard)
+          if [[ -n "$blocked" ]]; then
+            printf 'Tracked files violate .gitignore:\n%s\n' "$blocked"
+            exit 1
+          fi
+          empty_tree=$(git hash-object -t tree /dev/null)
+          git diff --check "$empty_tree" HEAD
+
+      - name: Reject known secret patterns
+        run: |
+          # Report filenames only. This is a limited scan of the committed tree.
+          pattern='-----BEGIN ([A-Z0-9]+ )?PRIVATE KEY-----|AKIA[A-Z0-9]{16}|gh[pousr]_[A-Za-z0-9]{30,}'
+          scan_status=0
+          git grep --cached -IlE -e "$pattern" || scan_status=$?
+          if [[ "$scan_status" -ne 1 ]]; then
+            printf 'Secret-pattern scan found a match or could not complete.\n'
+            exit 1
+          fi
+
+      - name: Check formatting
+        run: |
+          unformatted=$(git ls-files -z '*.go' | xargs -0 gofmt -l)
+          if [[ -n "$unformatted" ]]; then
+            printf 'Run gofmt on:\n%s\n' "$unformatted"
+            exit 1
+          fi
+
+      - name: Check module consistency
+        run: |
+          go version
+          go mod tidy -diff
+          go mod verify
+
+      - name: Run unit tests
+        run: go test ./... -count=1 -timeout=30s
+
+      - name: Enforce at least 97 percent statement coverage
+        run: go run ./scripts/coverage
+
+      - name: Check for data races
+        run: go test -race ./... -count=1 -timeout=60s
+
+      - name: Run static analysis
+        run: go vet ./...
+
+      - name: Compile for Linux amd64
+        env:
+          CGO_ENABLED: '0'
+          GOOS: linux
+          GOARCH: amd64
+        run: go build ./...
+
+      - name: Check known vulnerabilities
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+          "$GOBIN/govulncheck" ./...
+
+      - name: Validate workflow syntax
+        run: |
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+          "$GOBIN/actionlint" -color
+
+      - name: Check for generated repository changes
+        run: |
+          changes=$(git status --porcelain --untracked-files=all)
+          if [[ -n "$changes" ]]; then
+            printf 'Validation changed the repository:\n%s\n' "$changes"
+            exit 1
+          fi

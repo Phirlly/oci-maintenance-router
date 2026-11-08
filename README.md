@@ -5,8 +5,12 @@ maintenance notices to the PagerDuty service responsible for each affected
 resource, using current ownership tags instead of a manually maintained list
 of resource IDs.
 
-Status: repository preparation only. There is no runnable router, installation
-command, deployment package, or supported runtime yet.
+Status: implementation in progress. Deployment-settings validation is implemented
+in Go. There is no runnable router or deployment package yet.
+
+The intended installation is a **Deploy to OCI** button and a Resource Manager
+form for resource scope, ownership tags and PagerDuty destination secret
+references. Customers will not need to compile code or build a container.
 
 The initial scope is notification routing. Resource modification and automatic
 alarm suppression are outside that scope.
