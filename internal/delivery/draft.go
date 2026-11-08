@@ -1,6 +1,6 @@
-// Package delivery prepares credential-free drafts for newly selected work.
-// Drafts are not persisted batches, receipts or permission to send. Existing
-// assignments and retries must retain their first persisted bytes and key version.
+// Package delivery prepares credential-free messages and immutable delivery-state
+// candidates. Its codec supports reloads, not storage I/O. Neither drafts nor
+// proposed transitions authorize sending or establish durable acceptance.
 package delivery
 
 import (

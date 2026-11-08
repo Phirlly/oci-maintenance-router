@@ -1,0 +1,35 @@
+package delivery
+
+import (
+	"encoding/json"
+	"math"
+	"strings"
+)
+
+func recordCapacity(d *recordData) error {
+	// Encode a closed upper-bound state, not a transition or valid receipt.
+	// All optional times are present; ASCII fields never need JSON escaping.
+	header := *d
+	header.Batches = []savedBatch{}
+	data, _ := json.Marshal(header)
+	size := len(data)
+	stamp := "9999-12-31T23:59:59.999Z"
+	for i, b := range d.Batches {
+		b.State, b.Reason = ReviewRequired, ReasonConfigurationChanged
+		b.AttemptCount, b.OwnerToken = math.MaxUint64, strings.Repeat("x", 128)
+		b.FirstAttemptAt, b.LastAttemptAt, b.AttemptExpiresAt = &stamp, &stamp, &stamp
+		b.UpdatedAt, b.NextAttemptAt, b.AcceptedAt = &stamp, &stamp, &stamp
+		b.Ambiguous = false // false is longer than true.
+		// Count one batch at a time and stop as soon as it cannot fit. Do not
+		// allocate one large serialization of every rejected preparation.
+		data, _ = json.Marshal(b)
+		size += len(data)
+		if i > 0 {
+			size++
+		} // Comma between array members.
+		if size > maxRecordBytes {
+			return &Error{"record", "too_large"}
+		}
+	}
+	return nil
+}

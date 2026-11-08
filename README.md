@@ -7,7 +7,10 @@ of resource IDs.
 
 Status: implementation in progress. Deployment-settings validation, notice
 normalization with stable revision IDs, ownership-based routing decisions, and
-recipient-specific message drafts are implemented in Go. Customer scope, tags,
+recipient-specific message drafts, and delivery-state/recovery rules are
+implemented in Go. Saved-record encoding preserves messages and retry history
+across reloads; OCI storage and PagerDuty transport are still to be connected.
+Customer scope, tags,
 destinations and environment settings come from validated configuration. Unresolved
 resources and messages exceeding application limits remain visible for review.
 There is no runnable router or deployment package yet.
