@@ -15,7 +15,10 @@ activation, secret retrieval and PagerDuty transport still need implementation
 and testing in OCI. Customer scope, tags,
 destinations and environment settings come from validated configuration. Unresolved
 resources and messages exceeding application limits remain visible for review.
-There is no runnable router or deployment package yet.
+The local Function entrypoint performs a nonsending installation check only.
+Prebuilt Function archive tooling is implemented, with dependency, license,
+executable and integrity checks. The Resource Manager stack and complete
+deployment package are still pending; this is not yet an operational router.
 
 The intended installation is a **Deploy to OCI** button and a Resource Manager
 form for resource scope, ownership tags and PagerDuty destination secret
