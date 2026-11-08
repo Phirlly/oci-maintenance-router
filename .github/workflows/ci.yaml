@@ -60,6 +60,22 @@ jobs:
           empty_tree=$(git hash-object -t tree /dev/null)
           git diff --check "$empty_tree" HEAD
 
+      - name: Install the pinned Terraform version
+        run: |
+          terraform_tools="$RUNNER_TEMP/oci-router/terraform"
+          mkdir -p "$terraform_tools"
+          curl --fail --silent --show-error --location --max-time 120 \
+            https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip \
+            -o "$terraform_tools/terraform.zip"
+          printf '%s  %s\n' \
+            c0ed7bc32ee52ae255af9982c8c88a7a4c610485cf1d55feeb037eab75fa082c \
+            "$terraform_tools/terraform.zip" | sha256sum --check --strict
+          unzip -q "$terraform_tools/terraform.zip" -d "$terraform_tools"
+          printf 'TERRAFORM_BIN=%s\n' "$terraform_tools/terraform" >> "$GITHUB_ENV"
+
+      - name: Check Terraform formatting
+        run: '"$TERRAFORM_BIN" fmt -check -recursive infra'
+
       - name: Reject known secret patterns
         run: |
           # Report filenames only. This is a limited scan of the committed tree.
@@ -106,6 +122,14 @@ jobs:
 
       - name: Build the prebuilt Function archive
         run: go run ./scripts/packagefunction "$RUNNER_TEMP/oci-router/function"
+
+      - name: Build and validate the complete PREVIEW stack
+        run: |
+          go run ./scripts/packagestack "$RUNNER_TEMP/oci-router/function" "$RUNNER_TEMP/oci-router/stack.zip"
+          mkdir "$RUNNER_TEMP/oci-router/stack"
+          unzip -q "$RUNNER_TEMP/oci-router/stack.zip" -d "$RUNNER_TEMP/oci-router/stack"
+          "$TERRAFORM_BIN" -chdir="$RUNNER_TEMP/oci-router/stack" init -backend=false -input=false -lockfile=readonly -no-color
+          "$TERRAFORM_BIN" -chdir="$RUNNER_TEMP/oci-router/stack" validate -no-color
 
       - name: Check known vulnerabilities
         run: |

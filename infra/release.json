@@ -1,0 +1,13 @@
+{
+  "purpose": "deployment-check-only",
+  "runtime": {
+    "name": "ol9",
+    "version": "0.1.20",
+    "osVersion": "9.8",
+    "architecture": "X86"
+  },
+  "mysqlServices": [
+    "Oracle Cloud Infrastructure HeatWave MySQL",
+    "Oracle HeatWave MySQL"
+  ]
+}

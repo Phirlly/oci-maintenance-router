@@ -1,0 +1,155 @@
+schemaVersion: "1.1.0"
+title: OCI Maintenance Router — PREVIEW
+description: Verify installation without sending notifications.
+informationalText: This package checks configuration and storage access only. It does not process maintenance notices or send PagerDuty alerts.
+variableGroups:
+  - title: Placement
+    variables: ["${environment_name}", "${compartment_ocid}"]
+  - title: MySQL scope
+    variables: ["${mysql_regions}", "${mysql_compartments}"]
+  - title: Ownership tag
+    variables: ["${ownership_kind}", "${ownership_namespace}", "${ownership_key}"]
+  - title: PagerDuty destinations
+    variables: ["${pagerduty_region}", "${secret_compartment_ocid}", "${destinations}", "${routes}"]
+  - title: Network
+    variables: ["${create_network}", "${network_cidr}", "${network_compartment_ocid}", "${existing_vcn_ocid}", "${existing_subnet_ocid}"]
+variables:
+  tenancy_ocid:
+    type: string
+    visible: false
+  region:
+    type: string
+    visible: false
+  environment_name:
+    type: string
+    title: Environment name
+    description: Unique, stable name for this deployment. Use lowercase letters, digits and hyphens. Changing it requires replacing protected storage.
+    required: true
+    pattern: "^[a-z0-9][a-z0-9-]{0,31}$"
+  compartment_ocid:
+    type: oci:identity:compartment:id
+    title: Router compartment
+    required: true
+  mysql_regions:
+    type: list
+    valueType: mysql_region
+    title: MySQL regions
+    description: Add each subscribed region to include.
+    required: true
+  mysql_region:
+    type: oci:identity:region:name
+    visible: false
+  mysql_compartments:
+    type: list
+    valueType: mysql_compartment
+    title: MySQL compartments
+    description: Add each compartment to include. Child compartments are not automatically included.
+    required: true
+  mysql_compartment:
+    type: oci:identity:compartment:id
+    visible: false
+  ownership_kind:
+    type: enum
+    enum: [defined, freeform]
+    default: defined
+    title: Tag type
+    required: true
+  ownership_namespace:
+    type: string
+    title: Defined-tag namespace
+    required: true
+    visible:
+      eq: ["${ownership_kind}", defined]
+    minLength: 1
+    maxLength: 100
+  ownership_key:
+    type: string
+    title: Ownership tag key
+    required: true
+    minLength: 1
+    maxLength: 100
+  pagerduty_region:
+    type: enum
+    enum: [US, EU]
+    default: US
+    title: PagerDuty account region
+    required: true
+  secret_compartment_ocid:
+    type: oci:identity:compartment:id
+    title: Vault secret compartment
+    default: ${compartment_ocid}
+    required: true
+  destinations:
+    type: map
+    valueType: destination_secret
+    title: Destinations
+    description: Give each destination a stable lowercase name, then select its existing Vault secret in the stack region. Never paste integration keys.
+    required: true
+  destination_secret:
+    type: oci:kms:secret:id
+    visible: false
+    dependsOn:
+      compartmentId: ${secret_compartment_ocid}
+  routes:
+    type: map
+    valueType: destination_name
+    title: Owner-to-destination mapping
+    description: Enter an exact ownership tag value and a destination name from above. Values are case-sensitive and must already use Unicode NFC; ASCII values are unaffected.
+    required: true
+  destination_name:
+    type: string
+    visible: false
+    pattern: "^[a-z0-9][a-z0-9-]{0,31}$"
+  create_network:
+    type: boolean
+    title: Create a dedicated private network
+    default: true
+  network_cidr:
+    type: string
+    title: Dedicated network CIDR
+    default: 10.77.0.0/24
+    required: true
+    visible: ${create_network}
+  network_compartment_ocid:
+    type: oci:identity:compartment:id
+    title: Existing network compartment
+    default: ${compartment_ocid}
+    required: true
+    visible:
+      not: ["${create_network}"]
+  existing_vcn_ocid:
+    type: oci:core:vcn:id
+    title: Existing VCN
+    required: true
+    visible:
+      not: ["${create_network}"]
+    dependsOn:
+      compartmentId: ${network_compartment_ocid}
+  existing_subnet_ocid:
+    type: oci:core:subnet:id
+    title: Existing private regional subnet
+    description: Must already permit DNS and HTTPS to regional Object Storage. Shared routes and security rules are not changed.
+    required: true
+    visible:
+      not: ["${create_network}"]
+    dependsOn:
+      compartmentId: ${network_compartment_ocid}
+      vcnId: ${existing_vcn_ocid}
+      hidePublicSubnet: true
+      hideAdSubnet: true
+outputs:
+  installation_status:
+    type: string
+    title: Installation check
+  sending_enabled:
+    type: boolean
+    title: Notification delivery enabled
+  function_id:
+    type: string
+    title: Function
+  state_bucket:
+    type: string
+    title: Protected private storage
+  check_result:
+    type: string
+    visible: false
