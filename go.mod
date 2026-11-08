@@ -2,7 +2,10 @@ module oci-maintenance-router
 
 go 1.27.3
 
-require github.com/oracle/oci-go-sdk/v65 v65.129.0
+require (
+	github.com/fnproject/fdk-go v0.1.26
+	github.com/oracle/oci-go-sdk/v65 v65.129.0
+)
 
 require (
 	github.com/gofrs/flock v0.10.0 // indirect

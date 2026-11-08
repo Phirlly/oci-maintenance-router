@@ -22,6 +22,15 @@ func (c *Client) Get(ctx context.Context, name string) (Object, error) {
 	return c.exchange(ctx, http.MethodGet, name, "", "", nil)
 }
 
+// GetVersion reads only the requested immutable version, never latest. The
+// service must confirm the exact version before any body is returned.
+func (c *Client) GetVersion(ctx context.Context, name, version string) (Object, error) {
+	if !safeName(version) {
+		return Object{}, &Error{Code: InvalidRequest}
+	}
+	return c.exchangeVersion(ctx, http.MethodGet, name, "", "", nil, version)
+}
+
 // Create never overwrites an existing object. Conflict requires a fresh read.
 func (c *Client) Create(ctx context.Context, name string, body []byte) (string, error) {
 	obj, err := c.exchange(ctx, http.MethodPut, name, "If-None-Match", "*", body)
@@ -39,6 +48,10 @@ func (c *Client) Replace(ctx context.Context, name, etag string, body []byte) (s
 }
 
 func (c *Client) exchange(ctx context.Context, method, name, condition, etag string, body []byte) (Object, error) {
+	return c.exchangeVersion(ctx, method, name, condition, etag, body, "")
+}
+
+func (c *Client) exchangeVersion(ctx context.Context, method, name, condition, etag string, body []byte, version string) (Object, error) {
 	if c == nil || c.signer == nil || ctx == nil || !safeName(name) {
 		return Object{}, &Error{Code: InvalidRequest}
 	}
@@ -57,6 +70,9 @@ func (c *Client) exchange(ctx context.Context, method, name, condition, etag str
 	req, err := http.NewRequestWithContext(ctx, method, c.endpoint+c.path+url.PathEscape(name), bytes.NewReader(slices.Clone(body)))
 	if err != nil {
 		return Object{}, &Error{Code: InvalidRequest}
+	}
+	if version != "" {
+		req.URL.RawQuery = url.Values{"versionId": {version}}.Encode()
 	}
 	req.Header.Set("Date", time.Now().UTC().Format(http.TimeFormat))
 	if method == http.MethodPut {
@@ -87,6 +103,12 @@ func (c *Client) exchange(ctx context.Context, method, name, condition, etag str
 	}
 	if resp.StatusCode != http.StatusOK {
 		return Object{}, &Error{Code: Service, Status: resp.StatusCode, WriteUncertain: write}
+	}
+	if version != "" {
+		versions := resp.Header.Values("version-id")
+		if len(versions) != 1 || versions[0] != version {
+			return Object{}, failure(ctx, InvalidResponse, resp.StatusCode, false)
+		}
 	}
 	return readObject(ctx, resp, write)
 }
