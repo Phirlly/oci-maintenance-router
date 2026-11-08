@@ -2,8 +2,8 @@ package configuration
 
 func (c Config) validateRouting(catalog Catalog) error {
 	owner := c.Ownership
-	if (owner.Kind != "defined" && owner.Kind != "freeform") || owner.Key == "" ||
-		(owner.Kind == "defined" && owner.Namespace == "") {
+	if (owner.Kind != "defined" && owner.Kind != "freeform") || !validTagName(owner.Key) ||
+		(owner.Kind == "defined" && !validTagName(owner.Namespace)) {
 		return &Error{"ownership", "invalid"}
 	}
 	if len(c.Destinations) == 0 {
@@ -40,4 +40,16 @@ func (c Config) validateRouting(catalog Catalog) error {
 		return &Error{"operatorTopicId", "invalid"}
 	}
 	return nil
+}
+
+func validTagName(name string) bool {
+	if len(name) == 0 || len(name) > 100 {
+		return false
+	}
+	for i := range len(name) {
+		if name[i] < '!' || name[i] > '~' || name[i] == '.' {
+			return false
+		}
+	}
+	return true
 }

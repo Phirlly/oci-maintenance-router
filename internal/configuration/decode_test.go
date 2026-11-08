@@ -65,12 +65,12 @@ func TestSchemaVersionIsExactInteger(t *testing.T) {
 
 func TestDecodePreservesExactOwnerStrings(t *testing.T) {
 	value := settings(t)
-	value["ownership"] = map[string]any{"kind": "freeform", "key": "Owner "}
+	value["ownership"] = map[string]any{"kind": "freeform", "key": "Owner!"}
 	value["routes"] = []any{map[string]any{"ownerValue": " Payments 🐬 ", "destinationId": "payments"}}
 	value["pagerDutyRegion"] = "EU"
 	value["activeBaselineId"] = nil
 	got := decoded(t, value)
-	if got.Ownership != (Ownership{Kind: "freeform", Key: "Owner "}) ||
+	if got.Ownership != (Ownership{Kind: "freeform", Key: "Owner!"}) ||
 		got.Routes[0].OwnerValue != " Payments 🐬 " || got.PagerDutyRegion != "EU" {
 		t.Fatalf("strings coerced: %+v", got)
 	}
