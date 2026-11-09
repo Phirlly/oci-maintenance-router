@@ -13,7 +13,7 @@ resource "oci_functions_invoke_function" "deployment_check" {
     configurationSha256 = sha256(module.configuration.configuration_json)
     releaseSha256       = local.release_sha256
   })
-  depends_on = [oci_identity_policy.router]
+  depends_on = [oci_identity_policy.router, data.oci_functions_function.archive]
   lifecycle {
     postcondition {
       condition = try(
