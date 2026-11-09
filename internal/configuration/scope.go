@@ -47,7 +47,7 @@ func (c Config) validateScope(catalog Catalog) error {
 		return &Error{"compartmentIds", "invalid"}
 	}
 	for _, id := range c.CompartmentIDs {
-		if !globalOCID(id, "compartment") {
+		if id != c.TenancyID && !globalOCID(id, "compartment") {
 			return &Error{"compartmentIds", "invalid"}
 		}
 	}

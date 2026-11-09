@@ -21,7 +21,7 @@ func TestRejectInvalidScope(t *testing.T) {
 		{"regionMap", map[string]any{"unknown": "iad"}}, {"regionMap", map[string]any{"us-ashburn-1": 1}},
 		{"compartmentIds", []any{}}, {"compartmentIds", []any{nil}},
 		{"compartmentIds", []any{"ocid1.compartment.oc1..example", "ocid1.compartment.oc1..example"}},
-		{"compartmentIds", []any{"ocid1.tenancy.oc1..example"}},
+		{"compartmentIds", []any{"ocid1.tenancy.oc1..another"}},
 		{"mysqlServices", []any{}}, {"mysqlServices", []any{"HeatWave on AWS"}},
 		{"mysqlServices", []any{"Oracle HeatWave MySQL", "Oracle HeatWave MySQL"}},
 		{"mysqlServices", "Oracle HeatWave MySQL"},

@@ -18,16 +18,20 @@ output "configuration_json" {
     error_message = "MySQL regions must be nonempty, unique READY subscriptions."
   }
   precondition {
-    condition     = length(local.s.mysql_compartments) > 0 && length(distinct(local.s.mysql_compartments)) == length(local.s.mysql_compartments) && alltrue([for id in local.s.mysql_compartments : can(regex("^ocid1\\.compartment\\.oc1\\.\\.([A-Za-z0-9_-]*\\.)?[A-Za-z0-9_-]+$", id))])
-    error_message = "MySQL compartments must be nonempty, unique OC1 compartment identifiers."
+    condition     = length(local.s.mysql_compartments) > 0 && length(distinct(local.s.mysql_compartments)) == length(local.s.mysql_compartments) && alltrue([for id in local.s.mysql_compartments : id == local.s.tenancy_ocid || can(regex("^ocid1\\.compartment\\.oc1\\.\\.([A-Za-z0-9_-]*\\.)?[A-Za-z0-9_-]+$", id))])
+    error_message = "MySQL compartments: select at least one compartment from this tenancy, including its root if needed, with no duplicates. Child compartments must be selected separately."
   }
   precondition {
     condition     = contains(["defined", "freeform"], local.s.ownership_kind) && can(regex("^[!-~]{1,100}$", local.s.ownership_key)) && !strcontains(local.s.ownership_key, ".") && (local.s.ownership_kind != "defined" || (can(regex("^[!-~]{1,100}$", local.s.ownership_namespace)) && !strcontains(local.s.ownership_namespace, ".")))
     error_message = "Ownership tag needs a defined/freeform kind and 1–100 printable ASCII characters without spaces or periods in its key and defined namespace."
   }
   precondition {
-    condition     = length(local.s.destinations) > 0 && alltrue([for id, secret in local.s.destinations : can(regex("^[a-z0-9][a-z0-9-]{0,31}$", id)) && can(regex("^ocid1\\.vaultsecret\\.oc1\\.${local.regional_suffix}", secret))])
-    error_message = "Destinations need stable lowercase names (1–32 characters) and Vault secret references in the deployment region."
+    condition     = length(local.s.destinations) > 0 && alltrue([for id in keys(local.s.destinations) : can(regex("^[a-z0-9][a-z0-9-]{0,31}$", id))])
+    error_message = "Destinations: add at least one entry. Names must use 1–32 lowercase letters, digits or hyphens, starting with a letter or digit."
+  }
+  precondition {
+    condition     = alltrue([for secret in values(local.s.destinations) : can(regex("^ocid1\\.vaultsecret\\.oc1\\.${local.regional_suffix}", secret))])
+    error_message = "Destinations: select a Vault secret in the stack's OCI region using the picker on the right of each row. Save the variables and run Plan again. Never enter a PagerDuty integration key here."
   }
   precondition {
     condition     = length(local.s.routes) > 0 && alltrue([for owner, destination in local.s.routes : owner != "" && contains(keys(local.s.destinations), destination)])

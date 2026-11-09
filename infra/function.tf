@@ -63,8 +63,12 @@ resource "oci_functions_function" "router" {
       condition     = length("ROUTER_BOOTSTRAP") + length(local.bootstrap_base64) * 3 / 4 - length(regexall("=", local.bootstrap_base64)) <= 4096
       error_message = "Function bootstrap exceeds the 4096-byte aggregate environment budget."
     }
+    # Verify exact bytes in the documented Base64 or observed hexadecimal encoding.
     postcondition {
-      condition     = self.source_details[0].source_code_sha256 == filebase64sha256(local.archive_path)
+      condition = (
+        self.source_details[0].source_code_sha256 == filesha256(local.archive_path) ||
+        self.source_details[0].source_code_sha256 == filebase64sha256(local.archive_path)
+      )
       error_message = "OCI did not report the bundled Function archive checksum."
     }
   }

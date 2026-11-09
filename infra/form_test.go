@@ -40,6 +40,16 @@ func readForm(t *testing.T) stackForm {
 	return form
 }
 
+func TestNativeCollectionValuesAreRequired(t *testing.T) {
+	form := readForm(t)
+	for _, name := range []string{"mysql_regions", "mysql_compartments", "destinations", "routes"} {
+		field := form.Variables[name]
+		if !form.Variables[field.ValueType].Required {
+			t.Errorf("%s entries must require a value; a required collection does not require its children", name)
+		}
+	}
+}
+
 func TestNativeFormContracts(t *testing.T) {
 	form := readForm(t)
 	if form.SchemaVersion != "1.1.0" || len(form.VariableGroups) == 0 {

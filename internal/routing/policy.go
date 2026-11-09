@@ -5,6 +5,7 @@ import "oci-maintenance-router/internal/configuration"
 // Policy owns validated settings. Use New; nil/zero policies fail closed.
 type Policy struct {
 	generation   string
+	tenancyID    string
 	regions      map[string]string
 	allowed      map[string]bool
 	compartments map[string]bool
@@ -25,7 +26,7 @@ func New(data []byte, catalog configuration.Catalog) (*Policy, error) {
 		return nil, err
 	}
 	p := &Policy{
-		generation: generation, regions: map[string]string{}, allowed: map[string]bool{},
+		generation: generation, tenancyID: c.TenancyID, regions: map[string]string{}, allowed: map[string]bool{},
 		compartments: map[string]bool{}, services: map[string]bool{},
 		owner: c.Ownership, routes: map[string]string{},
 	}

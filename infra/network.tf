@@ -80,7 +80,7 @@ data "oci_core_subnet" "existing" {
   subnet_id = var.existing_subnet_ocid
   lifecycle {
     postcondition {
-      condition     = self.prohibit_public_ip_on_vnic && self.availability_domain == "" && self.state == "AVAILABLE" && self.vcn_id == var.existing_vcn_ocid
+      condition     = self.prohibit_public_ip_on_vnic && (self.availability_domain == null || self.availability_domain == "") && self.state == "AVAILABLE" && self.vcn_id == var.existing_vcn_ocid
       error_message = "Choose an AVAILABLE private regional subnet with working DNS and regional Object Storage HTTPS access."
     }
   }

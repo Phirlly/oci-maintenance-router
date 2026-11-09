@@ -38,7 +38,7 @@ func (p *Policy) resolveResource(d Decision, lookup Lookup) Decision {
 		m := lookup.Metadata
 		if m.ID == nil || *m.ID != d.ResourceID {
 			d.Reason = ReasonIdentityMismatch
-		} else if m.CompartmentID == nil || len(*m.CompartmentID) > maxMetadataText || !compartmentID.MatchString(*m.CompartmentID) {
+		} else if m.CompartmentID == nil || len(*m.CompartmentID) > maxMetadataText || (*m.CompartmentID != p.tenancyID && !compartmentID.MatchString(*m.CompartmentID)) {
 			d.Reason = ReasonCompartment
 		} else if !p.compartments[*m.CompartmentID] {
 			d.Disposition, d.Reason = OutOfScope, ReasonCompartmentScope
