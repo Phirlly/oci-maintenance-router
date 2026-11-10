@@ -31,6 +31,8 @@ type SavedNoticeRef struct{ ObjectName, NoticeID string }
 // Collection contains observed occurrences, not an authoritative snapshot,
 // baseline, heartbeat, complete chain hold decision or permission to send.
 type Collection struct {
+	// Candidates includes relevant current and saved historical membership.
+	Candidates CandidateView
 	// Observations retains original candidate occurrences in Current order,
 	// omitting unrelated entries. Applying one still requires conditional saving.
 	Observations []noticeledger.Observation
@@ -95,10 +97,11 @@ func (c *Collector) collect(ctx context.Context, wait func(context.Context, time
 	if ctx.Err() != nil {
 		return Collection{}, (*CollectionError)(failure(ctx, "", Canceled))
 	}
-	current, err := facts.Resolve()
+	view, err := facts.ResolveView()
 	if err != nil {
 		return Collection{}, collectionFailure(ctx, "", err)
 	}
+	current := view.Current()
 	// Allocate separately so discarded captures are not retained through an
 	// unused backing-array tail. Current and observations have identical order.
 	var relevant []noticeledger.Observation
@@ -110,5 +113,5 @@ func (c *Collector) collect(ctx context.Context, wait func(context.Context, time
 	if ctx.Err() != nil {
 		return Collection{}, (*CollectionError)(failure(ctx, "", Canceled))
 	}
-	return Collection{Current: current, Saved: saved, Observations: relevant}, nil
+	return Collection{Current: current, Saved: saved, Observations: relevant, Candidates: view}, nil
 }

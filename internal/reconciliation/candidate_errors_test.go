@@ -43,6 +43,7 @@ func TestCandidateInvalidAdmissionIsPermanent(t *testing.T) {
 			c := candidates(t)
 			observeCandidates(t, c, n)
 			err := candidateError(t, tc.fail(c), tc.code)
+			wantNoCandidateView(t, c, tc.code)
 			for _, format := range []string{"%v", "%+v", "%#v"} {
 				if len(fmt.Sprintf(format, err)) > 100 {
 					t.Fatal("error contains uncontrolled data")

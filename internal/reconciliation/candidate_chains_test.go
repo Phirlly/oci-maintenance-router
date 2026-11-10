@@ -45,6 +45,14 @@ func TestCandidateChainsKeepExactSeparateNamespaces(t *testing.T) {
 			ns := []notices.Notice{candidateNotice(t, 1, tc.seed, true), candidateNotice(t, 2, tc.update, false)}
 			observeCandidates(t, c, ns...)
 			requireMatches(t, c, ns, true, tc.want)
+			groups := candidateView(t, c).Components()
+			wantMembers := 1
+			if tc.want {
+				wantMembers = 2
+			}
+			if len(groups) != 1 || len(groups[0].Members) != wantMembers {
+				t.Fatal("component joined distinct namespace or normalized a chain")
+			}
 		})
 	}
 }

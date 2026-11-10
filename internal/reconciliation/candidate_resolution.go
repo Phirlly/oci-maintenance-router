@@ -1,12 +1,28 @@
 package reconciliation
 
+import (
+	"slices"
+	"strings"
+)
+
 // Resolve computes relevance independently of admission order, preserving
 // current observation order and duplicates. Subsequent additions do not mutate
 // returned matches. This bounded pure operation has no I/O or deadline reset;
 // a collector must retain and check its original discovery deadline.
 func (c *Candidates) Resolve() ([]CandidateMatch, error) {
-	if err := c.valid(); err != nil {
+	v, err := c.ResolveView()
+	if err != nil {
 		return nil, err
+	}
+	return v.Current(), nil
+}
+
+// ResolveView preserves current occurrences separately from sorted unique
+// current/saved membership. Only seeded components are included; saved-only
+// components are retained. It has the same bounded, single-owner scope as Resolve.
+func (c *Candidates) ResolveView() (CandidateView, error) {
+	if err := c.valid(); err != nil {
+		return CandidateView{}, err
 	}
 	components := candidateComponents{parent: make([]int, len(c.facts)), size: make([]int, len(c.facts))}
 	for i := range c.facts {
@@ -34,12 +50,34 @@ func (c *Candidates) Resolve() ([]CandidateMatch, error) {
 		}
 	}
 	result := []CandidateMatch{}
+	groups := map[int][]CandidateRevision{}
 	for i, fact := range c.facts {
+		root := components.root(i)
 		if fact.current {
-			result = append(result, CandidateMatch{Revision: fact.revision, KnownCandidate: seeded[components.root(i)]})
+			result = append(result, CandidateMatch{Revision: fact.revision, KnownCandidate: seeded[root]})
+		}
+		if seeded[root] {
+			groups[root] = append(groups[root], CandidateRevision{Revision: fact.revision, ChainID: fact.chain})
 		}
 	}
-	return result, nil
+	resolved := []CandidateComponent{}
+	for _, members := range groups {
+		slices.SortFunc(members, compareCandidateRevisions)
+		members = slices.Compact(members)
+		resolved = append(resolved, CandidateComponent{Fingerprint: componentFingerprint(c.environmentID, members), Members: members})
+	}
+	slices.SortFunc(resolved, func(a, b CandidateComponent) int { return compareCandidateRevisions(a.Members[0], b.Members[0]) })
+	return CandidateView{environmentID: c.environmentID, current: result, components: resolved}, nil
+}
+
+func compareCandidateRevisions(a, b CandidateRevision) int {
+	if order := strings.Compare(a.Revision.NoticeID, b.Revision.NoticeID); order != 0 {
+		return order
+	}
+	if order := strings.Compare(a.Revision.Digest, b.Revision.Digest); order != 0 {
+		return order
+	}
+	return strings.Compare(a.ChainID, b.ChainID)
 }
 
 type candidateComponents struct{ parent, size []int }

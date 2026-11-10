@@ -106,4 +106,7 @@ func wantCollectionFailure(t *testing.T, got Collection, err error, code Code, s
 	if got.Current != nil || got.Saved != nil || got.Observations != nil {
 		t.Fatal("partial collection on failure")
 	}
+	if got.Candidates.EnvironmentID() != "" || got.Candidates.Current() != nil || got.Candidates.Components() != nil {
+		t.Fatal("partial candidate view on failure")
+	}
 }

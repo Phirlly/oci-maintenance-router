@@ -27,6 +27,7 @@ func TestCandidateOccurrenceLimitIncludesDuplicatesAndSavedRevisions(t *testing.
 			t.Fatalf("exact occurrence cap failed: count=%d err=%v", len(got), err)
 		}
 		candidateError(t, c.Observe(n), ItemLimit)
+		wantNoCandidateView(t, c, ItemLimit)
 		got, err = c.Resolve()
 		candidateError(t, err, ItemLimit)
 		if got != nil {
@@ -50,6 +51,7 @@ func TestCandidateByteLimitCountsExactUTF8Bytes(t *testing.T) {
 		if overflow {
 			last = candidateNotice(t, 0, chain(link+"x"), false)
 			candidateError(t, c.Observe(last), ByteLimit)
+			wantNoCandidateView(t, c, ByteLimit)
 			got, err := c.Resolve()
 			candidateError(t, err, ByteLimit)
 			if got != nil {
@@ -70,6 +72,7 @@ func TestSavedCandidateAdmissionCannotExceedRemainingBudgets(t *testing.T) {
 		observeCandidates(t, c, n)
 	}
 	candidateError(t, c.Restore(r), ItemLimit)
+	wantNoCandidateView(t, c, ItemLimit)
 	got, err := c.Resolve()
 	candidateError(t, err, ItemLimit)
 	if got != nil {
@@ -82,6 +85,7 @@ func TestSavedCandidateAdmissionCannotExceedRemainingBudgets(t *testing.T) {
 		observeCandidates(t, c, large)
 	}
 	candidateError(t, c.Restore(saved), ByteLimit)
+	wantNoCandidateView(t, c, ByteLimit)
 	got, err = c.Resolve()
 	candidateError(t, err, ByteLimit)
 	if got != nil {
