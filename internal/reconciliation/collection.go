@@ -31,8 +31,11 @@ type SavedNoticeRef struct{ ObjectName, NoticeID string }
 // Collection contains observed occurrences, not an authoritative snapshot,
 // baseline, heartbeat, complete chain hold decision or permission to send.
 type Collection struct {
-	Current []CandidateMatch
-	Saved   []SavedNoticeRef
+	// Observations retains original candidate occurrences in Current order,
+	// omitting unrelated entries. Applying one still requires conditional saving.
+	Observations []noticeledger.Observation
+	Current      []CandidateMatch
+	Saved        []SavedNoticeRef
 }
 
 // Collector owns immutable policy and trusted adapters. Invocations use fresh
@@ -42,6 +45,7 @@ type Collector struct {
 	saved         SavedNoticeSource
 	policy        *routing.Policy
 	environmentID string
+	observer      *noticeledger.Observer
 }
 
 func NewCollector(data []byte, catalog configuration.Catalog, location configuration.LedgerLocation, announcements AnnouncementSource, saved SavedNoticeSource) (*Collector, error) {
@@ -52,17 +56,21 @@ func NewCollector(data []byte, catalog configuration.Catalog, location configura
 	if err != nil {
 		return nil, err
 	}
-	return &Collector{announcements: announcements, saved: saved, policy: facts.policy, environmentID: facts.environmentID}, nil
+	observer, err := noticeledger.New(data, catalog, location)
+	if err != nil {
+		return nil, err
+	}
+	return &Collector{announcements: announcements, saved: saved, policy: facts.policy, environmentID: facts.environmentID, observer: observer}, nil
 }
 
 // Collect lists both sources and reads every listed occurrence sequentially
 // under one shared deadline and pacing state. Failure returns no partial result.
-// It retains compact facts only; later processing must reread and compare full
-// revisions before acting. No state writes, retries or downstream calls occur.
+// It retains redacted candidate observations; later processing must persist them
+// and check current revisions before acting. No writes or downstream calls occur.
 func (c *Collector) Collect(ctx context.Context) (Collection, error) { return c.collect(ctx, pause) }
 
 func (c *Collector) collect(ctx context.Context, wait func(context.Context, time.Duration) error) (Collection, error) {
-	if c == nil || c.policy == nil || c.environmentID == "" || c.announcements == nil || c.saved == nil {
+	if c == nil || c.policy == nil || c.environmentID == "" || c.observer == nil || c.announcements == nil || c.saved == nil {
 		return Collection{}, &CollectionError{Code: InvalidRequest}
 	}
 	ctx, cancel, startErr := discoveryContext(ctx)
@@ -76,7 +84,8 @@ func (c *Collector) collect(ctx context.Context, wait func(context.Context, time
 		return Collection{}, collectionFailure(ctx, "", err)
 	}
 	facts := &Candidates{policy: c.policy, environmentID: c.environmentID}
-	if err = e.currentDetails(c.announcements, inventory.AnnouncementIDs, facts); err != nil {
+	observations, err := e.currentDetails(c.announcements, inventory.AnnouncementIDs, facts, c.observer)
+	if err != nil {
 		return Collection{}, err
 	}
 	saved, err := e.savedDetails(c.saved, inventory.NoticeObjects, facts)
@@ -90,8 +99,16 @@ func (c *Collector) collect(ctx context.Context, wait func(context.Context, time
 	if err != nil {
 		return Collection{}, collectionFailure(ctx, "", err)
 	}
+	// Allocate separately so discarded captures are not retained through an
+	// unused backing-array tail. Current and observations have identical order.
+	var relevant []noticeledger.Observation
+	for i, match := range current {
+		if match.KnownCandidate {
+			relevant = append(relevant, observations[i])
+		}
+	}
 	if ctx.Err() != nil {
 		return Collection{}, (*CollectionError)(failure(ctx, "", Canceled))
 	}
-	return Collection{Current: current, Saved: saved}, nil
+	return Collection{Current: current, Saved: saved, Observations: relevant}, nil
 }

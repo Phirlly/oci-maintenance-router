@@ -103,7 +103,7 @@ func wantCollectionFailure(t *testing.T, got Collection, err error, code Code, s
 	if !errors.As(err, &failure) || failure.Code != code || failure.Source != source || failure.HTTPStatus != status {
 		t.Fatalf("collection error=%+v; want %s/%s/%d", err, code, source, status)
 	}
-	if got.Current != nil || got.Saved != nil {
+	if got.Current != nil || got.Saved != nil || got.Observations != nil {
 		t.Fatal("partial collection on failure")
 	}
 }

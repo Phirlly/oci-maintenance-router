@@ -1,27 +1,43 @@
 package reconciliation
 
-import "strings"
+import (
+	"oci-maintenance-router/internal/noticeledger"
+	"strings"
+)
 
-func (e *enumeration) currentDetails(source AnnouncementSource, ids []string, facts *Candidates) error {
+const observationByteLimit = 4 << 20
+
+func (e *enumeration) currentDetails(source AnnouncementSource, ids []string, facts *Candidates, observer *noticeledger.Observer) ([]noticeledger.Observation, error) {
+	var observations []noticeledger.Observation
+	remaining := observationByteLimit
 	for _, id := range ids {
 		if err := e.before(Announcements); err != nil {
-			return collectionFailure(e.ctx, Announcements, err)
+			return nil, collectionFailure(e.ctx, Announcements, err)
 		}
 		n, err := source.Get(e.ctx, id)
 		if err != nil || e.ctx.Err() != nil {
-			return (*CollectionError)(readFailure(e.ctx, Announcements, err))
+			return nil, (*CollectionError)(readFailure(e.ctx, Announcements, err))
 		}
 		if n.Key().NoticeID == "" || n.Key().NoticeID != id {
-			return (*CollectionError)(failure(e.ctx, Announcements, InvalidNotice))
+			return nil, (*CollectionError)(failure(e.ctx, Announcements, InvalidNotice))
 		}
 		if err := facts.Observe(n); err != nil {
-			return collectionFailure(e.ctx, Announcements, err)
+			return nil, collectionFailure(e.ctx, Announcements, err)
+		}
+		observation, err := observer.Capture(n)
+		if err != nil {
+			return nil, (*CollectionError)(failure(e.ctx, Announcements, InvalidNotice))
 		}
 		if e.ctx.Err() != nil {
-			return (*CollectionError)(failure(e.ctx, Announcements, Canceled))
+			return nil, (*CollectionError)(failure(e.ctx, Announcements, Canceled))
 		}
+		if observation.RetainedBytes() > remaining {
+			return nil, (*CollectionError)(failure(e.ctx, Announcements, ByteLimit))
+		}
+		remaining -= observation.RetainedBytes()
+		observations = append(observations, observation)
 	}
-	return nil
+	return observations, nil
 }
 
 func (e *enumeration) savedDetails(source SavedNoticeSource, names []string, facts *Candidates) ([]SavedNoticeRef, error) {
