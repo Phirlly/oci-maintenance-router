@@ -8,6 +8,16 @@ import (
 	"oci-maintenance-router/internal/noticeledger"
 )
 
+// LoadRecord reads a discovered object through the complete LoadObject binding
+// checks, returning only its immutable record. It provides no CAS/save handle.
+func (s *NoticeStore) LoadRecord(ctx context.Context, name string) (noticeledger.Record, error) {
+	stored, err := s.LoadObject(ctx, name)
+	if err != nil {
+		return noticeledger.Record{}, err
+	}
+	return stored.Record(), nil
+}
+
 func validNoticeObjectName(name string) bool {
 	return len(name) == 77 && strings.HasPrefix(name, "notices/") &&
 		strings.HasSuffix(name, ".json") && environmentDigest.MatchString(name[8:72])

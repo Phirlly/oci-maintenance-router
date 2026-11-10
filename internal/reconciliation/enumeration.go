@@ -38,18 +38,19 @@ func Enumerate(ctx context.Context, announcements AnnouncementPages, saved Saved
 }
 
 func enumerate(ctx context.Context, announcements AnnouncementPages, saved SavedNoticePages, wait func(context.Context, time.Duration) error) (Inventory, error) {
-	if ctx == nil || announcements == nil || saved == nil {
+	if announcements == nil || saved == nil {
 		return Inventory{}, &Error{Code: InvalidRequest}
 	}
-	if ctx.Err() != nil {
-		return Inventory{}, failure(ctx, "", Canceled)
+	ctx, cancel, err := discoveryContext(ctx)
+	if err != nil {
+		return Inventory{}, err
 	}
-	if _, ok := ctx.Deadline(); !ok {
-		return Inventory{}, &Error{Code: DeadlineRequired}
-	}
-	ctx, cancel := context.WithTimeout(ctx, 120*time.Second)
 	defer cancel()
 	e := enumeration{ctx: ctx, wait: wait}
+	return e.inventory(announcements, saved)
+}
+
+func (e *enumeration) inventory(announcements AnnouncementPages, saved SavedNoticePages) (Inventory, error) {
 	ids, err := e.announcements(announcements)
 	if err != nil {
 		return Inventory{}, err
@@ -58,8 +59,8 @@ func enumerate(ctx context.Context, announcements AnnouncementPages, saved Saved
 	if err != nil {
 		return Inventory{}, err
 	}
-	if ctx.Err() != nil {
-		return Inventory{}, failure(ctx, SavedNotices, Canceled)
+	if e.ctx.Err() != nil {
+		return Inventory{}, failure(e.ctx, SavedNotices, Canceled)
 	}
 	return Inventory{ids, names}, nil
 }
