@@ -35,7 +35,7 @@ func validSource(s Source, noticeID string) bool {
 	return bytes.Equal(want, got)
 }
 func validate(d *recordData) error {
-	if d.SchemaVersion != 1 || !digestPattern.MatchString(d.EnvironmentID) || !noticePattern.MatchString(d.NoticeID) || !validTime(d.UpdatedAt) || len(d.Revisions) == 0 || (d.HoldReason != "" && !holdReason(d.HoldReason)) || (len(d.Revisions) > 1 && d.HoldReason == "") {
+	if (d.SchemaVersion != 1 && d.SchemaVersion != 2) || !digestPattern.MatchString(d.EnvironmentID) || !noticePattern.MatchString(d.NoticeID) || !validTime(d.UpdatedAt) || len(d.Revisions) == 0 || (d.HoldReason != "" && !holdReason(d.HoldReason)) || (len(d.Revisions) > 1 && d.HoldReason == "") {
 		return &Error{"invalid_record"}
 	}
 	previous := ""
@@ -72,6 +72,9 @@ func validate(d *recordData) error {
 				}
 			}
 		}
+	}
+	if !validSourceOutcome(d) {
+		return &Error{"invalid_source_outcome"}
 	}
 	for _, b := range d.delivery.Batches() {
 		i := revisionIndex(d, b.Message.Revision.Digest)

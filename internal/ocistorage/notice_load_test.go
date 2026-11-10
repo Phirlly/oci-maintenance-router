@@ -69,7 +69,7 @@ func TestDiscoveredNoticeRejectsWrongPathEnvironmentAndNoncanonicalRecord(t *tes
 			case "alias":
 				body = strings.Replace(body, `"noticeId":`, `"NoticeId":`, 1)
 			case "invalid ledger":
-				body = strings.Replace(body, `"schemaVersion":1`, `"schemaVersion":2`, 1)
+				body = strings.Replace(body, `"schemaVersion":2`, `"schemaVersion":3`, 1)
 			}
 			c, _ := tlsClient(t, syntheticKey{key: generatedKey(t)}, func(w http.ResponseWriter, req *http.Request) {
 				w.Header().Set("ETag", "current")

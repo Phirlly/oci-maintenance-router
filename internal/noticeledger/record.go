@@ -39,9 +39,11 @@ type Revision struct {
 	Resources         []Resource              `json:"resources"`
 }
 type Snapshot struct {
+	SchemaVersion                      int
 	EnvironmentID, NoticeID, UpdatedAt string
 	HoldReason                         delivery.Reason
 	Revisions                          []Revision
+	SourceOutcome                      *SourceOutcome
 	Batches                            []delivery.BatchSnapshot
 }
 type Record struct {
@@ -55,6 +57,7 @@ type recordData struct {
 	UpdatedAt     string          `json:"updatedAt"`
 	HoldReason    delivery.Reason `json:"holdReason"`
 	Revisions     []Revision      `json:"revisions"`
+	SourceOutcome *SourceOutcome  `json:"sourceOutcome,omitempty"`
 	delivery      delivery.Record
 }
 type Error struct{ Code string }

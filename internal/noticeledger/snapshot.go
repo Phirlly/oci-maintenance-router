@@ -19,6 +19,10 @@ func copySource(s Source) Source {
 }
 func (d *recordData) copy() recordData {
 	n := *d
+	if d.SourceOutcome != nil {
+		outcome := *d.SourceOutcome
+		n.SourceOutcome = &outcome
+	}
 	n.Revisions = slices.Clone(d.Revisions)
 	for i, v := range n.Revisions {
 		v.Source = copySource(v.Source)
@@ -32,7 +36,9 @@ func (r Record) Snapshot() Snapshot {
 		return Snapshot{}
 	}
 	d := r.data.copy()
-	return Snapshot{d.EnvironmentID, d.NoticeID, d.UpdatedAt, d.HoldReason, d.Revisions, d.delivery.Batches()}
+	return Snapshot{SchemaVersion: d.SchemaVersion, EnvironmentID: d.EnvironmentID,
+		NoticeID: d.NoticeID, UpdatedAt: d.UpdatedAt, HoldReason: d.HoldReason,
+		Revisions: d.Revisions, SourceOutcome: d.SourceOutcome, Batches: d.delivery.Batches()}
 }
 
 // Follows identifies exactly one transition from this in-memory record. It is

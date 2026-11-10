@@ -48,6 +48,7 @@ func (o Observation) RetainedBytes() int { return o.size }
 
 // Apply proposes one immediate record transition at the explicit merge time.
 // It preserves receipts/history and admits the complete resulting record.
+// Reusing a capture records its observation again; it does not perform a fetch.
 func (o Observation) Apply(previous Record, at time.Time) (Record, error) {
 	if o.data == nil {
 		return Record{}, &Error{"invalid_observation"}

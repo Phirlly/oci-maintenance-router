@@ -14,6 +14,11 @@ func capacity(d *recordData) error {
 	// replacement fields are ASCII; source text keeps its actual encoded size.
 	worst := d.copy()
 	worst.HoldReason = delivery.ReasonConfigurationChanged
+	if worst.SchemaVersion == 2 {
+		// AVAILABLE's 64-byte digest exceeds every other permitted outcome,
+		// including UNAVAILABLE's longer state and three-digit status.
+		worst.SourceOutcome = &SourceOutcome{State: SourceAvailable, RecordedAt: d.UpdatedAt, RevisionDigest: strings.Repeat("f", 64)}
+	}
 	for i := range worst.Revisions {
 		for j := range worst.Revisions[i].Resources {
 			row := &worst.Revisions[i].Resources[j]

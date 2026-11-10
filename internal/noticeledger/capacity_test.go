@@ -17,6 +17,9 @@ func maximumSize(t *testing.T, r Record) int {
 		t.Fatal(e)
 	}
 	w.HoldReason = delivery.ReasonConfigurationChanged
+	if w.SchemaVersion == 2 {
+		w.SourceOutcome = &SourceOutcome{State: SourceAvailable, RecordedAt: clock().Format(timeFormat), RevisionDigest: strings.Repeat("f", 64)}
+	}
 	for i := range w.Revisions {
 		for j := range w.Revisions[i].Resources {
 			d := &w.Revisions[i].Resources[j]
