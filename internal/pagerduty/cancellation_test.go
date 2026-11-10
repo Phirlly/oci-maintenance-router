@@ -64,11 +64,15 @@ func TestCancellationStopsDialAndTLS(t *testing.T) {
 
 func TestCancellationWhileWaitingForHeaders(t *testing.T) {
 	entered, stopped := make(chan struct{}), make(chan struct{})
+	release := make(chan struct{})
+	defer close(release)
 	c, _ := tlsClient(t, func(w http.ResponseWriter, r *http.Request) {
 		_, _ = io.Copy(io.Discard, r.Body)
 		close(entered)
 		<-r.Context().Done()
 		close(stopped)
+		// Returning would let net/http emit an implicit 200 during cancellation.
+		<-release
 	})
 	ctx, cancel := context.WithCancel(budget(t))
 	defer cancel()

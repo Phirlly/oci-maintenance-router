@@ -35,10 +35,14 @@ func TestOperationCapsLongDeadlineAndPropagatesEarlierOne(t *testing.T) {
 
 func TestEarlierDeadlineStopsHeaderWait(t *testing.T) {
 	stopped := make(chan struct{})
+	release := make(chan struct{})
+	defer close(release)
 	c, _ := tlsClient(t, func(w http.ResponseWriter, r *http.Request) {
 		_, _ = io.Copy(io.Discard, r.Body)
 		<-r.Context().Done()
 		close(stopped)
+		// Keep implicit response headers behind the completed client exchange.
+		<-release
 	})
 	ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
 	defer cancel()
