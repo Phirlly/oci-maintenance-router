@@ -31,13 +31,17 @@ type SavedNoticeRef struct{ ObjectName, NoticeID string }
 // Collection contains observed occurrences, not an authoritative snapshot,
 // baseline, heartbeat, complete chain hold decision or permission to send.
 type Collection struct {
+	// Availability contains only classified saved-only failures, not durable state.
+	Availability SourceAvailability
 	// Candidates includes relevant current and saved historical membership.
 	Candidates CandidateView
 	// Observations retains original candidate occurrences in Current order,
 	// omitting unrelated entries. Applying one still requires conditional saving.
 	Observations []noticeledger.Observation
-	Current      []CandidateMatch
-	Saved        []SavedNoticeRef
+	// Current includes successful listed occurrences followed by successful
+	// unique saved-only source reads in first saved-occurrence order.
+	Current []CandidateMatch
+	Saved   []SavedNoticeRef
 }
 
 // Collector owns immutable policy and trusted adapters. Invocations use fresh
@@ -65,8 +69,10 @@ func NewCollector(data []byte, catalog configuration.Catalog, location configura
 	return &Collector{announcements: announcements, saved: saved, policy: facts.policy, environmentID: facts.environmentID, observer: observer}, nil
 }
 
-// Collect lists both sources and reads every listed occurrence sequentially
-// under one shared deadline and pacing state. Failure returns no partial result.
+// Collect lists both sources, reads every listed occurrence and checks unique
+// saved notices absent from the current list under one deadline and pacing state.
+// Classified saved-only failures return availability evidence; fatal errors
+// return no partial result.
 // It retains redacted candidate observations; later processing must persist them
 // and check current revisions before acting. No writes or downstream calls occur.
 func (c *Collector) Collect(ctx context.Context) (Collection, error) { return c.collect(ctx, pause) }
@@ -86,11 +92,15 @@ func (c *Collector) collect(ctx context.Context, wait func(context.Context, time
 		return Collection{}, collectionFailure(ctx, "", err)
 	}
 	facts := &Candidates{policy: c.policy, environmentID: c.environmentID}
-	observations, err := e.currentDetails(c.announcements, inventory.AnnouncementIDs, facts, c.observer)
-	if err != nil {
+	observations := &sourceObservations{facts: facts, observer: c.observer, remaining: observationByteLimit}
+	if err := e.currentDetails(c.announcements, inventory.AnnouncementIDs, observations); err != nil {
 		return Collection{}, err
 	}
 	saved, err := e.savedDetails(c.saved, inventory.NoticeObjects, facts)
+	if err != nil {
+		return Collection{}, err
+	}
+	unavailable, err := e.savedSources(c.announcements, inventory.AnnouncementIDs, saved, observations)
 	if err != nil {
 		return Collection{}, err
 	}
@@ -107,11 +117,11 @@ func (c *Collector) collect(ctx context.Context, wait func(context.Context, time
 	var relevant []noticeledger.Observation
 	for i, match := range current {
 		if match.KnownCandidate {
-			relevant = append(relevant, observations[i])
+			relevant = append(relevant, observations.values[i])
 		}
 	}
 	if ctx.Err() != nil {
 		return Collection{}, (*CollectionError)(failure(ctx, "", Canceled))
 	}
-	return Collection{Current: current, Saved: saved, Observations: relevant, Candidates: view}, nil
+	return Collection{Current: current, Saved: saved, Observations: relevant, Candidates: view, Availability: SourceAvailability{environmentID: c.environmentID, unavailable: unavailable}}, nil
 }

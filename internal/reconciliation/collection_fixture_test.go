@@ -64,12 +64,34 @@ func detailSources(t *testing.T, ns []notices.Notice, rs []noticeledger.Record) 
 	for _, r := range rs {
 		names = append(names, recordName(r))
 	}
+	seen := map[string]bool{}
+	for _, id := range ids {
+		seen[id] = true
+	}
+	absent := []string{}
+	for _, r := range rs {
+		_, id := r.Identity()
+		if !seen[id] {
+			seen[id] = true
+			absent = append(absent, id)
+		}
+	}
 	ai, si := 0, 0
 	a := announcementDetails{page: func(context.Context, string) (ociannouncements.Page, error) {
 		return ociannouncements.Page{IDs: ids}, nil
 	}}
 	a.get = func(_ context.Context, id string) (notices.Notice, error) {
-		if ai >= len(ns) || id != ns[ai].Key().NoticeID {
+		// The fixture explicitly models saved-only sources as unavailable. Never
+		// reconstruct a full current Notice from its redacted saved projection.
+		if ai >= len(ns) {
+			i := ai - len(ns)
+			if si != len(rs) || i >= len(absent) || id != absent[i] {
+				t.Fatal("wrong saved-only Get order or retry")
+			}
+			ai++
+			return notices.Notice{}, &ociannouncements.Error{Code: ociannouncements.Service, Status: 404}
+		}
+		if id != ns[ai].Key().NoticeID {
 			t.Fatal("wrong Get order or retry")
 		}
 		n := ns[ai]
@@ -108,5 +130,8 @@ func wantCollectionFailure(t *testing.T, got Collection, err error, code Code, s
 	}
 	if got.Candidates.EnvironmentID() != "" || got.Candidates.Current() != nil || got.Candidates.Components() != nil {
 		t.Fatal("partial candidate view on failure")
+	}
+	if got.Availability.EnvironmentID() != "" || got.Availability.Unavailable() != nil {
+		t.Fatal("partial availability on failure")
 	}
 }
