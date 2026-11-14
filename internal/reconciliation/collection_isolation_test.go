@@ -38,7 +38,7 @@ func TestCollectionStartsFreshAfterFailureAndOwnsResults(t *testing.T) {
 	}
 	prior.Current[0].Revision.NoticeID = "caller edit"
 	prior.Current[0].KnownCandidate = false
-	prior.Saved[0] = SavedNoticeRef{"caller edit", "caller edit"}
+	prior.Saved[0] = SavedNoticeRef{ObjectName: "caller edit", NoticeID: "caller edit"}
 	got, err = c.collect(budget(t), noPause)
 	if err != nil || len(got.Current) != 1 || len(got.Saved) != 1 || got.Current[0].Revision != n.Key() || !got.Current[0].KnownCandidate || got.Saved[0].ObjectName != recordName(r) || got.Saved[0].NoticeID != n.Key().NoticeID {
 		t.Fatalf("result isolation failed: %+v %v", got, err)

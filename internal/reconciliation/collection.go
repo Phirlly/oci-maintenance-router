@@ -26,7 +26,10 @@ type SavedNoticeSource interface {
 
 // SavedNoticeRef identifies observed saved work, including saved-only notices.
 // Later processing must reread it and check current source; no ETag is retained.
-type SavedNoticeRef struct{ ObjectName, NoticeID string }
+type SavedNoticeRef struct {
+	ObjectName, NoticeID string
+	membership           string
+}
 
 // Collection contains observed occurrences, not an authoritative snapshot,
 // baseline, heartbeat, complete chain hold decision or permission to send.
@@ -86,7 +89,12 @@ func (c *Collector) collect(ctx context.Context, wait func(context.Context, time
 		return Collection{}, (*CollectionError)(startErr)
 	}
 	defer cancel()
-	e := enumeration{ctx: ctx, wait: wait}
+	return c.collectBounded(ctx, wait, nil)
+}
+
+// The durable coordinator owns this context for both collection and saving.
+func (c *Collector) collectBounded(ctx context.Context, wait func(context.Context, time.Duration) error, dispatch func() error) (Collection, error) {
+	e := enumeration{ctx: ctx, wait: wait, dispatch: dispatch}
 	inventory, err := e.inventory(c.announcements, c.saved)
 	if err != nil {
 		return Collection{}, collectionFailure(ctx, "", err)

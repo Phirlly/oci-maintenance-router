@@ -15,11 +15,12 @@ const (
 )
 
 type enumeration struct {
-	ctx     context.Context
-	wait    func(context.Context, time.Duration) error
-	started bool
-	items   int
-	bytes   int
+	ctx      context.Context
+	wait     func(context.Context, time.Duration) error
+	started  bool
+	items    int
+	bytes    int
+	dispatch func() error
 }
 
 func (e *enumeration) before(source Source) error {
@@ -35,6 +36,9 @@ func (e *enumeration) before(source Source) error {
 		return failure(e.ctx, source, Canceled)
 	}
 	e.started = true
+	if e.dispatch != nil {
+		return e.dispatch()
+	}
 	return nil
 }
 

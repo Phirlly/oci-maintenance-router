@@ -40,7 +40,7 @@ func (e *enumeration) savedDetails(source SavedNoticeSource, names []string, fac
 		_, id := r.Identity()
 		// Names are already owned by enumeration. Do not keep a record's backing
 		// buffer alive through its ID; no full record or CAS handle is retained.
-		result = append(result, SavedNoticeRef{ObjectName: name, NoticeID: strings.Clone(id)})
+		result = append(result, SavedNoticeRef{ObjectName: name, NoticeID: strings.Clone(id), membership: savedMembership(r)})
 	}
 	return result, nil
 }
