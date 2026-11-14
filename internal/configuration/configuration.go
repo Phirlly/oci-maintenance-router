@@ -25,7 +25,13 @@ type Config struct {
 	Mode             string
 	ActiveBaselineID string
 	Replay           []Replay
+	InstallationID   string
+	Preparation      Preparation
 }
+
+// Preparation contains desired controls only; the coordinator enforces mode,
+// pinned configuration, history, CURRENT checks and lease before any operation.
+type Preparation struct{ Initialize bool }
 
 type Ownership struct {
 	Kind      string

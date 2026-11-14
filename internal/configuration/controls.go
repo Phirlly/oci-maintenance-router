@@ -1,6 +1,9 @@
 package configuration
 
 func (c Config) validateControls() error {
+	if c.SchemaVersion == 2 {
+		return c.validatePreparation()
+	}
 	if c.Mode != "PREVIEW" && c.Mode != "LIVE" && c.Mode != "PAUSED" {
 		return &Error{"mode", "invalid"}
 	}

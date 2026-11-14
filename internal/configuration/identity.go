@@ -9,6 +9,10 @@ import (
 	"unicode/utf8"
 )
 
+// Routing meaning is unchanged across outer configuration schemas1 and2.
+// Preserve this projection's original bytes for saved delivery compatibility.
+const routingProjectionVersion = 1
+
 // EnvironmentID hashes the exact deployment identity and trusted ledger location.
 // Use identities only on configurations returned by Decode; revalidate edits.
 func (c Config) EnvironmentID(location LedgerLocation) (string, error) {
@@ -57,7 +61,7 @@ func (c Config) canonicalRouting() ([]byte, error) {
 		owner["namespace"] = c.Ownership.Namespace
 	}
 	return json.Marshal(map[string]any{
-		"schemaVersion": c.SchemaVersion, "tenancyId": c.TenancyID,
+		"schemaVersion": routingProjectionVersion, "tenancyId": c.TenancyID,
 		"deploymentRegion": c.DeploymentRegion, "regionMap": c.RegionMap,
 		"compartmentIds": compartments, "mysqlServices": services, "ownership": owner,
 		"destinations": destinationValues, "routes": routeValues, "pagerDutyRegion": c.PagerDutyRegion,

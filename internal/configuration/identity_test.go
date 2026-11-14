@@ -77,7 +77,6 @@ func TestRoutingOrderIndependenceWithoutMutation(t *testing.T) {
 
 func TestEveryRoutingInputChangesGeneration(t *testing.T) {
 	for name, change := range map[string]func(*Config){
-		"schema":            func(c *Config) { c.SchemaVersion = 2 },
 		"tenancy":           func(c *Config) { c.TenancyID = "ocid1.tenancy.oc1..other" },
 		"region":            func(c *Config) { c.DeploymentRegion = "us-phoenix-1" },
 		"region scope":      func(c *Config) { delete(c.RegionMap, "us-phoenix-1") },

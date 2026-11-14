@@ -1,7 +1,5 @@
 package configuration
 
-import "encoding/json"
-
 // Decode accepts an independently verified region/service catalog. Never build
 // that catalog from the untrusted configuration itself. This does no cloud I/O.
 func Decode(data []byte, catalog Catalog) (Config, error) {
@@ -9,22 +7,26 @@ func Decode(data []byte, catalog Catalog) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
-	r := readObject(value, "configuration", &err, []string{
-		"schemaVersion", "environmentName", "tenancyId", "deploymentRegion", "regionMap",
-		"compartmentIds", "mysqlServices", "ownership", "destinations", "routes",
-		"pagerDutyRegion", "intakeTopicId", "operatorTopicId",
-	}, []string{"mode", "activeBaselineId", "replay"})
+	version, err := configurationVersion(value)
 	if err != nil {
 		return Config{}, err
 	}
-	if r.values["schemaVersion"] == nil {
-		r.fail("schemaVersion", "type")
+	required := []string{
+		"schemaVersion", "environmentName", "tenancyId", "deploymentRegion", "regionMap",
+		"compartmentIds", "mysqlServices", "ownership", "destinations", "routes",
+		"pagerDutyRegion", "intakeTopicId", "operatorTopicId",
 	}
-	if number, ok := r.values["schemaVersion"].(json.Number); !ok || number != "1" {
-		r.fail("schemaVersion", "unsupported")
+	optional := []string{"mode", "activeBaselineId", "replay"}
+	if version == 2 {
+		required = append(required, "mode", "installationId", "preparation")
+		optional = nil
+	}
+	r := readObject(value, "configuration", &err, required, optional)
+	if err != nil {
+		return Config{}, err
 	}
 	config := Config{
-		SchemaVersion: 1, EnvironmentName: r.text("environmentName"),
+		SchemaVersion: version, EnvironmentName: r.text("environmentName"),
 		TenancyID: r.text("tenancyId"), DeploymentRegion: r.text("deploymentRegion"),
 		RegionMap: r.stringMap("regionMap"), CompartmentIDs: r.strings("compartmentIds"),
 		MySQLServices: r.strings("mysqlServices"), PagerDutyRegion: r.text("pagerDutyRegion"),
@@ -72,6 +74,10 @@ func (c *Config) readRouting(r objectReader) {
 func (c *Config) readControls(r objectReader) {
 	if _, ok := r.values["mode"]; ok {
 		c.Mode = r.text("mode")
+	}
+	if c.SchemaVersion == 2 {
+		c.readPreparation(r)
+		return
 	}
 	if value, exists := r.values["activeBaselineId"]; exists && value != nil {
 		c.ActiveBaselineID = r.text("activeBaselineId")
