@@ -5,11 +5,14 @@ import (
 	"oci-maintenance-router/internal/routing"
 )
 
-func validResource(d Resource, v Revision, hold delivery.Reason) bool {
+func validResource(d Resource, v Revision, hold delivery.Reason, closed bool) bool {
 	if (d.ResourceID != "" && !dbPattern.MatchString(d.ResourceID)) || (d.Region != "" && !regionPattern.MatchString(d.Region)) || (d.DestinationID != "" && !destinationPattern.MatchString(d.DestinationID)) || (d.BatchID != "" && !digestPattern.MatchString(d.BatchID)) {
 		return false
 	}
 	complete := d.ResourceID != "" && d.Region != "" && d.DestinationID != ""
+	if d.Disposition == "CLOSED" {
+		return closed && d.Reason == "operator" && ((d.BatchID != "" && complete) || (d.BatchID == "" && d.DestinationID == "" && (d.ResourceID != "" || d.Region == "")))
+	}
 	if d.BatchID != "" {
 		return complete && (d.Disposition == "ASSIGNED" || d.Disposition == "API_ACCEPTED" || d.Disposition == "REVIEW_REQUIRED")
 	}

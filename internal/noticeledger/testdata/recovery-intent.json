@@ -1,0 +1,23 @@
+{
+  "request": {
+    "requestId": "operator-1",
+    "kind": "CLOSE_REVISION",
+    "targetId": "4ee26b11ad20285c32e3706088ab9f373e965f41b636c225a4edfa3d03f79875",
+    "reviewFingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "routingGeneration": "9d8d2e4a9cc52391072d13532e0450690f5e3acdeb60f296caf2ff92b8196dbb",
+    "componentFingerprint": ""
+  },
+  "tuple": [
+    "oci-maintenance-router/recovery-intent",
+    1,
+    "c081fc9b5129be4e85c6039722858f2454d79fcd9219504f473d53dffd712378",
+    "ocid1.announcement.oc1..example",
+    "operator-1",
+    "CLOSE_REVISION",
+    "4ee26b11ad20285c32e3706088ab9f373e965f41b636c225a4edfa3d03f79875",
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "9d8d2e4a9cc52391072d13532e0450690f5e3acdeb60f296caf2ff92b8196dbb",
+    ""
+  ],
+  "sha256": "f5a2e8c768f403a79332c84fd18d34984da596580bb3863b67f47585fcaabb03"
+}

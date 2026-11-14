@@ -45,6 +45,7 @@ type Snapshot struct {
 	Revisions                          []Revision
 	SourceOutcome                      *SourceOutcome
 	Batches                            []delivery.BatchSnapshot
+	Recovery                           *RecoverySnapshot
 }
 type Record struct {
 	data   *recordData
@@ -58,6 +59,7 @@ type recordData struct {
 	HoldReason    delivery.Reason `json:"holdReason"`
 	Revisions     []Revision      `json:"revisions"`
 	SourceOutcome *SourceOutcome  `json:"sourceOutcome,omitempty"`
+	Recovery      *recoveryData   `json:"recovery,omitempty"`
 	delivery      delivery.Record
 }
 type Error struct{ Code string }

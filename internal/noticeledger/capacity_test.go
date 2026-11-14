@@ -17,8 +17,20 @@ func maximumSize(t *testing.T, r Record) int {
 		t.Fatal(e)
 	}
 	w.HoldReason = delivery.ReasonConfigurationChanged
-	if w.SchemaVersion == 2 {
+	if w.SchemaVersion >= 2 {
 		w.SourceOutcome = &SourceOutcome{State: SourceAvailable, RecordedAt: clock().Format(timeFormat), RevisionDigest: strings.Repeat("f", 64)}
+	}
+	if w.Recovery != nil {
+		for i := range w.Recovery.Actions {
+			a := &w.Recovery.Actions[i]
+			stamp := clock().Format(timeFormat)
+			if a.Status == RecoveryConsumed {
+				a.Status, a.Reason, a.CompletedAt, a.Ambiguous = RecoveryReviewed, "transient", &stamp, false
+			}
+			if a.Status == RecoveryApproved && a.InvalidatedAt == nil {
+				a.InvalidatedAt, a.InvalidationReason = &stamp, "configuration_changed"
+			}
+		}
 	}
 	for i := range w.Revisions {
 		for j := range w.Revisions[i].Resources {

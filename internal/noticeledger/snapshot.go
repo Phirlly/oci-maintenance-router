@@ -19,6 +19,7 @@ func copySource(s Source) Source {
 }
 func (d *recordData) copy() recordData {
 	n := *d
+	n.Recovery = copyRecovery(d.Recovery)
 	if d.SourceOutcome != nil {
 		outcome := *d.SourceOutcome
 		n.SourceOutcome = &outcome
@@ -36,9 +37,13 @@ func (r Record) Snapshot() Snapshot {
 		return Snapshot{}
 	}
 	d := r.data.copy()
+	var recovery *RecoverySnapshot
+	if d.Recovery != nil {
+		recovery = &RecoverySnapshot{Actions: d.Recovery.Actions}
+	}
 	return Snapshot{SchemaVersion: d.SchemaVersion, EnvironmentID: d.EnvironmentID,
 		NoticeID: d.NoticeID, UpdatedAt: d.UpdatedAt, HoldReason: d.HoldReason,
-		Revisions: d.Revisions, SourceOutcome: d.SourceOutcome, Batches: d.delivery.Batches()}
+		Revisions: d.Revisions, SourceOutcome: d.SourceOutcome, Batches: d.delivery.Batches(), Recovery: recovery}
 }
 
 // Follows identifies exactly one transition from this in-memory record. It is

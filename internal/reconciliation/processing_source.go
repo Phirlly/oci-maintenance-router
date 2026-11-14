@@ -114,6 +114,9 @@ func (r *processingRun) changedSource(work processingNoticeWork, saved ocistorag
 			if readErr != nil {
 				return readErr
 			}
+			if other.Record().Snapshot().SchemaVersion == 3 {
+				return &ProcessingError{Code: "unsupported_notice_schema"}
+			}
 			held, holdErr := other.Record().Hold(delivery.ReasonSourceChanged, r.lease.manager.now())
 			if holdErr != nil {
 				return &ProcessingError{Code: "transition_failed"}

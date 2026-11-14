@@ -35,7 +35,7 @@ func validSource(s Source, noticeID string) bool {
 	return bytes.Equal(want, got)
 }
 func validate(d *recordData) error {
-	if (d.SchemaVersion != 1 && d.SchemaVersion != 2) || !digestPattern.MatchString(d.EnvironmentID) || !noticePattern.MatchString(d.NoticeID) || !validTime(d.UpdatedAt) || len(d.Revisions) == 0 || (d.HoldReason != "" && !holdReason(d.HoldReason)) || (len(d.Revisions) > 1 && d.HoldReason == "") {
+	if (d.SchemaVersion != 1 && d.SchemaVersion != 2 && d.SchemaVersion != 3) || !digestPattern.MatchString(d.EnvironmentID) || !noticePattern.MatchString(d.NoticeID) || !validTime(d.UpdatedAt) || len(d.Revisions) == 0 || (d.HoldReason != "" && !holdReason(d.HoldReason)) || (len(d.Revisions) > 1 && d.HoldReason == "") || !validRecovery(d) {
 		return &Error{"invalid_record"}
 	}
 	previous := ""
@@ -49,7 +49,8 @@ func validate(d *recordData) error {
 		}
 		lastID := ""
 		for i, row := range v.Resources {
-			if row.Index != i || !validResource(row, v, d.HoldReason) {
+			closed := d.SchemaVersion == 3 && (row.BatchID != "" || recoveryRevisionClosed(d, v.Digest))
+			if row.Index != i || !validResource(row, v, d.HoldReason, closed) {
 				return &Error{"invalid_resource"}
 			}
 			if row.ResourceID != "" {

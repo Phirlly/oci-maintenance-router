@@ -13,6 +13,9 @@ func (r *processingRun) process(work processingNoticeWork) error {
 	if err != nil {
 		return err
 	}
+	if saved.Record().Snapshot().SchemaVersion == 3 {
+		return &ProcessingError{Code: "unsupported_notice_schema"}
+	}
 	if savedMembership(saved.Record()) != work.membership {
 		return &ProcessingError{Code: "membership_changed"}
 	}

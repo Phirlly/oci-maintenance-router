@@ -4,6 +4,7 @@ import (
 	"context"
 	"oci-maintenance-router/internal/delivery"
 	"oci-maintenance-router/internal/ocistorage"
+	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -14,16 +15,21 @@ import (
 func TestMaintenanceConcurrentRunsDoNotReplayAnAcceptedBatch(t *testing.T) {
 	n := processingNotice(t, 1, processingDB)
 	f := processingFixtureFor(t, n)
+	if f.run(t).Accepted != 1 {
+		t.Fatal("fixture lacks confirmed acceptance")
+	}
+	receipt := f.saved(t, n.Key().NoticeID).Snapshot().Batches[0]
 	var wg sync.WaitGroup
 	for range 2 {
 		wg.Go(func() { _, _ = f.p.Run(leaseBudget(t), f.live.lease) })
 	}
 	wg.Wait()
-	// A conflicting discovery may abort either run; restart must converge without
-	// replaying any confirmed acceptance from a winner.
+	// Concurrent observation writes may conflict, but the established receipt
+	// remains terminal through both processing and restart.
 	f.run(t)
-	if f.sent.Load() != 1 || f.saved(t, n.Key().NoticeID).Snapshot().Batches[0].State != delivery.APIAccepted {
-		t.Fatal("concurrent runs duplicated or lost delivery")
+	after := f.saved(t, n.Key().NoticeID).Snapshot().Batches[0]
+	if f.sent.Load() != 1 || after.State != delivery.APIAccepted || !reflect.DeepEqual(receipt, after) {
+		t.Fatalf("confirmed receipt changed: sent=%d state=%s", f.sent.Load(), after.State)
 	}
 }
 

@@ -12,7 +12,7 @@ func (r Record) observationTime(environmentID, noticeID string, at time.Time) (s
 	if r.data != nil && (r.data.EnvironmentID != environmentID || r.data.NoticeID != noticeID) {
 		return "", &Error{"identity_mismatch"}
 	}
-	if r.data != nil && r.data.SchemaVersion != 2 {
+	if r.data != nil && r.data.SchemaVersion != 2 && r.data.SchemaVersion != 3 {
 		return "", &Error{"migration_required"}
 	}
 	return r.operationTime(at)
@@ -34,7 +34,7 @@ func (r Record) mergeObservation(environmentID, noticeID string, v Revision, sta
 			return Record{}, &Error{"source_mismatch"}
 		}
 		for j, old := range previous.Resources {
-			if old.BatchID != "" {
+			if old.BatchID != "" || old.Disposition == "CLOSED" {
 				if old.ResourceID != v.Resources[j].ResourceID {
 					return Record{}, &Error{"source_mismatch"}
 				}

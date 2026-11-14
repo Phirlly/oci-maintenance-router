@@ -45,7 +45,7 @@ func (r Record) RecordSourceUnavailable(status int, at time.Time) (Record, error
 	if r.data == nil || !unavailableStatus(status) {
 		return Record{}, &Error{"invalid_source_outcome"}
 	}
-	if r.data.SchemaVersion != 2 {
+	if r.data.SchemaVersion != 2 && r.data.SchemaVersion != 3 {
 		return Record{}, &Error{"migration_required"}
 	}
 	stamp, err := r.operationTime(at)

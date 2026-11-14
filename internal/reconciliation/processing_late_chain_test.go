@@ -1,6 +1,7 @@
 package reconciliation
 
 import (
+	"bytes"
 	"context"
 	"oci-maintenance-router/internal/delivery"
 	"oci-maintenance-router/internal/noticeledger"
@@ -11,16 +12,29 @@ import (
 )
 
 func TestMaintenanceLateChainChangeRetainsKnownUnionAndStopsAllDispatch(t *testing.T) {
-	for _, fault := range []string{"none", "own_write", "peer_read", "peer_write", "peer_clock"} {
+	for _, fault := range []string{"none", "own_write", "peer_read", "peer_write", "peer_clock", "peer_recovery_schema"} {
 		a := processingNotice(t, 1, processingDB)
 		bRecord := processingNotice(t, 2, processingDB).Snapshot()
 		bRecord.ChainID = chain("joined")
 		b := normalizeCandidate(t, bRecord)
 		f := processingFixtureFor(t, a, b)
 		get := f.source.get
+		var recoveryPeer []byte
 		f.source.get = func(ctx context.Context, id string) (notices.Notice, error) {
 			n, e := get(ctx, id)
 			if id == a.Key().NoticeID && f.fetched.Load() >= 6 {
+				if fault == "peer_recovery_schema" {
+					peer := f.saved(t, b.Key().NoticeID)
+					migrated, err := peer.MigrateRecovery(time.Now())
+					if err != nil {
+						t.Fatal(err)
+					}
+					recoveryPeer, err = migrated.Encode()
+					if err != nil {
+						t.Fatal(err)
+					}
+					f.live.objects.seed(noticeName(b.Key().NoticeID), recoveryPeer)
+				}
 				v := n.Snapshot()
 				v.ChainID = chain("joined")
 				return normalizeCandidate(t, v), nil
@@ -65,6 +79,12 @@ func TestMaintenanceLateChainChangeRetainsKnownUnionAndStopsAllDispatch(t *testi
 		}
 		if fault == "none" && f.saved(t, b.Key().NoticeID).Snapshot().HoldReason != delivery.ReasonSourceChanged {
 			t.Fatal("known linked peer not held")
+		}
+		if fault == "peer_recovery_schema" {
+			got, err := f.saved(t, b.Key().NoticeID).Encode()
+			if err != nil || len(recoveryPeer) == 0 || !bytes.Equal(got, recoveryPeer) {
+				t.Fatal("late-chain handling mutated recovery-schema peer", err)
+			}
 		}
 	}
 }

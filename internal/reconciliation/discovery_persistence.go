@@ -20,6 +20,9 @@ func (r *discoveryRun) persist(work *discoveryWork) error {
 		if err != nil {
 			return discoveryFailureFor(r.ctx, "record_read", err)
 		}
+		if saved.Record().Snapshot().SchemaVersion == 3 {
+			return &DiscoveryError{Code: "unsupported_notice_schema"}
+		}
 		if savedMembership(saved.Record()) != work.saved.membership {
 			return &DiscoveryError{Code: "membership_changed"}
 		}

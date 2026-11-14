@@ -1,0 +1,48 @@
+{
+  "kind": "CLOSE_REVISION",
+  "target": "4ee26b11ad20285c32e3706088ab9f373e965f41b636c225a4edfa3d03f79875",
+  "generation": "9d8d2e4a9cc52391072d13532e0450690f5e3acdeb60f296caf2ff92b8196dbb",
+  "component": "",
+  "tuple": [
+    "oci-maintenance-router/recovery-review",
+    1,
+    "c081fc9b5129be4e85c6039722858f2454d79fcd9219504f473d53dffd712378",
+    "ocid1.announcement.oc1..example",
+    "CLOSE_REVISION",
+    "4ee26b11ad20285c32e3706088ab9f373e965f41b636c225a4edfa3d03f79875",
+    "9d8d2e4a9cc52391072d13532e0450690f5e3acdeb60f296caf2ff92b8196dbb",
+    "",
+    "",
+    [
+      "AVAILABLE",
+      "4ee26b11ad20285c32e3706088ab9f373e965f41b636c225a4edfa3d03f79875",
+      0
+    ],
+    [
+      [
+        "4ee26b11ad20285c32e3706088ab9f373e965f41b636c225a4edfa3d03f79875",
+        "",
+        "9d8d2e4a9cc52391072d13532e0450690f5e3acdeb60f296caf2ff92b8196dbb",
+        "SUPPORTED_SHAPE",
+        ""
+      ]
+    ],
+    [
+      [
+        {
+          "index": 0,
+          "resourceId": "ocid1.mysqldbsystem.oc1.iad.example",
+          "region": "us-ashburn-1",
+          "disposition": "UNRESOLVED",
+          "reason": "lookup_missing",
+          "destinationId": "",
+          "batchId": ""
+        }
+      ],
+      [],
+      false,
+      []
+    ]
+  ],
+  "sha256": "4ee51e551e4cba573778e6a301ef7b31bae982455adffc015e39819fda984a50"
+}

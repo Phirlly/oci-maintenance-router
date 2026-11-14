@@ -15,7 +15,8 @@ func (r Record) Begin(id string, c delivery.AttemptContext) (Record, delivery.At
 		return Record{}, delivery.AttemptRef{}, err
 	}
 	b, ok := r.data.delivery.Batch(id)
-	if !ok || effectiveHold(r.data, b) != "" {
+	_, approved := recoveryApproval(r.data, id)
+	if !ok || approved || effectiveHold(r.data, b) != "" {
 		return Record{}, delivery.AttemptRef{}, &Error{"attempt_blocked"}
 	}
 	d := r.data.copy()
@@ -81,6 +82,7 @@ func (r Record) Hold(reason delivery.Reason, at time.Time) (Record, error) {
 	if d.HoldReason == "" {
 		d.HoldReason = reason
 	}
+	invalidateApprovals(&d, string(reason))
 	return r.finalize(d, at)
 }
 

@@ -25,6 +25,9 @@ func (r Record) Prepare(at time.Time, values ...delivery.Preparation) (Record, e
 		if p.SecretVersion <= 0 || s.BatchID == "" || s.EnvironmentID != r.data.EnvironmentID || s.Revision.NoticeID != r.data.NoticeID {
 			return Record{}, &Error{"invalid_preparation"}
 		}
+		if recoveryRevisionClosed(r.data, s.Revision.Digest) {
+			return Record{}, &Error{"preparation_blocked"}
+		}
 		if _, ok := r.data.delivery.Batch(s.BatchID); ok {
 			continue
 		}
@@ -51,11 +54,7 @@ func (r Record) Prepare(at time.Time, values ...delivery.Preparation) (Record, e
 	d := r.data.copy()
 	d.UpdatedAt = stamp
 	if len(values) != 0 {
-		if len(d.delivery.Batches()) == 0 {
-			d.delivery, err = delivery.NewRecord(values...)
-		} else {
-			d.delivery, err = d.delivery.Prepare(values...)
-		}
+		d.delivery, err = prepareDeliveries(d.delivery, d.SchemaVersion, values)
 		if err != nil {
 			return Record{}, err
 		}

@@ -8,6 +8,14 @@ import (
 )
 
 func effectiveHold(d *recordData, b delivery.BatchSnapshot) delivery.Reason {
+	if a, ok := recoveryApproval(d, b.Message.BatchID); ok {
+		if activeApproval(d, a) {
+			return ""
+		}
+		if a.InvalidatedAt != nil {
+			return delivery.Reason(a.InvalidationReason)
+		}
+	}
 	if d.HoldReason != "" {
 		return d.HoldReason
 	}
@@ -25,6 +33,10 @@ func effectiveHold(d *recordData, b delivery.BatchSnapshot) delivery.Reason {
 }
 
 func (r Record) finalize(d recordData, at time.Time) (Record, error) {
+	syncApprovalInvalidation(r.data, &d)
+	if err := syncRecoveryOutcomes(&d); err != nil {
+		return Record{}, err
+	}
 	for _, b := range d.delivery.Batches() {
 		reason := effectiveHold(&d, b)
 		if reason != "" && (b.State == delivery.Prepared || b.State == delivery.RetryWait) {
@@ -67,6 +79,9 @@ func synchronize(d *recordData) error {
 						row.Disposition = "REVIEW_REQUIRED"
 						row.Reason = string(b.Reason)
 					}
+					if b.State == delivery.Closed {
+						row.Disposition, row.Reason = "CLOSED", string(delivery.ReasonOperator)
+					}
 					d.Revisions[i].Resources[j] = row
 					found = true
 				}
@@ -76,10 +91,14 @@ func synchronize(d *recordData) error {
 			}
 		}
 	}
-	if d.HoldReason != "" {
-		for i := range d.Revisions {
-			for j, row := range d.Revisions[i].Resources {
-				if row.BatchID == "" && row.Disposition != string(routing.OutOfScope) {
+	for i := range d.Revisions {
+		closed := recoveryRevisionClosed(d, d.Revisions[i].Digest)
+		for j, row := range d.Revisions[i].Resources {
+			if row.BatchID == "" {
+				if closed {
+					row.Disposition, row.Reason, row.DestinationID = "CLOSED", string(delivery.ReasonOperator), ""
+					d.Revisions[i].Resources[j] = row
+				} else if d.HoldReason != "" && row.Disposition != string(routing.OutOfScope) {
 					row.Disposition = "REVIEW_REQUIRED"
 					row.Reason = string(d.HoldReason)
 					row.DestinationID = ""
