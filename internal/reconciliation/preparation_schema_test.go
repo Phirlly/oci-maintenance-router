@@ -6,7 +6,7 @@ import (
 )
 
 func TestPreparationAcceptsDiagnosticSchemasAndPreservesExistingHistory(t *testing.T) {
-	for _, schema := range []int{3, 4, 5} {
+	for _, schema := range []int{3, 4, 5, 6} {
 		changeSchema := func(v map[string]any) { v["schemaVersion"] = schema }
 		for _, upgrade := range []bool{false, true} {
 			changes := []func(map[string]any){changeSchema}
@@ -35,7 +35,7 @@ func TestPreparationAcceptsDiagnosticSchemasAndPreservesExistingHistory(t *testi
 	}
 }
 func TestPreparationDiagnosticSchemasRejectTESTAndPAUSEDBeforeIO(t *testing.T) {
-	for _, schema := range []int{3, 4, 5} {
+	for _, schema := range []int{3, 4, 5, 6} {
 		for _, mode := range []string{"TEST", "PAUSED"} {
 			p, objects, lease := preparationFixture(t, nil, func(v map[string]any) {
 				v["schemaVersion"] = schema

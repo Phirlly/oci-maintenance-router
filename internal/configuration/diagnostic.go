@@ -10,7 +10,7 @@ func (c *Config) readDiagnostic(r objectReader) {
 		return
 	}
 	var optional []string
-	if c.SchemaVersion == 4 || c.SchemaVersion == 5 {
+	if c.SchemaVersion == 4 || c.SchemaVersion == 5 || c.SchemaVersion == 6 {
 		optional = []string{"receiptCode"}
 	}
 	d := readObject(value, "diagnostic", r.err, []string{"requestId", "secretId", "nonProduction"}, optional)
@@ -28,7 +28,7 @@ func (c Config) validateDiagnostic(catalog Catalog) error {
 	if !baselinePattern.MatchString(c.InstallationID) {
 		return &Error{"installationId", "invalid"}
 	}
-	if c.Mode != "PREVIEW" && c.Mode != "PAUSED" && c.Mode != "TEST" {
+	if c.Mode != "PREVIEW" && c.Mode != "PAUSED" && c.Mode != "TEST" && !(c.SchemaVersion == 6 && c.Mode == "LIVE") {
 		return &Error{"mode", "invalid"}
 	}
 	if c.Diagnostic == nil {

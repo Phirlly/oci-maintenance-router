@@ -27,7 +27,7 @@ func readDiagnosticControls(configBytes, catalogBytes []byte, location configura
 		return diagnosticControls{}, invalid
 	}
 	c, err := configuration.Decode(configBytes, catalog)
-	if err != nil || (c.SchemaVersion != 3 && c.SchemaVersion != 4 && c.SchemaVersion != 5) {
+	if err != nil || (c.SchemaVersion != 3 && c.SchemaVersion != 4 && c.SchemaVersion != 5 && c.SchemaVersion != 6) {
 		return diagnosticControls{}, invalid
 	}
 	if c.Diagnostic == nil {

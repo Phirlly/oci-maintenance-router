@@ -23,7 +23,7 @@ func readOperatorControls(configBytes, catalogBytes []byte, location configurati
 		return operatorControls{}, invalid
 	}
 	c, err := configuration.Decode(configBytes, catalog)
-	if err != nil || c.SchemaVersion != 5 {
+	if err != nil || (c.SchemaVersion != 5 && c.SchemaVersion != 6) {
 		return operatorControls{}, invalid
 	}
 	if c.OperatorTest == nil {
