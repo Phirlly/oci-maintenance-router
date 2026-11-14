@@ -6,7 +6,7 @@ import (
 )
 
 func TestCheckRejectsDiagnosticSchemaBeforeMarker(t *testing.T) {
-	for _, schema := range []int{3, 4} {
+	for _, schema := range []int{3, 4, 5} {
 		for _, mode := range []string{"PREVIEW", "PAUSED", "TEST"} {
 			s, store := fixture(t)
 			var v map[string]any

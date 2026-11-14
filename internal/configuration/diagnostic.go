@@ -10,7 +10,7 @@ func (c *Config) readDiagnostic(r objectReader) {
 		return
 	}
 	var optional []string
-	if c.SchemaVersion == 4 {
+	if c.SchemaVersion == 4 || c.SchemaVersion == 5 {
 		optional = []string{"receiptCode"}
 	}
 	d := readObject(value, "diagnostic", r.err, []string{"requestId", "secretId", "nonProduction"}, optional)

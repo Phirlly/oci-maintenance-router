@@ -28,6 +28,13 @@ type Config struct {
 	InstallationID   string
 	Preparation      Preparation
 	Diagnostic       *DiagnosticRequest
+	OperatorTest     *OperatorTestRequest
+}
+
+// OperatorTestRequest is desired EMAIL test intent and optional receipt input.
+// It does not prove channel association, publication permission or human receipt.
+type OperatorTestRequest struct {
+	RequestID, SubscriptionID, Endpoint, ReceiptCode string
 }
 
 // DiagnosticRequest is desired test intent and optional receipt attestation,

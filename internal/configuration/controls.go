@@ -4,8 +4,11 @@ func (c Config) validateControls(catalog Catalog) error {
 	if c.SchemaVersion == 2 {
 		return c.validatePreparation()
 	}
-	if c.SchemaVersion == 3 || c.SchemaVersion == 4 {
-		return c.validateDiagnostic(catalog)
+	if c.SchemaVersion == 3 || c.SchemaVersion == 4 || c.SchemaVersion == 5 {
+		if err := c.validateDiagnostic(catalog); err != nil {
+			return err
+		}
+		return c.validateOperatorTest(catalog)
 	}
 	if c.Mode != "PREVIEW" && c.Mode != "LIVE" && c.Mode != "PAUSED" {
 		return &Error{"mode", "invalid"}

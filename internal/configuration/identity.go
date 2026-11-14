@@ -9,7 +9,7 @@ import (
 	"unicode/utf8"
 )
 
-// Routing meaning is unchanged across outer configuration schemas1 through4.
+// Routing meaning is unchanged across outer configuration schemas1 through5.
 // Preserve this projection's original bytes for saved delivery compatibility.
 const routingProjectionVersion = 1
 
