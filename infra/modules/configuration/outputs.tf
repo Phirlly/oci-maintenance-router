@@ -1,6 +1,22 @@
 output "configuration_json" {
-  description = "Validated PREVIEW-only runtime configuration, with no secret contents."
+  description = "Validated PREVIEW, PAUSED or nonproduction TEST configuration; no secret contents."
   value       = local.configuration_json
+  precondition {
+    condition     = contains(["PREVIEW", "PAUSED", "TEST"], local.s.mode)
+    error_message = "Mode must be PREVIEW, PAUSED or TEST. Maintenance delivery is not enabled by this release."
+  }
+  precondition {
+    condition     = local.s.mode != "TEST" || try(local.s.test_run >= 1 && local.s.test_run <= 2147483647 && floor(local.s.test_run) == local.s.test_run, false)
+    error_message = "Test run number is required in TEST: enter an integer from 1 to 2147483647. Keep it unchanged to reuse the saved result; increase it to request another test."
+  }
+  precondition {
+    condition     = local.s.mode != "TEST" || (length(local.s.test_secret_ocid) <= 4096 && can(regex("^ocid1\\.vaultsecret\\.oc1\\.${local.regional_suffix}", local.s.test_secret_ocid)))
+    error_message = "Test secret must be an existing Vault secret in the stack's OCI region. Select its reference; never paste an integration key."
+  }
+  precondition {
+    condition     = local.s.mode != "TEST" || local.s.test_nonproduction
+    error_message = "Confirm the test secret belongs to a nonproduction PagerDuty service that may receive a test alert."
+  }
   precondition {
     condition     = can(regex("^[a-z0-9][a-z0-9-]{0,31}$", local.s.environment_name))
     error_message = "Environment name must use 1–32 lowercase letters, digits or hyphens, beginning with a letter or digit."

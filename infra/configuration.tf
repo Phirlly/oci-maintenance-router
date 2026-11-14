@@ -18,6 +18,10 @@ module "configuration" {
     destinations        = var.destinations
     routes              = var.routes
     pagerduty_region    = var.pagerduty_region
+    mode                = var.mode
+    test_secret_ocid    = var.test_secret_ocid
+    test_nonproduction  = var.test_nonproduction
+    test_run            = var.test_run
   }
   topics = {
     intake   = oci_ons_notification_topic.intake.id

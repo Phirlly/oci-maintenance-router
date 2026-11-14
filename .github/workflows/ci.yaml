@@ -124,7 +124,7 @@ jobs:
       - name: Build the prebuilt Function archive
         run: go run ./scripts/packagefunction "$RUNNER_TEMP/oci-router/function"
 
-      - name: Build and validate the complete PREVIEW stack
+      - name: Build and validate the complete Resource Manager stack
         run: |
           go run ./scripts/packagestack "$RUNNER_TEMP/oci-router/function" "$RUNNER_TEMP/oci-router/stack.zip"
           mkdir "$RUNNER_TEMP/oci-router/stack"

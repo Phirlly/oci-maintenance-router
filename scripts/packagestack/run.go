@@ -47,7 +47,7 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintln(out, "package: cannot write bundle")
 		return 1
 	}
-	fmt.Fprintf(out, "Built PREVIEW-only RM bundle: %d bytes, SHA256 %s\n", len(archive), digest(archive))
+	fmt.Fprintf(out, "Built RM preview/test bundle: %d bytes, SHA256 %s\n", len(archive), digest(archive))
 	return 0
 }
 

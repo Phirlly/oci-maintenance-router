@@ -28,12 +28,12 @@ func TestFormCoversActualTerraformInputs(t *testing.T) {
 			if !ok {
 				t.Fatalf("missing form input %s", name)
 			}
-			if kind == "bool" && field.Type != "boolean" || kind == "map(string)" && field.Type != "map" || kind == "list(string)" && field.Type != "list" {
+			if kind == "bool" && field.Type != "boolean" || kind == "map(string)" && field.Type != "map" || kind == "list(string)" && field.Type != "list" || kind == "number" && field.Type != "integer" {
 				t.Fatalf("type mismatch for %s: %s/%s", name, kind, field.Type)
 			}
 		}
 	}
-	if len(inputs) != 18 {
+	if len(inputs) != 23 {
 		t.Fatalf("review new input contract: %d", len(inputs))
 	}
 	for name, field := range form.Variables {

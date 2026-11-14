@@ -37,6 +37,13 @@ resource "oci_core_service_gateway" "router" {
     service_id = local.regional_service.id
   }
 }
+resource "oci_core_nat_gateway" "router" {
+  count          = var.create_network ? 1 : 0
+  compartment_id = var.compartment_ocid
+  vcn_id         = oci_core_vcn.router[0].id
+  display_name   = local.name
+  block_traffic  = false
+}
 resource "oci_core_route_table" "router" {
   count          = var.create_network ? 1 : 0
   compartment_id = var.compartment_ocid
@@ -47,6 +54,11 @@ resource "oci_core_route_table" "router" {
     destination_type  = "SERVICE_CIDR_BLOCK"
     network_entity_id = oci_core_service_gateway.router[0].id
   }
+  route_rules {
+    destination       = "0.0.0.0/0"
+    destination_type  = "CIDR_BLOCK"
+    network_entity_id = oci_core_nat_gateway.router[0].id
+  }
 }
 resource "oci_core_security_list" "router" {
   count          = var.create_network ? 1 : 0
@@ -56,6 +68,16 @@ resource "oci_core_security_list" "router" {
   egress_security_rules {
     destination      = local.regional_service.cidr_block
     destination_type = "SERVICE_CIDR_BLOCK"
+    protocol         = "6"
+    stateless        = false
+    tcp_options {
+      min = 443
+      max = 443
+    }
+  }
+  egress_security_rules {
+    destination      = "0.0.0.0/0"
+    destination_type = "CIDR_BLOCK"
     protocol         = "6"
     stateless        = false
     tcp_options {
@@ -81,7 +103,7 @@ data "oci_core_subnet" "existing" {
   lifecycle {
     postcondition {
       condition     = self.prohibit_public_ip_on_vnic && (self.availability_domain == null || self.availability_domain == "") && self.state == "AVAILABLE" && self.vcn_id == var.existing_vcn_ocid
-      error_message = "Choose an AVAILABLE private regional subnet with working DNS and regional Object Storage HTTPS access."
+      error_message = "Choose an AVAILABLE private regional subnet in the selected VCN. It needs DNS and HTTPS to Announcements, Object Storage, Vault and the selected PagerDuty region; shared network settings are not changed."
     }
   }
 }

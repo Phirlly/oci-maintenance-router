@@ -13,7 +13,7 @@ func TestCommandWritesNewExternalBundleAndProtectsExistingOutput(t *testing.T) {
 	t.Chdir(root)
 	path := filepath.Join(t.TempDir(), "stack.zip")
 	var output bytes.Buffer
-	if status := run([]string{dir, path}, &output); status != 0 || !strings.Contains(output.String(), "PREVIEW-only RM bundle:") {
+	if status := run([]string{dir, path}, &output); status != 0 || !strings.Contains(output.String(), "RM preview/test bundle:") {
 		t.Fatalf("%d %s", status, &output)
 	}
 	original, err := os.ReadFile(path)

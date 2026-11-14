@@ -1,10 +1,14 @@
 schemaVersion: "1.1.0"
-title: OCI Maintenance Router — PREVIEW
-description: Prepare maintenance history without sending notifications.
-informationalText: This PREVIEW reads announcements and prepares maintenance history for your selected scope. It does not send PagerDuty alerts or enable delivery.
+title: OCI Maintenance Router — Preview and Test
+description: Prepare maintenance history or send one explicit nonproduction test alert.
+informationalText: PREVIEW prepares maintenance history. TEST sends a test alert to your selected nonproduction service. Maintenance notification delivery remains disabled.
 variableGroups:
   - title: Placement
     variables: ["${environment_name}", "${compartment_ocid}"]
+  - title: Operation
+    variables: ["${mode}"]
+  - title: PagerDuty test
+    variables: ["${test_secret_compartment_ocid}", "${test_secret_ocid}", "${test_nonproduction}", "${test_run}"]
   - title: MySQL scope
     variables: ["${mysql_regions}", "${mysql_compartments}"]
   - title: Ownership tag
@@ -31,6 +35,47 @@ variables:
     title: Router compartment
     description: Create the router here. Select existing MySQL locations below, in this same tenancy. No database is created.
     required: true
+  mode:
+    type: enum
+    enum: [PREVIEW, PAUSED, TEST]
+    default: PREVIEW
+    title: Mode
+    description: PREVIEW prepares history without alerts. PAUSED stops new work. TEST sends one nonproduction test; it does not enable maintenance delivery.
+    required: true
+  test_secret_compartment_ocid:
+    type: oci:identity:compartment:id
+    title: Test secret compartment
+    description: Select the compartment containing your test secret in the stack region.
+    default: ${secret_compartment_ocid}
+    required: true
+    visible:
+      eq: ["${mode}", TEST]
+  test_secret_ocid:
+    type: oci:kms:secret:id
+    title: Nonproduction PagerDuty secret
+    description: Select a Vault secret containing the Events API V2 integration key for your test service. Never paste the key here. Reselect if blank when editing.
+    required: true
+    visible:
+      eq: ["${mode}", TEST]
+    dependsOn:
+      compartmentId: ${test_secret_compartment_ocid}
+  test_nonproduction:
+    type: boolean
+    title: This service may receive a nonproduction test alert
+    description: Confirm this test will not page production responders.
+    default: false
+    required: true
+    visible:
+      eq: ["${mode}", TEST]
+  test_run:
+    type: integer
+    title: Test run number
+    description: Enter 1 for your first test. Keep unchanged to reuse its result; increase by 1 for another test. After changing the test service, PagerDuty region or package, use a new number.
+    minimum: 1
+    maximum: 2147483647
+    required: true
+    visible:
+      eq: ["${mode}", TEST]
   mysql_regions:
     type: list
     valueType: mysql_region
@@ -88,7 +133,7 @@ variables:
   secret_compartment_ocid:
     type: oci:identity:compartment:id
     title: Vault secret compartment
-    description: "Choose the compartment containing your secrets in the stack region. Reuse an existing secret or <a href='https://docs.oracle.com/en-us/iaas/Content/secret-management/Tasks/create-secret.htm'>create one in Vault</a>. This nonsending PREVIEW can use harmless dummy content; no real PagerDuty key is needed."
+    description: "Choose the compartment containing your secrets in the stack region. Reuse an existing secret or <a href='https://docs.oracle.com/en-us/iaas/Content/secret-management/Tasks/create-secret.htm'>create one in Vault</a>. These routing secrets are not read yet; PREVIEW can use harmless dummy content. TEST uses its separate secret above."
     default: ${compartment_ocid}
     required: true
   destinations:
@@ -119,7 +164,7 @@ variables:
   create_network:
     type: boolean
     title: Create a new network
-    description: Leave selected to create a private VCN and subnet for the router. Clear to use an existing VCN and private regional subnet.
+    description: Create a private VCN, subnet and outbound gateways for OCI and PagerDuty access. Clear to use an existing VCN and private regional subnet.
     default: true
   network_cidr:
     type: string
@@ -148,7 +193,7 @@ variables:
   existing_subnet_ocid:
     type: oci:core:subnet:id
     title: Existing private regional subnet
-    description: Must already permit DNS and HTTPS to regional Announcements and Object Storage. Shared routes and security rules are not changed.
+    description: Must already permit DNS and HTTPS to regional Announcements, Object Storage and Vault, plus events.pagerduty.com (US) or events.eu.pagerduty.com (EU) for TEST. Shared routes and security rules are not changed.
     required: true
     visible:
       not: ["${create_network}"]
@@ -158,12 +203,18 @@ variables:
       hidePublicSubnet: true
       hideAdSubnet: true
 outputs:
+  configured_mode:
+    type: string
+    title: Configured mode
+  test_submission_status:
+    type: string
+    title: Last test submission (API acceptance only)
   installation_status:
     type: string
-    title: PREVIEW preparation
+    title: Last deployment check
   sending_enabled:
     type: boolean
-    title: Notification delivery enabled
+    title: Maintenance delivery enabled
   function_id:
     type: string
     title: Function

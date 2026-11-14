@@ -59,8 +59,8 @@ func TestPreviewExecutionBudgetAndPrivateNetwork(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(string(network), `resource "oci_core_nat_gateway"`) || strings.Contains(string(network), `resource "oci_core_internet_gateway"`) {
-		t.Fatal("regional PREVIEW services do not require new internet egress")
+	if strings.Contains(string(network), `resource "oci_core_internet_gateway"`) {
+		t.Fatal("router subnet must remain private")
 	}
 	form := readForm(t)
 	for _, name := range []string{"installation_id", "preparation", "test_request_id", "recovery"} {

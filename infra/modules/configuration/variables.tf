@@ -11,9 +11,13 @@ variable "settings" {
     destinations        = map(string)
     routes              = map(string)
     pagerduty_region    = string
+    mode                = optional(string, "PREVIEW")
+    test_secret_ocid    = optional(string, "")
+    test_nonproduction  = optional(bool, false)
+    test_run            = optional(number)
   })
   nullable    = false
-  description = "Customer routing choices; no secret contents or activation authority."
+  description = "Routing and explicit nonproduction test choices; no secret contents or maintenance-delivery authority."
 }
 variable "catalog" {
   type        = object({ regions = map(string), mysqlServices = list(string) })

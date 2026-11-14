@@ -14,6 +14,10 @@ type formVariable struct {
 	Visible   any
 	DependsOn map[string]any
 	Required  bool
+	Enum      []string
+	Default   any
+	Minimum   int
+	Maximum   int
 }
 type stackForm struct {
 	SchemaVersion  string
@@ -75,7 +79,7 @@ func TestNativeFormContracts(t *testing.T) {
 			t.Fatalf("system field %s exposed", name)
 		}
 	}
-	for _, name := range []string{"mode", "active_baseline_id", "replay", "archive", "runtime", "release_sha256"} {
+	for _, name := range []string{"active_baseline_id", "replay", "archive", "runtime", "release_sha256"} {
 		if _, ok := form.Variables[name]; ok {
 			t.Fatalf("internal/activation field %s exposed", name)
 		}

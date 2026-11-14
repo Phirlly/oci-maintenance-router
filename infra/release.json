@@ -1,5 +1,5 @@
 {
-  "purpose": "preview-preparation-only",
+  "purpose": "preview-and-nonproduction-test",
   "runtime": {
     "name": "ol9",
     "version": "0.1.20",

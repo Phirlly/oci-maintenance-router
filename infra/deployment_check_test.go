@@ -79,6 +79,7 @@ func TestActualInvocationPredicateRejectsStaleOrMalformedResults(t *testing.T) {
 				return string(b)
 			}
 			expression := strings.NewReplacer(
+				"var.mode", `"PREVIEW"`,
 				"self.content", quote(string(encoded)),
 				"local.check_attempt_id", quote(attempt),
 				"sha256(module.configuration.configuration_json)", quote(expectedConfig),
