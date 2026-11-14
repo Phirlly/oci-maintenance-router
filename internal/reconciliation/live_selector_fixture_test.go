@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"oci-maintenance-router/internal/notices"
 	"oci-maintenance-router/internal/ocinotifications"
 	"oci-maintenance-router/internal/pagerduty"
 )
@@ -36,9 +37,9 @@ func liveSelectionFailure(t *testing.T, b Baseline, err error, code string) *Liv
 	return e
 }
 
-func liveSelectorFixtureFor(t *testing.T) *liveSelectorFixture {
+func liveSelectorFixtureFor(t *testing.T, initial ...notices.Notice) *liveSelectorFixture {
 	t.Helper()
-	p, objects, lease := preparationFixture(t, nil)
+	p, objects, lease := preparationFixture(t, initial)
 	if err := p.Initialize(leaseBudget(t), lease); err != nil {
 		t.Fatal(err)
 	}

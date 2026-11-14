@@ -13,7 +13,7 @@ func envelope(saved, key []byte) ([]byte, error) {
 	if len(saved) > requestLimit {
 		return nil, &Error{Code: TooLarge}
 	}
-	if len(key) < 32 || len(key) > 128 || !utf8.Valid(key) || utf8.RuneCount(key) != 32 ||
+	if !ValidRoutingKey(key) ||
 		len(saved) < 2 || saved[0] != '{' || saved[len(saved)-1] != '}' || !utf8.Valid(saved) || !json.Valid(saved) {
 		return nil, &Error{Code: InvalidRequest}
 	}
