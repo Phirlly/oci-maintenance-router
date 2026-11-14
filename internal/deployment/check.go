@@ -64,8 +64,8 @@ func check(ctx context.Context, s Settings, store Store, attemptID string) Resul
 	if config.TenancyID != s.TenancyID || config.DeploymentRegion != s.Region {
 		return failed("configuration_identity")
 	}
-	// This legacy installation check cannot fulfil v2 preparation intent.
-	// Operational adoption must replace this gate with guarded preparation.
+	// This legacy installation check cannot fulfil operational preparation or
+	// diagnostic intent. Adoption must replace this gate with guarded coordination.
 	if config.SchemaVersion != 1 {
 		return failed("configuration_unsupported")
 	}

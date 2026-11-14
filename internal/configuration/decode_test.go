@@ -55,7 +55,7 @@ func TestRequiredAndExactTopLevelFields(t *testing.T) {
 }
 
 func TestSchemaVersionIsExactInteger(t *testing.T) {
-	for _, value := range []string{"3", "1.0", "1e0", "2.0", "2e0", "\"1\"", "\"2\"", "true", "[]", "{}"} {
+	for _, value := range []string{"4", "1.0", "1e0", "2.0", "2e0", "3.0", "3e0", "\"1\"", "\"2\"", "\"3\"", "true", "[]", "{}"} {
 		t.Run(value, func(t *testing.T) {
 			data := strings.Replace(string(fixture(t)), "\"schemaVersion\": 1", "\"schemaVersion\": "+value, 1)
 			wantError(t, []byte(data), "schemaVersion", "unsupported")

@@ -1,8 +1,11 @@
 package configuration
 
-func (c Config) validateControls() error {
+func (c Config) validateControls(catalog Catalog) error {
 	if c.SchemaVersion == 2 {
 		return c.validatePreparation()
+	}
+	if c.SchemaVersion == 3 {
+		return c.validateDiagnostic(catalog)
 	}
 	if c.Mode != "PREVIEW" && c.Mode != "LIVE" && c.Mode != "PAUSED" {
 		return &Error{"mode", "invalid"}

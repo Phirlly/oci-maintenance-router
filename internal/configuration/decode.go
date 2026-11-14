@@ -17,9 +17,12 @@ func Decode(data []byte, catalog Catalog) (Config, error) {
 		"pagerDutyRegion", "intakeTopicId", "operatorTopicId",
 	}
 	optional := []string{"mode", "activeBaselineId", "replay"}
-	if version == 2 {
+	if version == 2 || version == 3 {
 		required = append(required, "mode", "installationId", "preparation")
 		optional = nil
+	}
+	if version == 3 {
+		optional = []string{"diagnostic"}
 	}
 	r := readObject(value, "configuration", &err, required, optional)
 	if err != nil {
@@ -44,7 +47,7 @@ func Decode(data []byte, catalog Catalog) (Config, error) {
 	if err = config.validateRouting(catalog); err != nil {
 		return Config{}, err
 	}
-	if err = config.validateControls(); err != nil {
+	if err = config.validateControls(catalog); err != nil {
 		return Config{}, err
 	}
 	return config, nil
@@ -75,8 +78,11 @@ func (c *Config) readControls(r objectReader) {
 	if _, ok := r.values["mode"]; ok {
 		c.Mode = r.text("mode")
 	}
-	if c.SchemaVersion == 2 {
+	if c.SchemaVersion == 2 || c.SchemaVersion == 3 {
 		c.readPreparation(r)
+		if c.SchemaVersion == 3 {
+			c.readDiagnostic(r)
+		}
 		return
 	}
 	if value, exists := r.values["activeBaselineId"]; exists && value != nil {

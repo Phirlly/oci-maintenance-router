@@ -27,6 +27,13 @@ type Config struct {
 	Replay           []Replay
 	InstallationID   string
 	Preparation      Preparation
+	Diagnostic       *DiagnosticRequest
+}
+
+// DiagnosticRequest is desired test intent, never permission to dispatch.
+type DiagnosticRequest struct {
+	RequestID, SecretID string
+	NonProduction       bool
 }
 
 // Preparation contains desired controls only; the coordinator enforces mode,
