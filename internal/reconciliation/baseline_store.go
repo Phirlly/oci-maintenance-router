@@ -30,10 +30,13 @@ func NewBaselineStore(objects BaselineObjects, environmentID string) (*BaselineS
 	return s, nil
 }
 func (s *BaselineStore) usable() bool {
-	if s == nil || s.objects == nil || !leaseDigest.MatchString(s.environmentID) {
+	return s != nil && baselineObjectsUsable(s.objects, s.environmentID)
+}
+func baselineObjectsUsable(objects BaselineObjects, environment string) bool {
+	if objects == nil || !leaseDigest.MatchString(environment) {
 		return false
 	}
-	v := reflect.ValueOf(s.objects)
+	v := reflect.ValueOf(objects)
 	switch v.Kind() {
 	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Pointer, reflect.Slice:
 		return !v.IsNil()

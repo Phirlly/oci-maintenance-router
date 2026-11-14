@@ -78,8 +78,8 @@ func baselineWriteDisposition(err error) (confirm, uncertain bool) {
 	return false, true
 }
 
-// Tags are validated only as storage-response evidence, never retained as a
-// replacement capability. Keep the concrete adapter's conservative strong shape.
+// Keep the concrete adapter's conservative strong shape. Mutable prepared-history
+// storage retains a tag only inside a handle bound to its exact record and store.
 func baselineETag(tag string) bool {
 	if len(tag) == 0 || len(tag) > 1024 || strings.HasPrefix(tag, "W/") {
 		return false
