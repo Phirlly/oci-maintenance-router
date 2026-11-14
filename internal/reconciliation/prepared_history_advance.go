@@ -1,10 +1,6 @@
 package reconciliation
 
-import (
-	"crypto/sha256"
-	"fmt"
-	"slices"
-)
+import "slices"
 
 // Advance binds a proposal to this exact head and one cumulative layer. The
 // coordinator must separately verify persisted target, requested scope, current
@@ -18,7 +14,7 @@ func (h PreparedHistory) Advance(previous, next Baseline) (PreparedHistory, erro
 			return PreparedHistory{}, &BaselineError{Code: "invalid_transition"}
 		}
 	} else {
-		if previous.data == nil || preparedReference(previous) != *h.data.Prepared ||
+		if previous.data == nil || referenceForBaseline(previous) != *h.data.Prepared ||
 			previous.EnvironmentID() != h.EnvironmentID() || next.ID() == previous.ID() ||
 			len(next.data.Layers) != len(previous.data.Layers)+1 {
 			return PreparedHistory{}, &BaselineError{Code: "invalid_transition"}
@@ -31,12 +27,7 @@ func (h PreparedHistory) Advance(previous, next Baseline) (PreparedHistory, erro
 		}
 	}
 	d := *h.data
-	reference := preparedReference(next)
+	reference := referenceForBaseline(next)
 	d.Prepared = &reference
 	return PreparedHistory{data: &d, parent: h.data}, nil
-}
-
-func preparedReference(b Baseline) preparedBaselineReference {
-	body, _ := b.Encode()
-	return preparedBaselineReference{b.ID(), fmt.Sprintf("%x", sha256.Sum256(body))}
 }

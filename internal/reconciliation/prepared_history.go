@@ -9,15 +9,11 @@ type PreparedHistory struct {
 	parent *preparedHistoryData
 }
 
-type preparedBaselineReference struct {
-	ID     string `json:"baselineId"`
-	Digest string `json:"contentSha256"`
-}
 type preparedHistoryData struct {
-	SchemaVersion  int                        `json:"schemaVersion"`
-	EnvironmentID  string                     `json:"environmentId"`
-	InstallationID string                     `json:"installationId"`
-	Prepared       *preparedBaselineReference `json:"preparedBaseline"`
+	SchemaVersion  int                `json:"schemaVersion"`
+	EnvironmentID  string             `json:"environmentId"`
+	InstallationID string             `json:"installationId"`
+	Prepared       *baselineReference `json:"preparedBaseline"`
 }
 
 func NewPreparedHistory(environment, installation string) (PreparedHistory, error) {

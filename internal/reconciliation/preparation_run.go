@@ -35,7 +35,7 @@ func (r *preparationRun) prepare() (Baseline, error) {
 		if err != nil {
 			return Baseline{}, err
 		}
-		if preparedReference(previous).Digest != h.BaselineDigest() {
+		if referenceForBaseline(previous).Digest != h.BaselineDigest() {
 			return Baseline{}, &PreparationError{Code: "history_mismatch"}
 		}
 		existing = previous.data.cells

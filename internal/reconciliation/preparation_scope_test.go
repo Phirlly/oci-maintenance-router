@@ -17,7 +17,7 @@ func TestPreparationPersistsInitialAndReturnsCoveredHistoryWithoutScanning(t *te
 	b := prepareSuccessfully(t, p, l)
 	body, _ := b.Encode()
 	h := preparationHead(t, s, l)
-	if !b.Suppresses("us-ashburn-1", baselineCompartment, n.Key()) || h.BaselineID() != b.ID() || h.BaselineDigest() != preparedReference(b).Digest {
+	if !b.Suppresses("us-ashburn-1", baselineCompartment, n.Key()) || h.BaselineID() != b.ID() || h.BaselineDigest() != referenceForBaseline(b).Digest {
 		t.Fatal("confirmed baseline/head do not preserve discovery")
 	}
 	before := preparationCalls(s, "LIST", "")
