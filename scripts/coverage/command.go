@@ -6,7 +6,8 @@ import (
 )
 
 func runTests(profile string, output io.Writer) error {
-	command := exec.Command("go", "test", "./...", "-count=1", "-timeout=30s",
+	// The suite includes a real Function build with a two-minute command budget.
+	command := exec.Command("go", "test", "./...", "-count=1", "-timeout=3m",
 		"-coverpkg=./...", "-coverprofile="+profile)
 	command.Stdout, command.Stderr = output, output
 	return command.Run()

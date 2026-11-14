@@ -18,6 +18,12 @@ func TestRealTestRunner(t *testing.T) {
 			result: "PASS: statement coverage 100.00% (1/1); required >=97%",
 		},
 		{
+			name:        "bounded watchdog accommodates real packaging build",
+			extraPath:   "deadline_test.go",
+			extraSource: "package sample\nimport (\"testing\"; \"time\")\nfunc TestBuildBudget(t *testing.T) { d, ok := t.Deadline(); remaining := time.Until(d); if !ok || remaining <= 2*time.Minute || remaining > 3*time.Minute { t.Fatal(\"test watchdog must allow the two-minute build and remain bounded\") } }\n",
+			result:      "PASS: statement coverage 100.00% (1/1); required >=97%",
+		},
+		{
 			name:        "package without tests counts against coverage",
 			extraPath:   "untested/sample.go",
 			extraSource: "package untested\nfunc Value() int { return 2 }\n",

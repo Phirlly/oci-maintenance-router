@@ -102,13 +102,14 @@ jobs:
           go mod verify
 
       - name: Run unit tests
-        run: go test ./... -count=1 -timeout=30s
+        # Includes the real Function build; keep a finite build-aware watchdog.
+        run: go test ./... -count=1 -timeout=3m
 
       - name: Enforce at least 97 percent statement coverage
         run: go run ./scripts/coverage
 
       - name: Check for data races
-        run: go test -race ./... -count=1 -timeout=60s
+        run: go test -race ./... -count=1 -timeout=3m
 
       - name: Run static analysis
         run: go vet ./...
