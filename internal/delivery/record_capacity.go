@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// ReservedBytes includes the largest v1 transition metadata for every batch.
+// ReservedBytes includes the largest version-specific transition metadata.
 // An enclosing notice must add its own source/disposition overhead to this bound.
 func (r Record) ReservedBytes() (int, error) {
 	if r.data == nil {
@@ -29,6 +29,10 @@ func reservedRecordBytes(d *recordData) (int, error) {
 	size := len(data)
 	stamp := "9999-12-31T23:59:59.999Z"
 	for i, b := range d.Batches {
+		if d.SchemaVersion == 2 {
+			kind := AutomaticAttempt
+			b.AttemptKind = &kind
+		}
 		b.State, b.Reason = ReviewRequired, ReasonConfigurationChanged
 		b.AttemptCount, b.OwnerToken = math.MaxUint64, strings.Repeat("x", 128)
 		b.FirstAttemptAt, b.LastAttemptAt, b.AttemptExpiresAt = &stamp, &stamp, &stamp

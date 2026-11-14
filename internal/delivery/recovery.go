@@ -21,6 +21,9 @@ func (r Record) Recover(at time.Time) (Record, error) {
 		if b.State == Sending && !now.Before(savedTime(b.AttemptExpiresAt)) {
 			b.State, b.Reason, b.Ambiguous = RetryWait, ReasonExpired, true
 			b.UpdatedAt, b.NextAttemptAt = timeText(now), timeText(now)
+			if lastAttemptKind(b) == ManualAttempt {
+				b.State, b.NextAttemptAt = ReviewRequired, nil
+			}
 		}
 		if b.State == RetryWait && !now.Before(savedTime(b.FirstAttemptAt).Add(retryHorizon)) {
 			b.State, b.Reason, b.NextAttemptAt = ReviewRequired, ReasonHorizon, nil

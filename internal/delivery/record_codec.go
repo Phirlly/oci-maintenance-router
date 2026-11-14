@@ -15,7 +15,7 @@ var (
 	recordDBID   = regexp.MustCompile(`^ocid1\.mysqldbsystem\.oc1\.([a-z0-9][a-z0-9-]*)\.([A-Za-z0-9_-]*\.)?[A-Za-z0-9_-]+$`)
 )
 
-// Encode returns owned canonical v1 bytes. Writing them is the caller's separate
+// Encode returns owned canonical versioned bytes. Writing is a separate
 // conditional-storage operation; this method cannot establish durability.
 func (r Record) Encode() ([]byte, error) {
 	if r.data == nil {

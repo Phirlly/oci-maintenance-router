@@ -31,7 +31,9 @@ func Decode(data []byte, environmentID, noticeID string) (Record, error) {
 	if !bytes.Equal(w.Delivery, []byte("null")) {
 		var err error
 		w.delivery, err = delivery.DecodeRecord(w.Delivery, environmentID, noticeID)
-		if err != nil {
+		// Notice1/2 have no manual-action or closure semantics. A nested format
+		// upgrade requires explicit enclosing adoption, not only a newer decoder.
+		if err != nil || w.delivery.SchemaVersion() != 1 {
 			return Record{}, &Error{"invalid_delivery"}
 		}
 	}

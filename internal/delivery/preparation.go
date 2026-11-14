@@ -37,7 +37,12 @@ func (r Record) Prepare(preparations ...Preparation) (Record, error) {
 			return Record{}, &Error{"preparation", "identity_mismatch"}
 		}
 		if !seen[s.BatchID] {
-			d.Batches = append(d.Batches, savedBatch{Message: saveMessage(s), SecretVersion: p.SecretVersion, State: Prepared})
+			b := savedBatch{Message: saveMessage(s), SecretVersion: p.SecretVersion, State: Prepared}
+			if d.SchemaVersion == 2 {
+				kind := AttemptKind("")
+				b.AttemptKind = &kind
+			}
+			d.Batches = append(d.Batches, b)
 			seen[s.BatchID] = true
 		}
 	}

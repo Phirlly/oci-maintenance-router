@@ -10,7 +10,7 @@ var (
 )
 
 func validateRecord(d *recordData) error {
-	if d.SchemaVersion != 1 || !recordDigest.MatchString(d.EnvironmentID) || !recordNoticeID.MatchString(d.NoticeID) || len(d.Batches) == 0 {
+	if (d.SchemaVersion != 1 && d.SchemaVersion != 2) || !recordDigest.MatchString(d.EnvironmentID) || !recordNoticeID.MatchString(d.NoticeID) || len(d.Batches) == 0 {
 		return &Error{"record", "invalid_schema"}
 	}
 	previous := ""
@@ -22,7 +22,7 @@ func validateRecord(d *recordData) error {
 		if err := validateMessage(d, b); err != nil {
 			return err
 		}
-		if !validState(b) {
+		if !validAttemptKind(b, d.SchemaVersion) || !validState(b, d.SchemaVersion) {
 			return &Error{"state", "invalid"}
 		}
 	}

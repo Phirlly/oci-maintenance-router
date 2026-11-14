@@ -7,7 +7,7 @@ import (
 	"oci-maintenance-router/internal/routing"
 )
 
-// Private v1 wire schema: every field is explicit, including absent timestamps.
+// Private versioned wire schema: timestamps remain explicit in both versions.
 // No caller receives its mutable collections or pointers.
 type recordData struct {
 	SchemaVersion int          `json:"schemaVersion"`
@@ -48,6 +48,7 @@ type savedBatch struct {
 	AcceptedAt       *string      `json:"acceptedAt"`
 	Reason           Reason       `json:"reason"`
 	Ambiguous        bool         `json:"ambiguous"`
+	AttemptKind      *AttemptKind `json:"attemptKind,omitempty"`
 }
 
 func saveMessage(s Snapshot) savedMessage {
@@ -69,7 +70,7 @@ func (d *recordData) snapshot(b savedBatch) BatchSnapshot {
 		Message: Snapshot{BatchID: m.BatchID, EnvironmentID: d.EnvironmentID, Revision: notices.RevisionKey{NoticeID: d.NoticeID, Digest: m.RevisionDigest},
 			RoutingGeneration: m.RoutingGeneration, DestinationID: m.DestinationID, SecretID: m.SecretID, PagerDutyRegion: m.PagerDutyRegion,
 			Resources: resources, DedupKey: m.DedupKey, PayloadWithoutRoutingKey: []byte(m.Payload), PayloadDigest: m.PayloadDigest},
-		SecretVersion: b.SecretVersion, State: b.State, AttemptCount: b.AttemptCount, OwnerToken: b.OwnerToken,
+		SecretVersion: b.SecretVersion, State: b.State, AttemptCount: b.AttemptCount, AttemptKind: lastAttemptKind(b), OwnerToken: b.OwnerToken,
 		FirstAttemptAt: savedTime(b.FirstAttemptAt), LastAttemptAt: savedTime(b.LastAttemptAt), AttemptExpiresAt: savedTime(b.AttemptExpiresAt),
 		UpdatedAt: savedTime(b.UpdatedAt), NextAttemptAt: savedTime(b.NextAttemptAt), AcceptedAt: savedTime(b.AcceptedAt), Reason: b.Reason, Ambiguous: b.Ambiguous,
 	}
@@ -109,7 +110,7 @@ func (r Record) index(id string) (int, error) {
 func (r Record) copy() recordData {
 	d := *r.data
 	d.Batches = slices.Clone(d.Batches)
-	// Messages, strings and time pointers are immutable; transitions replace
+	// Messages, strings, time and attempt-kind pointers are immutable; transitions replace
 	// fields rather than mutating shared referents.
 	return d
 }

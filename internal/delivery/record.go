@@ -12,6 +12,15 @@ const (
 	RetryWait      State = "RETRY_WAIT"
 	APIAccepted    State = "API_ACCEPTED"
 	ReviewRequired State = "REVIEW_REQUIRED"
+	Closed         State = "CLOSED"
+)
+
+// AttemptKind describes the last attempt, never permission to dispatch.
+type AttemptKind string
+
+const (
+	AutomaticAttempt AttemptKind = "AUTOMATIC"
+	ManualAttempt    AttemptKind = "MANUAL"
 )
 
 type Reason string
@@ -42,6 +51,7 @@ type BatchSnapshot struct {
 	SecretVersion                                   int64
 	State                                           State
 	AttemptCount                                    uint64
+	AttemptKind                                     AttemptKind
 	OwnerToken                                      string
 	FirstAttemptAt, LastAttemptAt, AttemptExpiresAt time.Time
 	UpdatedAt, NextAttemptAt, AcceptedAt            time.Time

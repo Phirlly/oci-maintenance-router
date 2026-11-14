@@ -11,6 +11,10 @@ const maxAttemptLease = 600 * time.Second
 // Begin proposes an attempt. The returned reference is only for matching a
 // response; a successful conditional write and authority checks must precede send.
 func (r Record) Begin(id string, c AttemptContext) (Record, AttemptRef, error) {
+	return r.begin(id, c, AutomaticAttempt)
+}
+
+func (r Record) begin(id string, c AttemptContext, kind AttemptKind) (Record, AttemptRef, error) {
 	i, err := r.index(id)
 	if err != nil {
 		return Record{}, AttemptRef{}, err
@@ -30,19 +34,23 @@ func (r Record) Begin(id string, c AttemptContext) (Record, AttemptRef, error) {
 	if !expires.After(now) || expires.Sub(now) > maxAttemptLease {
 		return Record{}, AttemptRef{}, &Error{"attempt", "invalid_expiry"}
 	}
-	if b.State != Prepared && b.State != RetryWait {
+	manual := kind == ManualAttempt
+	if (manual && b.State != ReviewRequired) || (!manual && b.State != Prepared && b.State != RetryWait) {
 		return Record{}, AttemptRef{}, &Error{"state", "invalid_transition"}
 	}
 	if b.State == RetryWait && now.Before(savedTime(b.NextAttemptAt)) {
 		return Record{}, AttemptRef{}, &Error{"attempt", "not_due"}
 	}
-	if b.FirstAttemptAt != nil && !now.Before(savedTime(b.FirstAttemptAt).Add(retryHorizon)) {
+	if !manual && b.FirstAttemptAt != nil && !now.Before(savedTime(b.FirstAttemptAt).Add(retryHorizon)) {
 		return Record{}, AttemptRef{}, &Error{"attempt", "retry_horizon"}
 	}
 	if b.AttemptCount == math.MaxUint64 {
 		return Record{}, AttemptRef{}, &Error{"attempt", "count_exhausted"}
 	}
 	b.AttemptCount++
+	if r.data.SchemaVersion == 2 {
+		b.AttemptKind = &kind
+	}
 	if b.FirstAttemptAt == nil {
 		b.FirstAttemptAt = timeText(now)
 	}
@@ -71,6 +79,15 @@ func (r Record) Finish(ref AttemptRef, status int, at, retryAt time.Time) (Recor
 	}
 	if status != 0 && (status < 100 || status > 599) {
 		return Record{}, &Error{"response", "invalid_status"}
+	}
+	if lastAttemptKind(b) == ManualAttempt {
+		b, err = finishManual(b, status, now, retryAt)
+		if err != nil {
+			return Record{}, err
+		}
+		d := r.copy()
+		d.Batches[i] = b
+		return Record{data: &d}, nil
 	}
 	retry := status == 0 || status == 429 || status >= 500
 	if !retry && !retryAt.IsZero() {
