@@ -46,6 +46,9 @@ func (r *processingRun) prepare(saved ocistorage.StoredNotice, n notices.Notice,
 		return saved, &ProcessingError{Code: "preparation_failed"}
 	}
 	for _, issue := range drafts.Issues {
+		if err = r.recordPreparation(saved, n, lookups, issue.Code, issue.ResourceID); err != nil {
+			return saved, err
+		}
 		if err = r.issue(ProcessingIssue{NoticeID: n.Key().NoticeID, RevisionDigest: n.Key().Digest, ResourceID: issue.ResourceID, Code: issue.Code}); err != nil {
 			return saved, err
 		}
@@ -61,6 +64,9 @@ func (r *processingRun) prepare(saved ocistorage.StoredNotice, n notices.Notice,
 			versions[message.DestinationID], failures[message.DestinationID] = version, code
 		}
 		if code := failures[message.DestinationID]; code != "" {
+			if err = r.recordPreparation(saved, n, lookups, code, preparationMembers(message.Resources)...); err != nil {
+				return saved, err
+			}
 			if err = r.issue(ProcessingIssue{NoticeID: n.Key().NoticeID, RevisionDigest: n.Key().Digest, BatchID: message.BatchID, Code: code}); err != nil {
 				return saved, err
 			}
@@ -70,6 +76,9 @@ func (r *processingRun) prepare(saved ocistorage.StoredNotice, n notices.Notice,
 		if prepareErr != nil {
 			if e, ok := prepareErr.(*noticeledger.Error); !ok || e == nil || e.Code != "too_large" {
 				return saved, &ProcessingError{Code: "preparation_failed"}
+			}
+			if err = r.recordPreparation(saved, n, lookups, "state_capacity", preparationMembers(message.Resources)...); err != nil {
+				return saved, err
 			}
 			if err = r.issue(ProcessingIssue{NoticeID: n.Key().NoticeID, RevisionDigest: n.Key().Digest, BatchID: message.BatchID, Code: "state_capacity"}); err != nil {
 				return saved, err

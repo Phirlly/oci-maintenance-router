@@ -1,6 +1,8 @@
 package noticeledger
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"time"
 
 	"oci-maintenance-router/internal/configuration"
@@ -9,8 +11,9 @@ import (
 )
 
 type Observer struct {
-	policy        *routing.Policy
-	environmentID string
+	policy              *routing.Policy
+	environmentID       string
+	configurationDigest string
 }
 
 func New(data []byte, catalog configuration.Catalog, location configuration.LedgerLocation) (*Observer, error) {
@@ -26,7 +29,8 @@ func New(data []byte, catalog configuration.Catalog, location configuration.Ledg
 	if err != nil {
 		return nil, err
 	}
-	return &Observer{p, env}, nil
+	hash := sha256.Sum256(data)
+	return &Observer{policy: p, environmentID: env, configurationDigest: hex.EncodeToString(hash[:])}, nil
 }
 
 // Observe recomputes provisional routing. knownCandidate is a discovery fact,

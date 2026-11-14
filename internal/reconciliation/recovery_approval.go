@@ -2,6 +2,7 @@ package reconciliation
 
 import (
 	"oci-maintenance-router/internal/delivery"
+	"oci-maintenance-router/internal/noticeledger"
 	"oci-maintenance-router/internal/notices"
 	"oci-maintenance-router/internal/ocistorage"
 	"oci-maintenance-router/internal/routing"
@@ -31,6 +32,11 @@ func (r *processingRun) approveRecovery(saved ocistorage.StoredNotice, n notices
 		return &ProcessingError{Code: "preparation_failed"}
 	}
 	if len(drafts.Issues) != 0 || len(drafts.Drafts) == 0 {
+		for _, issue := range drafts.Issues {
+			if err = r.recordPreparation(saved, n, lookups, issue.Code, issue.ResourceID); err != nil {
+				return err
+			}
+		}
 		return r.rejectRecovery(saved, "no_eligible_work")
 	}
 	versions := map[string]int64{}
@@ -43,6 +49,9 @@ func (r *processingRun) approveRecovery(saved ocistorage.StoredNotice, n notices
 				return err
 			}
 			if code != "" {
+				if err = r.recordPreparation(saved, n, lookups, code, preparationMembers(message.Resources)...); err != nil {
+					return err
+				}
 				return r.rejectRecovery(saved, "secret_unavailable")
 			}
 			versions[message.DestinationID] = version
@@ -59,6 +68,18 @@ func (r *processingRun) approveRecovery(saved ocistorage.StoredNotice, n notices
 	}
 	next, _, err := r.owner.observer.ApproveRecovery(saved.Record(), r.recoveryRequest(), n, true, lookups, r.lease.manager.now(), values...)
 	if err != nil {
+		capacity := false
+		switch e := err.(type) {
+		case *noticeledger.Error:
+			capacity = e != nil && e.Code == "too_large"
+		case *delivery.Error:
+			capacity = e != nil && e.Code == "too_large"
+		}
+		if capacity {
+			if failure := r.recordPreparation(saved, n, lookups, "state_capacity", selected...); failure != nil {
+				return failure
+			}
+		}
 		return &ProcessingError{Code: "recovery_failed"}
 	}
 	if _, err = r.save(saved, next); err != nil {

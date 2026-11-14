@@ -40,6 +40,10 @@ func processingFailure(ctx context.Context, err error) *ProcessingError {
 				r.Code = "conflict"
 			}
 		}
+	case *PreparationIssueStorageError:
+		if e != nil {
+			r.Code, r.HTTPStatus, r.WriteUncertain = "issue_"+e.Code, e.HTTPStatus, e.WriteUncertain
+		}
 	default:
 		detail := liveSelectionError(ctx, err)
 		if detail.Code != "selection_failed" {

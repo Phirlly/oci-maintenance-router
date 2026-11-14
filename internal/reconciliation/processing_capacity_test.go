@@ -42,6 +42,15 @@ func TestMaintenanceStateCapacityPreservesPreparedAndAcceptedPeers(t *testing.T)
 	if len(f.saved(t, n.Key().NoticeID).Snapshot().Revisions[0].Resources) != 256 {
 		t.Fatal("capacity admission evicted resources")
 	}
+	observations := savedPreparationIssues(t, f, n.Key().NoticeID).Snapshot().Observations
+	if len(observations) == 0 {
+		t.Fatal("state capacity failures not durable")
+	}
+	for _, observation := range observations {
+		if observation.Code != "state_capacity" {
+			t.Fatal("wrong retained preparation failure")
+		}
+	}
 }
 
 func TestMaintenanceReviewResultBoundsStopWithoutFalseCompletion(t *testing.T) {
