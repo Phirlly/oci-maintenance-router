@@ -23,6 +23,12 @@ func TestRenderedConfigurationMatchesRuntimeContract(t *testing.T) {
 	if config.Mode != "PREVIEW" || config.ActiveBaselineID != "" || len(config.Replay) != 0 {
 		t.Fatal("installation configuration can activate delivery")
 	}
+	if config.SchemaVersion != 7 || config.InstallationID == "" || !config.Preparation.Initialize {
+		t.Fatal("installation must explicitly initialize and prepare schema7 history")
+	}
+	if config.Diagnostic != nil || config.OperatorTest != nil || config.Recovery != nil {
+		t.Fatal("PREVIEW must not carry test or recovery intent")
+	}
 	if config.RegionMap["us-phoenix-1"] != "phx" || len(config.RegionMap) != 1 || len(catalog.Regions) != 2 {
 		t.Fatal("scope replaced independent catalog")
 	}

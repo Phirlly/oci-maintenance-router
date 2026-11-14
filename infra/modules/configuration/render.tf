@@ -1,7 +1,9 @@
 locals {
   s = var.settings
   configuration_json = jsonencode({
-    schemaVersion    = 1
+    schemaVersion    = 7
+    installationId   = var.installation_id
+    preparation      = { initialize = true }
     environmentName  = local.s.environment_name
     tenancyId        = local.s.tenancy_ocid
     deploymentRegion = local.s.region

@@ -58,6 +58,11 @@ func writeJSON(t *testing.T, path string, value any) {
 
 func render(t *testing.T, settings map[string]any) (map[string]string, string, error) {
 	t.Helper()
+	return renderWithInstallation(t, settings, "b1-"+strings.Repeat("a", 64))
+}
+
+func renderWithInstallation(t *testing.T, settings map[string]any, installation string) (map[string]string, string, error) {
+	t.Helper()
 	requireTerraform(t)
 	dir := t.TempDir()
 	source, err := filepath.Abs("modules/configuration")
@@ -67,7 +72,8 @@ func render(t *testing.T, settings map[string]any) (map[string]string, string, e
 	writeJSON(t, filepath.Join(dir, "main.tf.json"), map[string]any{
 		"module": map[string]any{"configuration": map[string]any{
 			"source": source, "settings": "${var.settings}", "catalog": catalogFixture(),
-			"topics": map[string]string{"intake": "ocid1.onstopic.oc1.iad.intake", "operator": "ocid1.onstopic.oc1.iad.operator"},
+			"installation_id": installation,
+			"topics":          map[string]string{"intake": "ocid1.onstopic.oc1.iad.intake", "operator": "ocid1.onstopic.oc1.iad.operator"},
 		}},
 		"variable": map[string]any{"settings": map[string]string{"type": "any"}},
 		"output": map[string]any{

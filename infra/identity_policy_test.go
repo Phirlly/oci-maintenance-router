@@ -46,7 +46,10 @@ func TestActualPolicyStatementsPreserveObjectScope(t *testing.T) {
 			// Exact statements also guard the principal, bucket and permission limits.
 			want := []string{
 				fmt.Sprintf("Allow dynamic-group id %s to manage objects in compartment id %s where all {target.bucket.name = '%s', request.permission = 'OBJECT_READ', any {target.object.name = 'configuration/router.json', target.object.name = 'configuration/catalog.json'}}", group, compartment, bucket),
-				fmt.Sprintf("Allow dynamic-group id %s to manage objects in compartment id %s where all {target.bucket.name = '%s', target.object.name = 'deployment-checks/*', any {request.permission = 'OBJECT_READ', request.permission = 'OBJECT_CREATE', request.permission = 'OBJECT_OVERWRITE'}}", group, compartment, bucket),
+				fmt.Sprintf("Allow dynamic-group id %s to inspect objects in compartment id %s where target.bucket.name = '%s'", group, compartment, bucket),
+				fmt.Sprintf("Allow dynamic-group id %s to manage objects in compartment id %s where all {target.bucket.name = '%s', any {target.object.name = 'control/lease.json', target.object.name = 'control/prepared-history.json'}, any {request.permission = 'OBJECT_READ', request.permission = 'OBJECT_CREATE', request.permission = 'OBJECT_OVERWRITE'}}", group, compartment, bucket),
+				fmt.Sprintf("Allow dynamic-group id %s to manage objects in compartment id %s where all {target.bucket.name = '%s', target.object.name = 'baselines/*', any {request.permission = 'OBJECT_READ', request.permission = 'OBJECT_CREATE'}}", group, compartment, bucket),
+				fmt.Sprintf("Allow dynamic-group id %s to manage objects in compartment id %s where all {target.bucket.name = '%s', target.object.name = 'notices/*', any {request.permission = 'OBJECT_READ', request.permission = 'OBJECT_CREATE', request.permission = 'OBJECT_OVERWRITE'}}", group, compartment, bucket),
 			}
 			if !reflect.DeepEqual(got, want) {
 				t.Fatalf("rendered IAM scope differs from documented contract:\ngot  %q\nwant %q", got, want)

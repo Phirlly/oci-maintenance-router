@@ -3,8 +3,8 @@
 Route OCI MySQL maintenance notices to the owning PagerDuty service using
 resource ownership tags, with configuration through OCI Resource Manager.
 
-**PREVIEW:** Under development. The current package checks installation only
-and does not send notifications.
+**PREVIEW:** Under development. The current package prepares maintenance history
+without sending notifications.
 
 **Deploy to OCI — coming soon.** The button will be available once the deployment
 package is validated and published.

@@ -1,5 +1,5 @@
 {
-  "purpose": "deployment-check-only",
+  "purpose": "preview-preparation-only",
   "runtime": {
     "name": "ol9",
     "version": "0.1.20",

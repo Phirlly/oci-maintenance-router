@@ -1,6 +1,11 @@
+locals {
+  # Retained bucket identity survives package rollback without another resource.
+  installation_id = "b1-${sha256(oci_objectstorage_bucket.state.bucket_id)}"
+}
 module "configuration" {
-  source  = "./modules/configuration"
-  catalog = local.catalog
+  source          = "./modules/configuration"
+  catalog         = local.catalog
+  installation_id = local.installation_id
   settings = {
     environment_name    = var.environment_name
     tenancy_ocid        = var.tenancy_ocid

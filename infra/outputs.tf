@@ -1,5 +1,5 @@
 output "installation_status" {
-  description = "Historical installation verification only; this package cannot send notifications."
+  description = "Historical PREVIEW preparation result; not current health or delivery readiness."
   value       = try(jsondecode(oci_functions_invoke_function.deployment_check.content).status, "not-ready")
 }
 output "sending_enabled" {
@@ -7,7 +7,7 @@ output "sending_enabled" {
   value       = false
 }
 output "function_id" {
-  description = "Function performing the nonsending deployment check."
+  description = "Function preparing maintenance history without sending notifications."
   value       = oci_functions_function.router.id
 }
 output "state_bucket" {
@@ -15,6 +15,6 @@ output "state_bucket" {
   value       = oci_objectstorage_bucket.state.name
 }
 output "check_result" {
-  description = "Safe diagnostic result for this Apply; never a maintenance baseline or delivery receipt."
+  description = "Safe PREVIEW result for this Apply; contains no baseline contents or delivery receipt."
   value       = oci_functions_invoke_function.deployment_check.content
 }

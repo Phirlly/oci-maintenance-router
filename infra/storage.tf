@@ -7,6 +7,10 @@ resource "oci_objectstorage_bucket" "state" {
   versioning     = "Enabled"
   lifecycle {
     prevent_destroy = true
+    postcondition {
+      condition     = can(regex("^ocid1\\.bucket\\.oc1\\.[A-Za-z0-9_.-]+$", self.bucket_id))
+      error_message = "The protected state bucket must report its unique OC1 bucket OCID before preparation."
+    }
   }
 }
 resource "oci_objectstorage_object" "configuration" {

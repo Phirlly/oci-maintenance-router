@@ -1,7 +1,7 @@
 schemaVersion: "1.1.0"
 title: OCI Maintenance Router — PREVIEW
-description: Verify installation without sending notifications.
-informationalText: This package checks configuration and storage access only. It does not process maintenance notices or send PagerDuty alerts.
+description: Prepare maintenance history without sending notifications.
+informationalText: This PREVIEW reads announcements and prepares maintenance history for your selected scope. It does not send PagerDuty alerts or enable delivery.
 variableGroups:
   - title: Placement
     variables: ["${environment_name}", "${compartment_ocid}"]
@@ -148,7 +148,7 @@ variables:
   existing_subnet_ocid:
     type: oci:core:subnet:id
     title: Existing private regional subnet
-    description: Must already permit DNS and HTTPS to regional Object Storage. Shared routes and security rules are not changed.
+    description: Must already permit DNS and HTTPS to regional Announcements and Object Storage. Shared routes and security rules are not changed.
     required: true
     visible:
       not: ["${create_network}"]
@@ -160,7 +160,7 @@ variables:
 outputs:
   installation_status:
     type: string
-    title: Installation check
+    title: PREVIEW preparation
   sending_enabled:
     type: boolean
     title: Notification delivery enabled

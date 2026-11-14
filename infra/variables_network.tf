@@ -19,7 +19,7 @@ variable "network_compartment_ocid" {
 variable "existing_subnet_ocid" {
   type        = string
   nullable    = false
-  description = "Existing private regional subnet with DNS and Object Storage HTTPS access."
+  description = "Existing private regional subnet with DNS and HTTPS access to Announcements and Object Storage."
   default     = ""
 }
 variable "existing_vcn_ocid" {

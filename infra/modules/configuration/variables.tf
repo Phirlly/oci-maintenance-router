@@ -25,3 +25,12 @@ variable "topics" {
   nullable    = false
   description = "Distinct deployment-owned regional topic identifiers."
 }
+variable "installation_id" {
+  type        = string
+  nullable    = false
+  description = "Deployment-owned identity derived from the protected state bucket OCID."
+  validation {
+    condition     = can(regex("^b1-[a-f0-9]{64}$", var.installation_id))
+    error_message = "Installation identity must be derived from the protected state bucket."
+  }
+}

@@ -36,7 +36,7 @@ resource "oci_functions_function" "router" {
   application_id     = oci_functions_application.router.id
   display_name       = "maintenance-router"
   memory_in_mbs      = "256"
-  timeout_in_seconds = 30
+  timeout_in_seconds = 300
   config             = { ROUTER_BOOTSTRAP = local.bootstrap }
   source_details {
     source_type = "ARCHIVE"
