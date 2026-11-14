@@ -11,8 +11,12 @@ import (
 const discoveryReserve = 10 * time.Second
 
 type currentControls struct {
-	objects                 ocistorage.NoticeObjects
+	objects                 currentObjects
 	configHash, catalogHash [32]byte
+}
+
+type currentObjects interface {
+	Get(context.Context, string) (ocistorage.Object, error)
 }
 
 func (d *Discovery) controls() currentControls {
