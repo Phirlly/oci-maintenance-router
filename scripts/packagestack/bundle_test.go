@@ -46,7 +46,7 @@ func inputFixture(t *testing.T) (string, string) {
 		t.Fatal(err)
 	}
 	hash := sha256.Sum256(data.Bytes())
-	manifest := map[string]any{"schemaVersion": 1, "purpose": "deployment-check-only", "architecture": "X86", "operatingSystem": "linux", "goVersion": "go1.27.4",
+	manifest := map[string]any{"schemaVersion": 1, "purpose": "maintenance-router-runtime", "architecture": "X86", "operatingSystem": "linux", "goVersion": "go1.27.4",
 		"archiveSha256": sum(data.Bytes()), "archiveSha256Base64": base64.StdEncoding.EncodeToString(hash[:]), "archiveBytes": data.Len(),
 		"binarySha256": sum([]byte("synthetic func")), "entries": entries}
 	encoded, err := json.Marshal(manifest)

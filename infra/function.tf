@@ -56,7 +56,7 @@ resource "oci_functions_function" "router" {
       error_message = "The exact approved ACTIVE X86 runtime is unavailable or ambiguous in this region; use a verified release/region."
     }
     precondition {
-      condition     = local.function_manifest.schemaVersion == 1 && local.function_manifest.purpose == "deployment-check-only" && local.function_manifest.architecture == "X86" && local.function_manifest.operatingSystem == "linux" && local.function_manifest.archiveSha256 == filesha256(local.archive_path) && local.function_manifest.archiveSha256Base64 == filebase64sha256(local.archive_path)
+      condition     = local.function_manifest.schemaVersion == 1 && local.function_manifest.purpose == "maintenance-router-runtime" && local.function_manifest.architecture == "X86" && local.function_manifest.operatingSystem == "linux" && local.function_manifest.archiveSha256 == filesha256(local.archive_path) && local.function_manifest.archiveSha256Base64 == filebase64sha256(local.archive_path)
       error_message = "Bundled Function archive does not match its approved manifest."
     }
     precondition {

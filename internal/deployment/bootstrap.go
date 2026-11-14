@@ -18,6 +18,13 @@ import (
 
 var hashPattern = regexp.MustCompile(`^[0-9a-f]{64}$`)
 
+// The managed connection keeps the same verified principal and bucket together.
+// Invocation input has no path to supplying either dependency.
+type managedStore struct {
+	operationalObjects
+	principal common.ConfigurationProvider
+}
+
 func parseSettings(raw string) (Settings, error) {
 	var s Settings
 	if len(raw) > 4096 || decodeJSON([]byte(raw), &s) != nil {
@@ -63,8 +70,8 @@ func connectPrincipal(s Settings, getenv func(string) string, principal func() (
 		return nil, errors.New("managed identity required")
 	}
 	p, err := principal()
-	if err != nil {
-		return nil, err
+	if err != nil || p == nil {
+		return nil, errors.New("managed identity unavailable")
 	}
 	tenant, err := p.TenancyOCID()
 	if err != nil || tenant != s.TenancyID {
@@ -78,5 +85,5 @@ func connectPrincipal(s Settings, getenv func(string) string, principal func() (
 	if err != nil {
 		return nil, err
 	}
-	return client, nil
+	return &managedStore{operationalObjects: client, principal: p}, nil
 }

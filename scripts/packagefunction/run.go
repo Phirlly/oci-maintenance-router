@@ -53,7 +53,7 @@ func run(args []string, out io.Writer, build func(string) ([]entry, error)) int 
 		return 1
 	}
 	complete = true
-	fmt.Fprintf(out, "Built nonsending Function archive: %d bytes, SHA256 %s\n", len(packed), digest(packed))
+	fmt.Fprintf(out, "Built Function archive: %d bytes, SHA256 %s\n", len(packed), digest(packed))
 	return 0
 }
 

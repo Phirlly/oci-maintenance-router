@@ -28,7 +28,7 @@ type functionManifest struct {
 func verifyFunction(archive, manifest []byte) error {
 	var report functionManifest
 	hash := sha256.Sum256(archive)
-	if json.Unmarshal(manifest, &report) != nil || report.SchemaVersion != 1 || report.Purpose != "deployment-check-only" ||
+	if json.Unmarshal(manifest, &report) != nil || report.SchemaVersion != 1 || report.Purpose != "maintenance-router-runtime" ||
 		report.Architecture != "X86" || report.OperatingSystem != "linux" || report.GoVersion != "go1.27.4" ||
 		report.ArchiveBytes != len(archive) || report.ArchiveSHA256 != digest(archive) || report.ArchiveSHA256Base64 != base64.StdEncoding.EncodeToString(hash[:]) {
 		return fmt.Errorf("Function manifest identity or archive checksum mismatch")

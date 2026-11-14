@@ -57,7 +57,7 @@ func archive(input []entry) ([]byte, []byte, error) {
 			return nil, nil, fmt.Errorf("invalid archive inventory")
 		}
 	}
-	report := manifest{SchemaVersion: 1, Purpose: "deployment-check-only", GoVersion: compilerVersion,
+	report := manifest{SchemaVersion: 1, Purpose: "maintenance-router-runtime", GoVersion: compilerVersion,
 		Architecture: "X86", OperatingSystem: "linux", BinarySHA256: digest(entries[0].data)}
 	for _, module := range reviewedDependencies() {
 		report.Dependencies = append(report.Dependencies, module.dependency)

@@ -34,6 +34,9 @@ func TestCommandWritesCompleteArtifactsAndPreservesExisting(t *testing.T) {
 	if code := run([]string{outdir}, &out, fakeBuild); code != 0 {
 		t.Fatalf("status %d: %s", code, out.String())
 	}
+	if !strings.Contains(out.String(), "Built Function archive:") || strings.Contains(out.String(), "nonsending") {
+		t.Fatalf("archive capability misreported: %s", out.String())
+	}
 	for _, name := range []string{"func", "function.zip", "function-manifest.json", "SHA256SUMS"} {
 		data, err := os.ReadFile(filepath.Join(outdir, name))
 		if err != nil || len(data) == 0 {

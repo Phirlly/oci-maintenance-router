@@ -12,61 +12,71 @@ import (
 
 var attemptPattern = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 
-// Handler accepts only a nonsending installation check. Invocation data cannot
-// change the trusted configuration or enable notification delivery.
+// Handler dispatches only deployment-owned operations. Invocation data cannot
+// change trusted configuration or grant notification-delivery authority.
 type Handler struct {
 	getenv  func(string) string
 	connect func(Settings) (Store, error)
+	compose func(Settings, Store, pinnedInputs, string) (operations, error)
 }
 
 func New(getenv func(string) string) *Handler {
-	return &Handler{getenv: getenv, connect: connect}
+	return &Handler{getenv: getenv, connect: connect, compose: composeOperations}
 }
 
 func (h *Handler) Serve(ctx context.Context, in io.Reader, out io.Writer) {
 	result := h.run(ctx, in)
+	body, success := result.output()
 	fdk.SetHeader(out, "Content-Type", "application/json")
-	if result.Status != "deployment-verified" {
+	if !success {
 		fdk.WriteStatus(out, 400)
 	}
 	// FDK's transport status alone does not signify success. RM checks this body.
-	_ = json.NewEncoder(out).Encode(result)
+	_ = json.NewEncoder(out).Encode(body)
 }
 
-func (h *Handler) run(ctx context.Context, in io.Reader) (result Result) {
+func (h *Handler) run(ctx context.Context, in io.Reader) (result response) {
+	started := time.Now()
 	if _, ok := ctx.Deadline(); !ok || ctx.Err() != nil {
-		return failed("deadline")
+		return rejected("deadline")
 	}
-	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	original := ctx
+	ctx, cancel := context.WithDeadline(ctx, started.Add(20*time.Second))
 	defer cancel()
 	body, err := io.ReadAll(io.LimitReader(in, 1025))
 	if err != nil || len(body) > 1024 {
-		return failed("request_invalid")
+		return rejected("request_invalid")
 	}
 	if ctx.Err() != nil {
-		return failed("deadline")
+		return rejected("deadline")
 	}
-	var request struct {
-		Operation           string `json:"operation"`
-		ConfigurationSHA256 string `json:"configurationSha256"`
-		ReleaseSHA256       string `json:"releaseSha256"`
-		CheckAttemptID      string `json:"checkAttemptId"`
-	}
-	if decodeJSON(body, &request) != nil || request.Operation != "deployment-check" || !attemptPattern.MatchString(request.CheckAttemptID) {
-		return failed("request_invalid")
+	request, err := parseCommand(body)
+	if err != nil {
+		return rejected("request_invalid")
 	}
 	// Correlate every later outcome without reflecting malformed request data.
-	defer func() { result.CheckAttemptID = request.CheckAttemptID }()
+	defer func() { result.legacy.CheckAttemptID = request.attemptID }()
 	settings, err := parseSettings(h.getenv("ROUTER_BOOTSTRAP"))
 	if err != nil {
-		return failed("bootstrap_invalid")
+		return rejected("bootstrap_invalid")
 	}
-	if request.ConfigurationSHA256 != settings.ConfigurationSHA256 || request.ReleaseSHA256 != settings.ReleaseSHA256 {
-		return failed("request_mismatch")
+	if request.operation == "deployment-check" && (request.configurationSHA256 != settings.ConfigurationSHA256 || request.releaseSHA256 != settings.ReleaseSHA256) {
+		return rejected("request_mismatch")
 	}
 	store, err := h.connect(settings)
-	if err != nil {
-		return failed("authentication")
+	if err != nil || store == nil {
+		return rejected("authentication")
 	}
-	return check(ctx, settings, store, request.CheckAttemptID)
+	p, failure := loadPinned(ctx, settings, store)
+	if failure.Status != "" {
+		return response{legacy: failure}
+	}
+	if p.config.SchemaVersion == 7 {
+		operational := h.runOperational(original, started, settings, store, p, request)
+		return response{operational: &operational}
+	}
+	if request.operation != "deployment-check" {
+		return rejected("configuration_unsupported")
+	}
+	return response{legacy: checkLegacy(ctx, settings, store, request.attemptID, p)}
 }

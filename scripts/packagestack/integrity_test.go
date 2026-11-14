@@ -11,7 +11,7 @@ import (
 )
 
 func TestFunctionInventoryRejectsMismatch(t *testing.T) {
-	for _, kind := range []string{"duplicate", "name", "size", "checksum", "binary", "zip"} {
+	for _, kind := range []string{"purpose", "duplicate", "name", "size", "checksum", "binary", "zip"} {
 		t.Run(kind, func(t *testing.T) {
 			_, dir := inputFixture(t)
 			archive, err := os.ReadFile(filepath.Join(dir, "function.zip"))
@@ -27,6 +27,8 @@ func TestFunctionInventoryRejectsMismatch(t *testing.T) {
 				t.Fatal("fixture")
 			}
 			switch kind {
+			case "purpose":
+				report.Purpose = "deployment-check-only"
 			case "duplicate":
 				report.Entries[1].Name = report.Entries[0].Name
 			case "name":

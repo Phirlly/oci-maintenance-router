@@ -64,7 +64,7 @@ func TestArchiveInventoryIntegrityAndReproducibility(t *testing.T) {
 		} `json:"entries"`
 	}
 	if json.Unmarshal(manifest, &report) != nil || report.SchemaVersion != 1 ||
-		report.Purpose != "deployment-check-only" || report.GoVersion != "go1.27.4" || report.Architecture != "X86" ||
+		report.Purpose != "maintenance-router-runtime" || report.GoVersion != "go1.27.4" || report.Architecture != "X86" ||
 		report.ArchiveSHA256 != hash(packed) || report.BinarySHA256 != hash([]byte("binary")) ||
 		report.ArchiveBytes != len(packed) || len(report.Entries) != 2 || report.Entries[0].Name != "func" ||
 		report.Entries[0].SHA256 != hash([]byte("binary")) || report.Entries[0].Bytes != 6 {
