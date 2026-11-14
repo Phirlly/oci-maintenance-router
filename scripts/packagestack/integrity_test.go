@@ -73,3 +73,27 @@ func TestBundleRequiresEveryAllowlistedFile(t *testing.T) {
 		t.Fatal("missing infrastructure accepted")
 	}
 }
+
+func TestFunctionManifestRejectsAffectedCompilerPatch(t *testing.T) {
+	_, dir := inputFixture(t)
+	archive, err := os.ReadFile(filepath.Join(dir, "function.zip"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "function-manifest.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var report functionManifest
+	if err := json.Unmarshal(data, &report); err != nil {
+		t.Fatal(err)
+	}
+	report.GoVersion = "go1.27.3"
+	data, err = json.Marshal(report)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if verifyFunction(archive, data) == nil {
+		t.Fatal("accepted an archive from the compiler patch affected by GO-2026-6859")
+	}
+}

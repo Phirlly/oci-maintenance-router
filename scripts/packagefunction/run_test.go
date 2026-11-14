@@ -12,7 +12,7 @@ import (
 func repository(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module oci-maintenance-router\n\ngo 1.27.3\n"), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module oci-maintenance-router\n\ngo 1.27.4\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(root)

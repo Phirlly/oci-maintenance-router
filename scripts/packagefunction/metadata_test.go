@@ -7,7 +7,7 @@ import (
 
 func validBuild() *debug.BuildInfo {
 	return &debug.BuildInfo{
-		GoVersion: "go1.27.3", Path: "oci-maintenance-router/cmd/router",
+		GoVersion: "go1.27.4", Path: "oci-maintenance-router/cmd/router",
 		Main: debug.Module{Path: "oci-maintenance-router", Version: "(devel)"},
 		Settings: []debug.BuildSetting{{Key: "GOOS", Value: "linux"}, {Key: "GOARCH", Value: "amd64"},
 			{Key: "GOAMD64", Value: "v1"}, {Key: "CGO_ENABLED", Value: "0"}, {Key: "-trimpath", Value: "true"}, {Key: "-buildmode", Value: "exe"}, {Key: "-compiler", Value: "gc"}},
@@ -53,5 +53,13 @@ func TestBuildMetadataAcceptsOnlyReviewedGraph(t *testing.T) {
 	}
 	if validateBuild(nil) == nil {
 		t.Fatal("accepted absent metadata")
+	}
+}
+
+func TestBuildMetadataRejectsAffectedCompilerPatch(t *testing.T) {
+	info := validBuild()
+	info.GoVersion = "go1.27.3"
+	if validateBuild(info) == nil {
+		t.Fatal("accepted the compiler patch affected by GO-2026-6859")
 	}
 }

@@ -10,9 +10,9 @@ import (
 )
 
 // NoticeStore binds complete notice records to one verified environment/location.
-// Bootstrap owns association of the environment identity with this client.
+// Bootstrap owns association of the environment identity with its object backend.
 type NoticeStore struct {
-	client        *Client
+	objects       NoticeObjects
 	environmentID string
 }
 
@@ -27,14 +27,16 @@ type StoredNotice struct {
 var environmentDigest = regexp.MustCompile(`^[a-f0-9]{64}$`)
 var storedNoticeID = regexp.MustCompile(`^ocid1\.announcement\.oc1\.\.([A-Za-z0-9_-]*\.)?[A-Za-z0-9_-]+$`)
 
-func NewNoticeStore(client *Client, environmentID string) (*NoticeStore, error) {
-	if client == nil || client.signer == nil || client.transport == nil || !environmentDigest.MatchString(environmentID) {
+func NewNoticeStore(objects NoticeObjects, environmentID string) (*NoticeStore, error) {
+	if !usableNoticeObjects(objects) || !environmentDigest.MatchString(environmentID) {
 		return nil, &Error{Code: InvalidConfiguration}
 	}
-	return &NoticeStore{client, environmentID}, nil
+	return &NoticeStore{objects, environmentID}, nil
 }
 func (s StoredNotice) Record() noticeledger.Record { return s.record }
-func (s *NoticeStore) usable() bool                { return s != nil && s.client != nil && s.environmentID != "" }
+func (s *NoticeStore) usable() bool {
+	return s != nil && usableNoticeObjects(s.objects) && environmentDigest.MatchString(s.environmentID)
+}
 func noticeObjectName(id string) string {
 	return fmt.Sprintf("notices/%x.json", sha256.Sum256([]byte(id)))
 }
@@ -43,15 +45,7 @@ func (s *NoticeStore) Load(ctx context.Context, id string) (StoredNotice, error)
 	if !s.usable() || len(id) > 1<<20 || !storedNoticeID.MatchString(id) {
 		return StoredNotice{}, &Error{Code: InvalidRequest}
 	}
-	obj, err := s.client.Get(ctx, noticeObjectName(id))
-	if err != nil {
-		return StoredNotice{}, err
-	}
-	r, err := noticeledger.Decode(obj.Body, s.environmentID, id)
-	if err != nil {
-		return StoredNotice{}, &Error{Code: InvalidResponse, Status: 200}
-	}
-	return StoredNotice{s, r, obj.ETag}, nil
+	return s.load(ctx, noticeObjectName(id), id)
 }
 
 func (s *NoticeStore) Create(ctx context.Context, r noticeledger.Record) (StoredNotice, error) {
@@ -59,15 +53,7 @@ func (s *NoticeStore) Create(ctx context.Context, r noticeledger.Record) (Stored
 	if !s.usable() || env != s.environmentID || id == "" {
 		return StoredNotice{}, &Error{Code: InvalidRequest}
 	}
-	body, err := r.Encode()
-	if err != nil {
-		return StoredNotice{}, err
-	}
-	etag, err := s.client.Create(ctx, noticeObjectName(id), body)
-	if err != nil {
-		return StoredNotice{}, err
-	}
-	return StoredNotice{s, r, etag}, nil
+	return s.write(ctx, id, "", r)
 }
 
 // Save accepts exactly one transition of the record bound to previous's ETag.
@@ -81,13 +67,5 @@ func (s *NoticeStore) Save(ctx context.Context, previous StoredNotice, next noti
 	if env != s.environmentID || env != oldEnv || id != oldID {
 		return StoredNotice{}, &Error{Code: InvalidRequest}
 	}
-	body, err := next.Encode()
-	if err != nil {
-		return StoredNotice{}, err
-	}
-	etag, err := s.client.Replace(ctx, noticeObjectName(id), previous.etag, body)
-	if err != nil {
-		return StoredNotice{}, err
-	}
-	return StoredNotice{s, next, etag}, nil
+	return s.write(ctx, id, previous.etag, next)
 }

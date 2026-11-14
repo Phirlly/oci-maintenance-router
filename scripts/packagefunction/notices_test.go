@@ -10,7 +10,7 @@ import (
 
 func noticeFixture(t *testing.T) environment {
 	t.Helper()
-	env := environment{GOROOT: t.TempDir(), GOMODCACHE: t.TempDir(), GOVERSION: "go1.27.3"}
+	env := environment{GOROOT: t.TempDir(), GOMODCACHE: t.TempDir(), GOVERSION: "go1.27.4"}
 	paths := map[string][]string{
 		"github.com/fnproject/fdk-go@v0.1.26":                         {"LICENSE", "NOTICE.txt", "THIRD_PARTY_LICENSES.txt"},
 		"github.com/gofrs/flock@v0.10.0":                              {"LICENSE"},
@@ -54,7 +54,7 @@ func TestNoticesUseOnlyProductionAllowlist(t *testing.T) {
 		}
 		seen[e.name] = true
 		source := filepath.Join(env.GOMODCACHE, strings.TrimPrefix(e.name, "resources/notices/"))
-		if strings.HasPrefix(e.name, "resources/notices/go1.27.3/") {
+		if strings.HasPrefix(e.name, "resources/notices/go1.27.4/") {
 			source = filepath.Join(env.GOROOT, "LICENSE")
 		}
 		original, err := os.ReadFile(source)

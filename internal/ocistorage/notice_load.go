@@ -30,23 +30,44 @@ func (s *NoticeStore) LoadObject(ctx context.Context, name string) (StoredNotice
 	if !s.usable() || !validNoticeObjectName(name) {
 		return StoredNotice{}, &Error{Code: InvalidRequest}
 	}
-	obj, err := s.client.Get(ctx, name)
+	return s.load(ctx, name, "")
+}
+
+func (s *NoticeStore) load(ctx context.Context, name, id string) (StoredNotice, error) {
+	ctx, cancel, err := noticeContext(ctx)
 	if err != nil {
 		return StoredNotice{}, err
 	}
-	var candidate struct {
-		NoticeID string `json:"noticeId"`
+	defer cancel()
+	obj, err := s.objects.Get(ctx, name)
+	if err != nil {
+		return StoredNotice{}, noticeBackendFailure(ctx, err, false)
 	}
-	if json.Unmarshal(obj.Body, &candidate) != nil || len(candidate.NoticeID) > objectLimit ||
-		!storedNoticeID.MatchString(candidate.NoticeID) || noticeObjectName(candidate.NoticeID) != name {
-		return StoredNotice{}, failure(ctx, InvalidResponse, 200, false)
+	if ctx.Err() != nil {
+		return StoredNotice{}, failure(ctx, Canceled, 200, false)
 	}
-	record, err := noticeledger.Decode(obj.Body, s.environmentID, candidate.NoticeID)
+	if len(obj.Body) > objectLimit {
+		return StoredNotice{}, &Error{Code: TooLarge, Status: 200}
+	}
+	if !validETag(obj.ETag) {
+		return StoredNotice{}, &Error{Code: InvalidResponse, Status: 200}
+	}
+	if id == "" {
+		var candidate struct {
+			NoticeID string `json:"noticeId"`
+		}
+		if json.Unmarshal(obj.Body, &candidate) != nil || len(candidate.NoticeID) > objectLimit ||
+			!storedNoticeID.MatchString(candidate.NoticeID) || noticeObjectName(candidate.NoticeID) != name {
+			return StoredNotice{}, failure(ctx, InvalidResponse, 200, false)
+		}
+		id = candidate.NoticeID
+	}
+	record, err := noticeledger.Decode(obj.Body, s.environmentID, id)
 	if ctx.Err() != nil {
 		return StoredNotice{}, failure(ctx, Canceled, 200, false)
 	}
 	if err != nil {
 		return StoredNotice{}, failure(ctx, InvalidResponse, 200, false)
 	}
-	return StoredNotice{s, record, obj.ETag}, nil
+	return StoredNotice{s, record, strings.Clone(obj.ETag)}, nil
 }

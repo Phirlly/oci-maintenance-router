@@ -18,7 +18,7 @@ func TestGoCommandControlsBuildEnvironment(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Disabled GOENV is reported as an empty configuration-file path by go env.
-	for key, want := range map[string]string{"GOENV": "", "GOWORK": "off", "GOTOOLCHAIN": "go1.27.3", "GOFLAGS": "", "GOOS": "linux", "GOARCH": "amd64", "GOAMD64": "v1", "CGO_ENABLED": "0", "GOEXPERIMENT": "", "GOFIPS140": "off", "GOVERSION": "go1.27.3"} {
+	for key, want := range map[string]string{"GOENV": "", "GOWORK": "off", "GOTOOLCHAIN": "go1.27.4", "GOFLAGS": "", "GOOS": "linux", "GOARCH": "amd64", "GOAMD64": "v1", "CGO_ENABLED": "0", "GOEXPERIMENT": "", "GOFIPS140": "off", "GOVERSION": "go1.27.4"} {
 		if values[key] != want {
 			t.Fatalf("%s=%q want %q", key, values[key], want)
 		}

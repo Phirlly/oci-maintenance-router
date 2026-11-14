@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const compilerVersion = "go1.27.3"
+const compilerVersion = "go1.27.4"
 
 type environment struct{ GOROOT, GOMODCACHE, GOVERSION string }
 type goRunner func(...string) ([]byte, error)

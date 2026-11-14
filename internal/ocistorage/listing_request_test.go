@@ -60,7 +60,7 @@ func TestInvalidDiscoveryInputsDoNotSign(t *testing.T) {
 			t.Fatal("invalid load returned handle")
 		}
 	}
-	for _, store := range []*NoticeStore{nil, {}, {client: &Client{}, environmentID: "x"}} {
+	for _, store := range []*NoticeStore{nil, {}, {objects: &Client{}, environmentID: "x"}} {
 		p, err := store.ListPage(budget(t), "")
 		wantError(t, err, InvalidRequest, 0, false)
 		emptyPage(t, p)

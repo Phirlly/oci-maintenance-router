@@ -26,7 +26,7 @@ func TestBuildRejectsFailedStages(t *testing.T) {
 					if stage == "environment JSON" {
 						return []byte("{"), nil
 					}
-					env := environment{GOROOT: dir, GOMODCACHE: dir, GOVERSION: "go1.27.3"}
+					env := environment{GOROOT: dir, GOMODCACHE: dir, GOVERSION: "go1.27.4"}
 					if stage == "compiler version" {
 						env.GOVERSION = "go1.28.0"
 					}
