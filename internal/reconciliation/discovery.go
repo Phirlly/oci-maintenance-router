@@ -16,6 +16,7 @@ type Discovery struct {
 	collector               *Collector
 	objects                 ocistorage.NoticeObjects
 	configHash, catalogHash [32]byte
+	scope                   discoveryScope
 	wait                    func(context.Context, time.Duration) error
 	now                     func() time.Time
 }
@@ -27,6 +28,7 @@ type DiscoveryResult struct {
 	view          CandidateView
 	availability  SourceAvailability
 	completedAt   time.Time
+	scope         discoveryScope
 }
 
 func (r DiscoveryResult) EnvironmentID() string            { return r.environmentID }
@@ -66,7 +68,7 @@ func NewDiscovery(configBytes, catalogBytes []byte, location configuration.Ledge
 	if err != nil {
 		return nil, &DiscoveryError{Code: "invalid_request"}
 	}
-	return &Discovery{collector: collector, objects: objects, configHash: sha256.Sum256(configBytes), catalogHash: sha256.Sum256(catalogBytes), wait: pause, now: time.Now}, nil
+	return &Discovery{collector: collector, objects: objects, configHash: sha256.Sum256(configBytes), catalogHash: sha256.Sum256(catalogBytes), scope: baselineScope(config), wait: pause, now: time.Now}, nil
 }
 
 // Run durably records a complete bounded discovery. Partial confirmed writes
@@ -143,5 +145,5 @@ func (r *discoveryRun) run() (DiscoveryResult, error) {
 	if !leaseWallTime(at) {
 		return DiscoveryResult{}, &DiscoveryError{Code: "clock_invalid"}
 	}
-	return DiscoveryResult{environmentID: r.owner.collector.environmentID, view: collection.Candidates, availability: collection.Availability, completedAt: at}, nil
+	return DiscoveryResult{environmentID: r.owner.collector.environmentID, view: collection.Candidates, availability: collection.Availability, completedAt: at, scope: r.owner.scope}, nil
 }
