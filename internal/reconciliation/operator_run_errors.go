@@ -1,6 +1,9 @@
 package reconciliation
 
-import "context"
+import (
+	"context"
+	"oci-maintenance-router/internal/ocinotifications"
+)
 
 // OperatorRunError contains controlled diagnostics, never contact or provider text.
 type OperatorRunError struct {
@@ -55,4 +58,12 @@ func operatorRunError(ctx context.Context, code string, err error) *OperatorRunE
 		}
 	}
 	return r
+}
+
+func operatorChannelReadError(ctx context.Context, err error) *OperatorRunError {
+	failure := operatorRunError(ctx, "channel_read", nil)
+	if e, ok := err.(*ocinotifications.Error); ok && e != nil && e.Status >= 100 && e.Status <= 599 {
+		failure.HTTPStatus = e.Status
+	}
+	return failure
 }

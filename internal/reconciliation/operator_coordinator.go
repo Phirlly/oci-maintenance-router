@@ -1,9 +1,7 @@
 package reconciliation
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
 	"oci-maintenance-router/internal/configuration"
 	"oci-maintenance-router/internal/ocinotifications"
 )
@@ -42,33 +40,19 @@ func (r OperatorResult) ObservedStatus() int       { return r.status }
 func (r OperatorResult) ObservedMessageID() string { return r.messageID }
 
 func NewOperatorCoordinator(configBytes, catalogBytes []byte, location configuration.LedgerLocation, objects OperatorChallengeObjects, client *ocinotifications.Client) (*OperatorCoordinator, error) {
-	invalid := &OperatorRunError{Code: "invalid_request"}
 	if client == nil {
-		return nil, invalid
+		return nil, &OperatorRunError{Code: "invalid_request"}
 	}
-	configBytes, catalogBytes = bytes.Clone(configBytes), bytes.Clone(catalogBytes)
-	catalog, err := configuration.DecodeCatalog(catalogBytes)
+	c, err := readOperatorControls(configBytes, catalogBytes, location, objects)
 	if err != nil {
-		return nil, invalid
+		return nil, err
 	}
-	c, err := configuration.Decode(configBytes, catalog)
-	if err != nil || c.SchemaVersion != 5 {
-		return nil, invalid
-	}
-	if c.Mode != "TEST" || c.OperatorTest == nil {
+	if c.mode != "TEST" {
 		return nil, &OperatorRunError{Code: "intent_required"}
 	}
-	environment, err := c.EnvironmentID(location)
-	if err != nil {
-		return nil, invalid
-	}
-	if _, err := NewOperatorChallengeStore(objects, environment, c.InstallationID); err != nil {
-		return nil, invalid
-	}
-	desired := OperatorChannel{c.OperatorTopicID, c.OperatorTest.SubscriptionID, "EMAIL", c.OperatorTest.Endpoint}
-	intent, _ := NewOperatorIntent(environment, c.InstallationID, c.OperatorTest.RequestID, desired) // Validated by configuration.
-	return &OperatorCoordinator{objects: objects, intent: intent, desired: desired,
-		controls: currentControls{objects, sha256.Sum256(configBytes), sha256.Sum256(catalogBytes)},
+	desired := c.desired
+	return &OperatorCoordinator{objects: objects, intent: c.intent, desired: desired,
+		controls: c.current,
 		read: func(ctx context.Context) (operatorObservation, error) {
 			channel, err := client.GetChannel(ctx, desired.TopicID, desired.SubscriptionID)
 			if err != nil {
