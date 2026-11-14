@@ -17,15 +17,18 @@ func Decode(data []byte, catalog Catalog) (Config, error) {
 		"pagerDutyRegion", "intakeTopicId", "operatorTopicId",
 	}
 	optional := []string{"mode", "activeBaselineId", "replay"}
-	if version == 2 || version == 3 || version == 4 || version == 5 || version == 6 {
+	if version == 2 || version == 3 || version == 4 || version == 5 || version == 6 || version == 7 {
 		required = append(required, "mode", "installationId", "preparation")
 		optional = nil
 	}
-	if version == 3 || version == 4 || version == 5 || version == 6 {
+	if version == 3 || version == 4 || version == 5 || version == 6 || version == 7 {
 		optional = []string{"diagnostic"}
 	}
-	if version == 5 || version == 6 {
+	if version == 5 || version == 6 || version == 7 {
 		optional = append(optional, "operatorTest")
+	}
+	if version == 7 {
+		optional = append(optional, "recovery")
 	}
 	r := readObject(value, "configuration", &err, required, optional)
 	if err != nil {
@@ -81,13 +84,16 @@ func (c *Config) readControls(r objectReader) {
 	if _, ok := r.values["mode"]; ok {
 		c.Mode = r.text("mode")
 	}
-	if c.SchemaVersion == 2 || c.SchemaVersion == 3 || c.SchemaVersion == 4 || c.SchemaVersion == 5 || c.SchemaVersion == 6 {
+	if c.SchemaVersion == 2 || c.SchemaVersion == 3 || c.SchemaVersion == 4 || c.SchemaVersion == 5 || c.SchemaVersion == 6 || c.SchemaVersion == 7 {
 		c.readPreparation(r)
-		if c.SchemaVersion == 3 || c.SchemaVersion == 4 || c.SchemaVersion == 5 || c.SchemaVersion == 6 {
+		if c.SchemaVersion == 3 || c.SchemaVersion == 4 || c.SchemaVersion == 5 || c.SchemaVersion == 6 || c.SchemaVersion == 7 {
 			c.readDiagnostic(r)
 		}
-		if c.SchemaVersion == 5 || c.SchemaVersion == 6 {
+		if c.SchemaVersion == 5 || c.SchemaVersion == 6 || c.SchemaVersion == 7 {
 			c.readOperatorTest(r)
+		}
+		if c.SchemaVersion == 7 {
+			c.readRecovery(r)
 		}
 		return
 	}

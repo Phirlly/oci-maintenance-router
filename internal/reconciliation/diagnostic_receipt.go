@@ -23,7 +23,7 @@ func NewDiagnosticReceiptVerifier(configBytes, catalogBytes []byte, location con
 	if err != nil {
 		return nil, err
 	}
-	if c.schema != 4 && c.schema != 5 && c.schema != 6 {
+	if c.schema != 4 && c.schema != 5 && c.schema != 6 && c.schema != 7 {
 		return nil, &DiagnosticRunError{Code: "invalid_request"}
 	}
 	if c.receiptCode == "" {

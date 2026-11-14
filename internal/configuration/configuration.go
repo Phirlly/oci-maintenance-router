@@ -29,6 +29,7 @@ type Config struct {
 	Preparation      Preparation
 	Diagnostic       *DiagnosticRequest
 	OperatorTest     *OperatorTestRequest
+	Recovery         *RecoveryRequest
 }
 
 // OperatorTestRequest is desired EMAIL test intent and optional receipt input.

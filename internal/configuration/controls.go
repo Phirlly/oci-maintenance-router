@@ -4,14 +4,17 @@ func (c Config) validateControls(catalog Catalog) error {
 	if c.SchemaVersion == 2 {
 		return c.validatePreparation()
 	}
-	if c.SchemaVersion == 3 || c.SchemaVersion == 4 || c.SchemaVersion == 5 || c.SchemaVersion == 6 {
+	if c.SchemaVersion == 3 || c.SchemaVersion == 4 || c.SchemaVersion == 5 || c.SchemaVersion == 6 || c.SchemaVersion == 7 {
 		if err := c.validateDiagnostic(catalog); err != nil {
 			return err
 		}
 		if err := c.validateOperatorTest(catalog); err != nil {
 			return err
 		}
-		return c.validateLiveInputs()
+		if err := c.validateLiveInputs(); err != nil {
+			return err
+		}
+		return c.validateRecovery()
 	}
 	if c.Mode != "PREVIEW" && c.Mode != "LIVE" && c.Mode != "PAUSED" {
 		return &Error{"mode", "invalid"}

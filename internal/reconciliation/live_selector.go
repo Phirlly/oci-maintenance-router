@@ -24,7 +24,7 @@ func NewLiveBaselineSelector(configBytes, catalogBytes []byte, location configur
 		return nil, invalid
 	}
 	c, err := configuration.Decode(configBytes, catalog)
-	if err != nil || c.SchemaVersion != 6 {
+	if err != nil || (c.SchemaVersion != 6 && c.SchemaVersion != 7) {
 		return nil, invalid
 	}
 	if c.Mode != "LIVE" {

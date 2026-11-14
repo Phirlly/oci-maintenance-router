@@ -7,7 +7,7 @@ import (
 
 func TestLiveControlsRetainStrictJSONAndRejectLegacyAuthority(t *testing.T) {
 	wire := string(encoded(t, liveSettings(t)))
-	for _, version := range []string{"7", "6.0", "6e0", `"6"`} {
+	for _, version := range []string{"8", "6.0", "6e0", `"6"`} {
 		wantError(t, []byte(strings.Replace(wire, `"schemaVersion":6`, `"schemaVersion":`+version, 1)), "schemaVersion", "unsupported")
 	}
 	for _, field := range []string{"activeBaselineId", "replay", "activationId", "baselineId", "ready", "private-input"} {

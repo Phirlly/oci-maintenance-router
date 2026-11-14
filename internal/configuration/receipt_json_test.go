@@ -21,7 +21,7 @@ func TestReceiptJSONRetainsStrictParsingAndControlRules(t *testing.T) {
 			t.Fatal("input leaked in error")
 		}
 	}
-	for _, version := range []string{"4.0", "4e0", `"4"`, "7"} {
+	for _, version := range []string{"4.0", "4e0", `"4"`, "8"} {
 		wantError(t, []byte(strings.Replace(wire, `"schemaVersion":4`, `"schemaVersion":`+version, 1)), "schemaVersion", "unsupported")
 	}
 	for _, field := range []string{"mode", "installationId", "preparation"} {
