@@ -20,9 +20,6 @@ func (r *discoveryRun) persist(work *discoveryWork) error {
 		if err != nil {
 			return discoveryFailureFor(r.ctx, "record_read", err)
 		}
-		if saved.Record().Snapshot().SchemaVersion == 3 {
-			return &DiscoveryError{Code: "unsupported_notice_schema"}
-		}
 		if savedMembership(saved.Record()) != work.saved.membership {
 			return &DiscoveryError{Code: "membership_changed"}
 		}
@@ -57,7 +54,7 @@ func (r *discoveryRun) persist(work *discoveryWork) error {
 			return err
 		}
 	}
-	if work.hold && saved.Record().Snapshot().HoldReason == "" {
+	if (work.hold && saved.Record().Snapshot().HoldReason == "") || recoveryComponentChanged(saved.Record(), work.component) {
 		next, err := saved.Record().Hold(delivery.ReasonSourceChanged, r.owner.now())
 		if err != nil {
 			return &DiscoveryError{Code: "transition_failed"}
@@ -67,6 +64,17 @@ func (r *discoveryRun) persist(work *discoveryWork) error {
 		}
 	}
 	return nil
+}
+
+func recoveryComponentChanged(record noticeledger.Record, component string) bool {
+	if history := record.Snapshot().Recovery; history != nil {
+		for _, a := range history.Actions {
+			if a.Status == noticeledger.RecoveryApproved && a.InvalidatedAt == nil && a.Request.ComponentFingerprint != component {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (r *discoveryRun) save(previous ocistorage.StoredNotice, next noticeledger.Record) (ocistorage.StoredNotice, error) {

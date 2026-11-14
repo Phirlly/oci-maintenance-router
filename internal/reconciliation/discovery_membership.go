@@ -28,6 +28,7 @@ type discoveryWork struct {
 	observations []noticeledger.Observation
 	unavailable  int
 	hold         bool
+	component    string
 }
 
 // Only the coordinator's own complete collection reaches this grouping step.
@@ -54,10 +55,10 @@ func discoveryWorks(c Collection) ([]*discoveryWork, error) {
 		get(unavailable.NoticeID).unavailable = unavailable.HTTPStatus
 	}
 	for _, component := range c.Candidates.components {
-		if len(component.Members) > 1 {
-			for _, member := range component.Members {
-				get(member.Revision.NoticeID).hold = true
-			}
+		for _, member := range component.Members {
+			work := get(member.Revision.NoticeID)
+			work.component = component.Fingerprint
+			work.hold = len(component.Members) > 1
 		}
 	}
 	ids := make([]string, 0, len(byID))

@@ -24,13 +24,16 @@ type processingRun struct {
 // Run returns confirmed partial work even on failure. Completed means this pass
 // finished, not that every notice was eligible or every notification was received.
 func (p *MaintenanceProcessor) Run(ctx context.Context, lease *Lease) (ProcessingResult, error) {
-	if p == nil || p.discovery == nil || p.selector == nil || p.current == nil || p.version == nil || p.wait == nil || p.jitter == nil || p.token == nil || !lease.usable() {
+	if p == nil || p.environmentID == "" || p.objects == nil || p.wait == nil || p.token == nil || !lease.usable() {
+		return ProcessingResult{}, &ProcessingError{Code: "invalid_request"}
+	}
+	if p.config.Mode == "LIVE" && (p.discovery == nil || p.selector == nil || p.current == nil || p.version == nil || p.jitter == nil) {
 		return ProcessingResult{}, &ProcessingError{Code: "invalid_request"}
 	}
 	if err := leaseRequest(ctx); err != nil {
 		return ProcessingResult{}, processingFailure(ctx, err)
 	}
-	if lease.manager.environmentID != p.discovery.collector.environmentID {
+	if lease.manager.environmentID != p.environmentID {
 		return ProcessingResult{}, &ProcessingError{Code: "environment_mismatch"}
 	}
 	token := p.token()
@@ -53,6 +56,20 @@ func (p *MaintenanceProcessor) Run(ctx context.Context, lease *Lease) (Processin
 }
 
 func (r *processingRun) run() error {
+	r.deadline, _ = r.ctx.Deadline()
+	r.storage = &discoveryStorage{objects: r.owner.objects, reserve: r.reserve}
+	r.store, _ = ocistorage.NewNoticeStore(r.storage, r.owner.environmentID)
+	pending, err := r.recoveryStart()
+	if err != nil {
+		return err
+	}
+	if r.owner.config.Mode != "LIVE" {
+		if err = r.guard(); err != nil {
+			return err
+		}
+		r.result.snapshot.Completed = true
+		return nil
+	}
 	initial, err := r.owner.discovery.Run(r.ctx, r.lease)
 	if err != nil {
 		return err
@@ -68,10 +85,13 @@ func (r *processingRun) run() error {
 	work, cancel := context.WithDeadline(r.ctx, r.deadline.Add(-discoveryReserve))
 	defer cancel()
 	r.ctx = work
-	r.storage = &discoveryStorage{objects: r.owner.objects, reserve: r.reserve}
-	r.store, _ = ocistorage.NewNoticeStore(r.storage, r.lease.manager.environmentID)
 	r.baseline, err = r.owner.selector.Select(r.ctx, r.lease)
 	if err != nil {
+		if pending && missingRecoveryReadiness(err) {
+			if failure := r.rejectCurrentRecovery("readiness_required"); failure != nil {
+				return failure
+			}
+		}
 		return err
 	}
 	r.final, err = r.owner.discovery.Run(r.ctx, r.lease)
@@ -84,6 +104,11 @@ func (r *processingRun) run() error {
 	worklist, err := processingWork(initial, r.final)
 	if err != nil {
 		return err
+	}
+	if pending {
+		if err = r.recoverLive(worklist); err != nil {
+			return err
+		}
 	}
 	for _, work := range worklist {
 		if err = r.process(work); err != nil {
@@ -98,7 +123,7 @@ func (r *processingRun) run() error {
 }
 
 func (r *processingRun) reserve() error { return currentReserve(r.ctx, r.lease) }
-func (r *processingRun) guard() error   { return r.owner.discovery.controls().check(r.ctx, r.lease) }
+func (r *processingRun) guard() error   { return r.owner.controls.check(r.ctx, r.lease) }
 func (r *processingRun) before() error {
 	if r.started {
 		if err := r.owner.wait(r.ctx, 100*time.Millisecond); err != nil {

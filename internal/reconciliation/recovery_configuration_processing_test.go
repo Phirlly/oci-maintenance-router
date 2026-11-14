@@ -1,7 +1,6 @@
 package reconciliation
 
 import (
-	"bytes"
 	"strings"
 	"testing"
 	"time"
@@ -11,7 +10,7 @@ import (
 	"oci-maintenance-router/internal/notices"
 )
 
-func TestRecoveryConfigurationRefusesAutomaticProcessorBeforeIO(t *testing.T) {
+func TestRecoveryConfigurationConstructorAdoptsIntentWithoutIO(t *testing.T) {
 	f := liveSelectorFixtureFor(t)
 	for _, present := range []bool{false, true} {
 		cfg := liveSchemaConfig(t, "LIVE", func(v map[string]any) {
@@ -29,13 +28,13 @@ func TestRecoveryConfigurationRefusesAutomaticProcessorBeforeIO(t *testing.T) {
 		}
 		before := len(f.objects.calls)
 		p, err := NewMaintenanceProcessor(cfg, []byte(preparationCatalog), candidateLocation(), strings.Repeat("b", 64), processingEmptySource(), f.objects, operatorClient(t), diagnosticVault(t), processingMySQL(t))
-		if p != nil || err == nil || len(f.objects.calls) != before || f.diagnosticSends.Load() != 1 || f.operatorSends.Load() != 1 {
-			t.Fatal("automatic processor adopted recovery configuration")
+		if p == nil || err != nil || (p.config.Recovery != nil) != present || len(f.objects.calls) != before || f.diagnosticSends.Load() != 1 || f.operatorSends.Load() != 1 {
+			t.Fatal("processor failed to own recovery intent without IO", err)
 		}
 	}
 }
 
-func TestRecoveryConfigurationDiscoveryStillRefusesNotice3(t *testing.T) {
+func TestRecoveryConfigurationDiscoveryPreservesNotice3(t *testing.T) {
 	n := candidateNotice(t, 1, nil, true)
 	old := candidateRecord(t, n)
 	at, err := time.Parse(time.RFC3339Nano, old.Snapshot().UpdatedAt)
@@ -54,11 +53,12 @@ func TestRecoveryConfigurationDiscoveryStillRefusesNotice3(t *testing.T) {
 	}
 	current.wait, current.now = d.wait, d.now
 	objects.seed("configuration/router.json", cfg)
-	before, _ := r.Encode()
 	result, err := current.Run(leaseBudget(t), lease)
-	discoveryFailure(t, result, err, "unsupported_notice_schema")
-	after, _ := objects.record(t, lease.manager.environmentID, n.Key().NoticeID).Encode()
-	if len(objects.noticeWrites()) != 0 || !bytes.Equal(before, after) {
-		t.Fatal("new configuration adopted notice3")
+	if err != nil || result.EnvironmentID() == "" {
+		t.Fatal("new configuration rejected notice3", err)
+	}
+	after := objects.record(t, lease.manager.environmentID, n.Key().NoticeID).Snapshot()
+	if after.SchemaVersion != 3 || after.Recovery == nil || len(after.Recovery.Actions) != 0 || len(after.Revisions) != 1 || after.Revisions[0].Digest != n.Key().Digest {
+		t.Fatal("discovery executed intent or changed retained history")
 	}
 }

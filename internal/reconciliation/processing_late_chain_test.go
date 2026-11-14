@@ -1,7 +1,6 @@
 package reconciliation
 
 import (
-	"bytes"
 	"context"
 	"oci-maintenance-router/internal/delivery"
 	"oci-maintenance-router/internal/noticeledger"
@@ -81,9 +80,9 @@ func TestMaintenanceLateChainChangeRetainsKnownUnionAndStopsAllDispatch(t *testi
 			t.Fatal("known linked peer not held")
 		}
 		if fault == "peer_recovery_schema" {
-			got, err := f.saved(t, b.Key().NoticeID).Encode()
-			if err != nil || len(recoveryPeer) == 0 || !bytes.Equal(got, recoveryPeer) {
-				t.Fatal("late-chain handling mutated recovery-schema peer", err)
+			got := f.saved(t, b.Key().NoticeID).Snapshot()
+			if len(recoveryPeer) == 0 || got.SchemaVersion != 3 || got.HoldReason != delivery.ReasonSourceChanged || len(got.Recovery.Actions) != 0 {
+				t.Fatal("late-chain handling failed to hold recovery-schema peer")
 			}
 		}
 	}

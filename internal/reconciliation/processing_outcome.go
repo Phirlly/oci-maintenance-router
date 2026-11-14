@@ -28,9 +28,13 @@ func (r *processingRun) dispatch(saved ocistorage.StoredNotice, b delivery.Batch
 		next, err = saved.Record().StopUnsent(ref, at)
 	} else {
 		current, _ := processingBatch(saved, b.Message.BatchID)
-		retryAt, retryErr := r.retryAt(current, response, status, at)
-		if retryErr != nil {
-			return saved, retryErr
+		var retryAt time.Time
+		if current.AttemptKind != delivery.ManualAttempt {
+			var retryErr error
+			retryAt, retryErr = r.retryAt(current, response, status, at)
+			if retryErr != nil {
+				return saved, retryErr
+			}
 		}
 		next, err = saved.Record().Finish(ref, status, at, retryAt)
 	}
@@ -56,6 +60,7 @@ func (r *processingRun) dispatch(saved ocistorage.StoredNotice, b delivery.Batch
 		return saved, &ProcessingError{Code: "outcome_unconfirmed", WriteUncertain: true}
 	}
 	r.result.snapshot.Attempts[index].Confirmed = true
+	r.captureRecovery(got)
 	if status == 202 {
 		r.result.snapshot.Accepted++
 	}

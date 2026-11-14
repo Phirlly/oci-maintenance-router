@@ -18,10 +18,12 @@ func (r *processingRun) save(previous ocistorage.StoredNotice, next noticeledger
 		return ocistorage.StoredNotice{}, err
 	}
 	if sameNotice(previous.Record(), next) {
+		r.captureRecovery(previous)
 		return previous, nil
 	}
 	got, err := r.write(r.ctx, previous, next)
 	if err == nil {
+		r.captureRecovery(got)
 		err = r.guard()
 	}
 	return got, err

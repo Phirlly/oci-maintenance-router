@@ -101,9 +101,18 @@ func (r *processingRun) changedSource(work processingNoticeWork, saved ocistorag
 	}
 	seen := map[string]bool{work.id: true}
 	for _, component := range r.final.view.components {
+		affected := component.Fingerprint == work.component
+		for _, m := range component.Members {
+			if chain != "" && m.ChainID == chain {
+				affected = true
+			}
+		}
+		if !affected {
+			continue
+		}
 		for _, m := range component.Members {
 			id := m.Revision.NoticeID
-			if seen[id] || chain == "" || m.ChainID != chain {
+			if seen[id] {
 				continue
 			}
 			seen[id] = true
@@ -113,9 +122,6 @@ func (r *processingRun) changedSource(work processingNoticeWork, saved ocistorag
 			other, readErr := r.store.Load(r.ctx, id)
 			if readErr != nil {
 				return readErr
-			}
-			if other.Record().Snapshot().SchemaVersion == 3 {
-				return &ProcessingError{Code: "unsupported_notice_schema"}
 			}
 			held, holdErr := other.Record().Hold(delivery.ReasonSourceChanged, r.lease.manager.now())
 			if holdErr != nil {

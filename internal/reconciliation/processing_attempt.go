@@ -3,6 +3,7 @@ package reconciliation
 import (
 	"bytes"
 	"oci-maintenance-router/internal/delivery"
+	"oci-maintenance-router/internal/noticeledger"
 	"oci-maintenance-router/internal/ocistorage"
 	"oci-maintenance-router/internal/pagerduty"
 	"oci-maintenance-router/internal/routing"
@@ -14,7 +15,7 @@ func (r *processingRun) attempt(work processingNoticeWork, saved ocistorage.Stor
 		if !ok {
 			return saved, &ProcessingError{Code: "batch_missing"}
 		}
-		if b.State == delivery.APIAccepted {
+		if b.State == delivery.APIAccepted || b.State == delivery.Closed {
 			return saved, nil
 		}
 		if b.State == delivery.ReviewRequired {
@@ -65,7 +66,8 @@ func (r *processingRun) attempt(work processingNoticeWork, saved ocistorage.Stor
 			return saved, r.issue(ProcessingIssue{NoticeID: work.id, BatchID: id, Code: string(b.Reason)})
 		}
 		plan := r.owner.policy.Resolve(n, true, lookups)
-		if !r.batchEligible(b, plan, lookups) {
+		_, approved := processingApproval(saved, id)
+		if !r.batchEligible(b, plan, lookups, approved) {
 			return r.holdBatch(saved, b, delivery.ReasonOperator, "ownership_changed")
 		}
 		if err = r.before(); err != nil {
@@ -83,7 +85,11 @@ func (r *processingRun) attempt(work processingNoticeWork, saved ocistorage.Stor
 			clear(key)
 			return r.holdBatch(saved, b, delivery.ReasonSecretUnavailable, "secret_invalid")
 		}
-		saved, err = r.claimAndSend(saved, b, key)
+		if approved {
+			saved, err = r.claimApproved(saved, b, key, work)
+		} else {
+			saved, err = r.claimAndSend(saved, b, key)
+		}
 		clear(key)
 		if err != nil {
 			return saved, err
@@ -91,7 +97,7 @@ func (r *processingRun) attempt(work processingNoticeWork, saved ocistorage.Stor
 	}
 }
 
-func (r *processingRun) batchEligible(b delivery.BatchSnapshot, plan routing.Plan, lookups map[string]routing.Lookup) bool {
+func (r *processingRun) batchEligible(b delivery.BatchSnapshot, plan routing.Plan, lookups map[string]routing.Lookup, approved bool) bool {
 	if plan.Assessment.State != routing.SupportedShape || plan.Revision != b.Message.Revision || plan.RoutingGeneration != b.Message.RoutingGeneration {
 		return false
 	}
@@ -101,7 +107,7 @@ func (r *processingRun) batchEligible(b delivery.BatchSnapshot, plan routing.Pla
 	}
 	for _, member := range b.Message.Resources {
 		d, ok := decisions[member.ResourceID]
-		if !ok || d.Disposition != routing.Ready || d.Region != member.Region || d.DestinationID != b.Message.DestinationID || r.suppressed(plan.Revision, d, lookups) {
+		if !ok || d.Disposition != routing.Ready || d.Region != member.Region || d.DestinationID != b.Message.DestinationID || (!approved && r.suppressed(plan.Revision, d, lookups)) {
 			return false
 		}
 	}
@@ -137,7 +143,11 @@ func (r *processingRun) claimAndSend(saved ocistorage.StoredNotice, b delivery.B
 	if err != nil {
 		return saved, &ProcessingError{Code: "attempt_failed"}
 	}
-	saved, err = r.save(saved, next)
+	return r.sendClaim(saved, b, next, ref, key)
+}
+
+func (r *processingRun) sendClaim(saved ocistorage.StoredNotice, b delivery.BatchSnapshot, next noticeledger.Record, ref delivery.AttemptRef, key []byte) (ocistorage.StoredNotice, error) {
+	saved, err := r.save(saved, next)
 	if err != nil {
 		return saved, err
 	}

@@ -18,7 +18,7 @@ func (r *processingRun) prepare(saved ocistorage.StoredNotice, n notices.Notice,
 	for _, revision := range saved.Record().Snapshot().Revisions {
 		if revision.Digest == n.Key().Digest {
 			for _, row := range revision.Resources {
-				if row.BatchID != "" {
+				if row.BatchID != "" || row.Disposition == "CLOSED" {
 					assigned[row.ResourceID] = true
 				}
 			}

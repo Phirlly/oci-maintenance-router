@@ -13,9 +13,6 @@ func (r *processingRun) process(work processingNoticeWork) error {
 	if err != nil {
 		return err
 	}
-	if saved.Record().Snapshot().SchemaVersion == 3 {
-		return &ProcessingError{Code: "unsupported_notice_schema"}
-	}
 	if savedMembership(saved.Record()) != work.membership {
 		return &ProcessingError{Code: "membership_changed"}
 	}
@@ -27,25 +24,47 @@ func (r *processingRun) process(work processingNoticeWork) error {
 	if err != nil {
 		return err
 	}
+	ordinary := work.eligible && saved.Record().Snapshot().HoldReason == ""
 	if !work.eligible {
 		r.result.snapshot.Deferred++
-		return r.issue(ProcessingIssue{NoticeID: work.id, Code: work.reason})
+		if err = r.issue(ProcessingIssue{NoticeID: work.id, Code: work.reason}); err != nil {
+			return err
+		}
 	}
-	if reason := saved.Record().Snapshot().HoldReason; reason != "" {
-		return r.issue(ProcessingIssue{NoticeID: work.id, Code: string(reason)})
-	}
-	saved, n, lookups, available, err := r.fresh(work, saved)
-	if err != nil || !available {
-		return err
-	}
-	saved, err = r.prepare(saved, n, lookups)
-	if err != nil {
-		return err
+	if ordinary {
+		refreshed, n, lookups, available, failure := r.fresh(work, saved)
+		if failure != nil || !available {
+			return failure
+		}
+		saved, err = r.prepare(refreshed, n, lookups)
+		if err != nil {
+			return err
+		}
+	} else if reason := saved.Record().Snapshot().HoldReason; reason != "" && work.eligible {
+		if err = r.issue(ProcessingIssue{NoticeID: work.id, Code: string(reason)}); err != nil {
+			return err
+		}
 	}
 	// IDs are immutable. Reload the current snapshot after every outcome so no
 	// stale in-memory copy can overwrite another batch's confirmed result.
 	for _, batch := range saved.Record().Snapshot().Batches {
-		saved, err = r.attempt(work, saved, batch.Message.BatchID)
+		if batch.State == delivery.ReviewRequired {
+			if err = r.issue(ProcessingIssue{NoticeID: work.id, RevisionDigest: batch.Message.Revision.Digest, BatchID: batch.Message.BatchID, Code: string(batch.Reason)}); err != nil {
+				return err
+			}
+			continue
+		}
+		selected := work
+		if a, associated := processingApproval(saved, batch.Message.BatchID); associated {
+			var permitted bool
+			selected, permitted = approvalWork(work, saved, a, batch)
+			if !permitted {
+				continue
+			}
+		} else if !ordinary {
+			continue
+		}
+		saved, err = r.attempt(selected, saved, batch.Message.BatchID)
 		if err != nil {
 			return err
 		}

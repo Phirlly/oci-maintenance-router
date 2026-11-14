@@ -6,10 +6,14 @@ import (
 )
 
 type processingNoticeWork struct {
-	id, membership string
-	member         CandidateRevision
-	eligible       bool
-	reason         string
+	id, membership    string
+	component         string
+	stable, available bool
+	members           []CandidateRevision
+	current           map[notices.RevisionKey]bool
+	member            CandidateRevision
+	eligible          bool
+	reason            string
 }
 
 func processingWork(initial, final DiscoveryResult) ([]processingNoticeWork, error) {
@@ -19,9 +23,7 @@ func processingWork(initial, final DiscoveryResult) ([]processingNoticeWork, err
 		for _, m := range c.Members {
 			old[m] = true
 		}
-		if len(c.Members) == 1 {
-			stable[c.Fingerprint] = true
-		}
+		stable[c.Fingerprint] = true
 	}
 	current := map[notices.RevisionKey]bool{}
 	currentIDs := map[string]bool{}
@@ -49,7 +51,8 @@ func processingWork(initial, final DiscoveryResult) ([]processingNoticeWork, err
 			if available[m.Revision.NoticeID] || !currentIDs[m.Revision.NoticeID] {
 				reason = "source_unavailable"
 			}
-			works[m.Revision.NoticeID] = processingNoticeWork{id: m.Revision.NoticeID, member: m, eligible: eligible, reason: reason}
+			works[m.Revision.NoticeID] = processingNoticeWork{id: m.Revision.NoticeID, member: m, eligible: eligible, reason: reason,
+				component: c.Fingerprint, stable: stable[c.Fingerprint], available: currentIDs[m.Revision.NoticeID] && !available[m.Revision.NoticeID], current: current}
 		}
 	}
 	if len(old) != 0 {
@@ -65,6 +68,7 @@ func processingWork(initial, final DiscoveryResult) ([]processingNoticeWork, err
 		work := works[id]
 		slices.SortFunc(byID[id], compareCandidateRevisions)
 		work.membership = componentFingerprint(final.environmentID, slices.Compact(byID[id]))
+		work.members = slices.Clone(byID[id])
 		result = append(result, work)
 	}
 	return result, nil

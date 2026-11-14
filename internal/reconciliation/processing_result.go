@@ -14,11 +14,18 @@ type ProcessingAttempt struct {
 	MayHaveSent, Confirmed bool
 }
 
+// ProcessingRecovery reports only a confirmed retained action, not dispatch authority.
+type ProcessingRecovery struct {
+	NoticeID, RequestID, Status, Reason, InvalidationReason string
+	Ambiguous                                               bool
+}
+
 type ProcessingSnapshot struct {
 	Completed                                bool
 	Prepared, Accepted, Deferred, Suppressed int
 	Issues                                   []ProcessingIssue
 	Attempts                                 []ProcessingAttempt
+	Recovery                                 *ProcessingRecovery
 }
 
 type ProcessingResult struct{ snapshot ProcessingSnapshot }
@@ -26,5 +33,9 @@ type ProcessingResult struct{ snapshot ProcessingSnapshot }
 func (r ProcessingResult) Snapshot() ProcessingSnapshot {
 	s := r.snapshot
 	s.Issues, s.Attempts = slices.Clone(s.Issues), slices.Clone(s.Attempts)
+	if s.Recovery != nil {
+		v := *s.Recovery
+		s.Recovery = &v
+	}
 	return s
 }
