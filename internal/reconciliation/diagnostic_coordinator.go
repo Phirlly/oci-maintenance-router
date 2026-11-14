@@ -1,10 +1,7 @@
 package reconciliation
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"oci-maintenance-router/internal/configuration"
 	"oci-maintenance-router/internal/ocisecrets"
 	"oci-maintenance-router/internal/pagerduty"
@@ -42,33 +39,19 @@ func (r DiagnosticResult) Dispatched() bool         { return r.dispatched }
 func (r DiagnosticResult) ObservedStatus() int      { return r.status }
 
 func NewDiagnosticCoordinator(configBytes, catalogBytes []byte, location configuration.LedgerLocation, releaseSHA256 string, objects DiagnosticObjects, vault *ocisecrets.Client) (*DiagnosticCoordinator, error) {
-	if vault == nil || !leaseDigest.MatchString(releaseSHA256) {
+	if vault == nil {
 		return nil, &DiagnosticRunError{Code: "invalid_request"}
 	}
-	configBytes, catalogBytes = bytes.Clone(configBytes), bytes.Clone(catalogBytes)
-	catalog, err := configuration.DecodeCatalog(catalogBytes)
+	c, err := readDiagnosticControls(configBytes, catalogBytes, location, releaseSHA256, objects)
 	if err != nil {
-		return nil, &DiagnosticRunError{Code: "invalid_request"}
+		return nil, err
 	}
-	config, err := configuration.Decode(configBytes, catalog)
-	if err != nil || config.SchemaVersion != 3 {
-		return nil, &DiagnosticRunError{Code: "invalid_request"}
-	}
-	if config.Mode != "TEST" {
+	if c.mode != "TEST" {
 		return nil, &DiagnosticRunError{Code: "intent_required"}
 	}
-	environment, err := config.EnvironmentID(location)
-	if err != nil {
-		return nil, &DiagnosticRunError{Code: "invalid_request"}
-	}
-	if _, err := NewDiagnosticStore(objects, environment, config.InstallationID); err != nil {
-		return nil, &DiagnosticRunError{Code: "invalid_request"}
-	}
-	catalogHash := sha256.Sum256(catalogBytes)
-	intent := DiagnosticIntent{environment, config.InstallationID, config.Diagnostic.RequestID, releaseSHA256, hex.EncodeToString(catalogHash[:]), config.PagerDutyRegion, config.Diagnostic.SecretID, config.Diagnostic.NonProduction}
-	sender, _ := pagerduty.New(config.PagerDutyRegion) // Validated by configuration.
-	return &DiagnosticCoordinator{objects: objects, intent: intent,
-		controls: currentControls{objects, sha256.Sum256(configBytes), catalogHash},
+	sender, _ := pagerduty.New(c.intent.PagerDutyRegion) // Validated by configuration.
+	return &DiagnosticCoordinator{objects: objects, intent: c.intent,
+		controls: c.current,
 		current:  func(ctx context.Context, id string) (diagnosticCredential, error) { return vault.GetCurrent(ctx, id) },
 		send:     sender.Send, token: newLeaseToken}, nil
 }

@@ -33,6 +33,10 @@ func TestDiagnosticConfigurationPreservesSavedMaintenanceWork(t *testing.T) {
 		before := r.Snapshot()
 		for _, change := range []func(map[string]any){diagnosticConfig, func(v map[string]any) {
 			diagnosticConfig(v)
+			v["schemaVersion"] = 4
+			v["diagnostic"].(map[string]any)["receiptCode"] = "OMR-0123456789abcdef0123456789abcdef"
+		}, func(v map[string]any) {
+			diagnosticConfig(v)
 			v["diagnostic"] = map[string]any{"requestId": "new-test", "secretId": "ocid1.vaultsecret.oc1.iad.other", "nonProduction": true}
 		}} {
 			next, err := observer(t, change).Observe(r, normalized(t, src), false, lookups(db), clock())

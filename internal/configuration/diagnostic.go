@@ -1,16 +1,27 @@
 package configuration
 
+import "regexp"
+
+var receiptPattern = regexp.MustCompile(`^OMR-[0-9a-f]{32}$`)
+
 func (c *Config) readDiagnostic(r objectReader) {
 	value, exists := r.values["diagnostic"]
 	if !exists {
 		return
 	}
-	d := readObject(value, "diagnostic", r.err, []string{"requestId", "secretId", "nonProduction"}, nil)
+	var optional []string
+	if c.SchemaVersion == 4 {
+		optional = []string{"receiptCode"}
+	}
+	d := readObject(value, "diagnostic", r.err, []string{"requestId", "secretId", "nonProduction"}, optional)
 	nonProduction, ok := d.values["nonProduction"].(bool)
 	if !ok {
 		d.fail("diagnostic.nonProduction", "type")
 	}
-	c.Diagnostic = &DiagnosticRequest{d.text("requestId"), d.text("secretId"), nonProduction}
+	c.Diagnostic = &DiagnosticRequest{RequestID: d.text("requestId"), SecretID: d.text("secretId"), NonProduction: nonProduction}
+	if _, exists := d.values["receiptCode"]; exists {
+		c.Diagnostic.ReceiptCode = d.text("receiptCode")
+	}
 }
 
 func (c Config) validateDiagnostic(catalog Catalog) error {
@@ -36,6 +47,9 @@ func (c Config) validateDiagnostic(catalog Catalog) error {
 	}
 	if !d.NonProduction {
 		return &Error{"diagnostic.nonProduction", "invalid"}
+	}
+	if d.ReceiptCode != "" && !receiptPattern.MatchString(d.ReceiptCode) {
+		return &Error{"diagnostic.receiptCode", "invalid"}
 	}
 	return nil
 }

@@ -20,7 +20,7 @@ func TestDiagnosticJSONRetainsStrictParsingAndPrivacy(t *testing.T) {
 			t.Fatal("private value leaked")
 		}
 	}
-	for _, version := range []string{"3.0", "3e0", `"3"`, "4"} {
+	for _, version := range []string{"3.0", "3e0", `"3"`, "5"} {
 		body := strings.Replace(wire, `"schemaVersion":3`, `"schemaVersion":`+version, 1)
 		wantError(t, []byte(body), "schemaVersion", "unsupported")
 	}

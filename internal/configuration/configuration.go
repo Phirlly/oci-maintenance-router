@@ -30,10 +30,12 @@ type Config struct {
 	Diagnostic       *DiagnosticRequest
 }
 
-// DiagnosticRequest is desired test intent, never permission to dispatch.
+// DiagnosticRequest is desired test intent and optional receipt attestation,
+// never permission to dispatch or activate. The receipt code is not a secret.
 type DiagnosticRequest struct {
 	RequestID, SecretID string
 	NonProduction       bool
+	ReceiptCode         string
 }
 
 // Preparation contains desired controls only; the coordinator enforces mode,

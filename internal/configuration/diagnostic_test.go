@@ -18,7 +18,7 @@ func TestDiagnosticControlsRequireExplicitCompleteIntent(t *testing.T) {
 		v := diagnosticSettings(t)
 		v["mode"] = mode
 		c := decoded(t, v)
-		if c.SchemaVersion != 3 || c.Mode != mode || c.InstallationID != "installation-1" || !c.Preparation.Initialize || c.Diagnostic == nil || *c.Diagnostic != (DiagnosticRequest{"test-1", "ocid1.vaultsecret.oc1.iad.test", true}) || c.ActiveBaselineID != "" || len(c.Replay) != 0 {
+		if c.SchemaVersion != 3 || c.Mode != mode || c.InstallationID != "installation-1" || !c.Preparation.Initialize || c.Diagnostic == nil || *c.Diagnostic != (DiagnosticRequest{RequestID: "test-1", SecretID: "ocid1.vaultsecret.oc1.iad.test", NonProduction: true}) || c.ActiveBaselineID != "" || len(c.Replay) != 0 {
 			t.Fatal("incorrect TEST controls")
 		}
 		second := decoded(t, v)

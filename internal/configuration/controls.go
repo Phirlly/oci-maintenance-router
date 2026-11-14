@@ -4,7 +4,7 @@ func (c Config) validateControls(catalog Catalog) error {
 	if c.SchemaVersion == 2 {
 		return c.validatePreparation()
 	}
-	if c.SchemaVersion == 3 {
+	if c.SchemaVersion == 3 || c.SchemaVersion == 4 {
 		return c.validateDiagnostic(catalog)
 	}
 	if c.Mode != "PREVIEW" && c.Mode != "LIVE" && c.Mode != "PAUSED" {
