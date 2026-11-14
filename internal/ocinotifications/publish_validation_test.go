@@ -1,10 +1,13 @@
 package ocinotifications
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -76,9 +79,17 @@ func TestMessageEncodedSizeAndTitleCharacterBoundaries(t *testing.T) {
 	prefix := `{"title":"","body":"`
 	suffix := `"}`
 	payload := []byte(prefix + strings.Repeat("a", messageLimit-len(prefix)-len(suffix)) + suffix)
+	var publications atomic.Int32
 	c, _ := tlsClient(t, syntheticKey{key: generatedKey(t)}, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			serveChannel(w, r)
+			return
+		}
+		publications.Add(1)
+		body, err := io.ReadAll(r.Body)
+		if err != nil || r.Method != http.MethodPost || r.ContentLength != int64(messageLimit) || !bytes.Equal(body, payload) {
+			t.Errorf("boundary request: method=%s length=%d received=%d error=%v", r.Method, r.ContentLength, len(body), err)
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		w.Write([]byte(`{"messageId":"` + messageID + `"}`))
@@ -87,7 +98,10 @@ func TestMessageEncodedSizeAndTitleCharacterBoundaries(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r, err := c.Publish(budget(t), ch, payload); err != nil || r.MessageID != messageID {
-		t.Fatal("exact encoded bound rejected")
+	if r, err := c.Publish(budget(t), ch, payload); err != nil || r != (Publication{Status: http.StatusOK, MessageID: messageID, MayHaveSent: true}) {
+		t.Fatalf("exact encoded bound: result=%+v error=%v", r, err)
+	}
+	if publications.Load() != 1 {
+		t.Fatalf("publication count=%d, want one", publications.Load())
 	}
 }
