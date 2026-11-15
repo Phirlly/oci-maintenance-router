@@ -3,6 +3,7 @@ package deployment
 // Settings is deployment-owned bootstrap metadata, never invocation input.
 type Settings struct {
 	TenancyID            string `json:"tenancyId"`
+	MetricsCompartmentID string `json:"metricsCompartmentId,omitempty"`
 	Region               string `json:"region"`
 	Namespace            string `json:"namespace"`
 	Bucket               string `json:"bucket"`

@@ -16,6 +16,7 @@ import (
 func operationalFixture(t *testing.T) (*Handler, Settings, *operationalStore, string) {
 	t.Helper()
 	s, stored := fixture(t)
+	s.MetricsCompartmentID = "ocid1.compartment.oc1..router"
 	var data map[string]any
 	if err := json.Unmarshal(stored.config, &data); err != nil {
 		t.Fatal(err)
@@ -77,6 +78,13 @@ func TestOperationalInvocationCoalescesWithoutClaimingVerification(t *testing.T)
 			}
 			if json.Unmarshal(out.Body.Bytes(), &result) != nil || result.ResponseVersion != 2 || result.Status != "coalesced" || result.ScanCompleted || objects.version != before {
 				t.Fatalf("overlap reported readiness or changed owner: %s; versions=%d/%d", out.Body, before, objects.version)
+			}
+			wantStatus := 400
+			if operation == "reconcile" {
+				wantStatus = 200
+			}
+			if out.Code != wantStatus {
+				t.Fatalf("overlap transport status=%d want=%d", out.Code, wantStatus)
 			}
 			if err := lease.Check(operationalContext(t), time.Second); err != nil {
 				t.Fatal("invocation released another owner", err)

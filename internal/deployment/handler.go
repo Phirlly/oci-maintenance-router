@@ -20,11 +20,12 @@ type Handler struct {
 	getenv  func(string) string
 	connect func(Settings) (Store, error)
 	compose func(Settings, Store, pinnedInputs, string) (operations, error)
+	metrics func(Settings, Store, string) (metricPublisher, error)
 	logger  *log.Logger
 }
 
 func New(getenv func(string) string) *Handler {
-	return &Handler{getenv: getenv, connect: connect, compose: composeOperations, logger: log.New(os.Stderr, "", 0)}
+	return &Handler{getenv: getenv, connect: connect, compose: composeOperations, metrics: composeMetrics, logger: log.New(os.Stderr, "", 0)}
 }
 
 func (h *Handler) Serve(ctx context.Context, in io.Reader, out io.Writer) {
@@ -79,7 +80,19 @@ func (h *Handler) run(ctx context.Context, in io.Reader) (result response) {
 		return rejected("closure_intent_mismatch")
 	}
 	if p.config.SchemaVersion == 7 {
+		var publisher metricPublisher
+		if p.config.Mode == "LIVE" && (request.operation == "reconcile" || request.operation == "deployment-check") {
+			publisher, err = h.metrics(settings, store, p.config.InstallationID)
+			if err != nil || publisher == nil {
+				failed := initialOperationalResult(settings, p, request)
+				failed.Code = "monitoring_configuration"
+				return response{operational: &failed}
+			}
+		}
 		operational := h.runOperational(original, started, settings, store, p, request)
+		if publisher != nil && request.operation == "reconcile" {
+			publishOperationalMetrics(original, publisher, &operational)
+		}
 		return response{operational: &operational}
 	}
 	if request.operation != "deployment-check" {

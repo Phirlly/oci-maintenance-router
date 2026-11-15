@@ -17,6 +17,7 @@ import (
 )
 
 var hashPattern = regexp.MustCompile(`^[0-9a-f]{64}$`)
+var metricsCompartmentPattern = regexp.MustCompile(`^ocid1\.compartment\.oc1\.\.([A-Za-z0-9_-]*\.)?[A-Za-z0-9_-]+$`)
 
 // The managed connection keeps the same verified principal and bucket together.
 // Invocation input has no path to supplying either dependency.
@@ -39,6 +40,9 @@ func parseSettings(raw string) (Settings, error) {
 		if !hashPattern.MatchString(v) {
 			return s, errors.New("invalid bootstrap digest")
 		}
+	}
+	if s.MetricsCompartmentID != "" && (len(s.MetricsCompartmentID) > 1024 || s.MetricsCompartmentID != s.TenancyID && !metricsCompartmentPattern.MatchString(s.MetricsCompartmentID)) {
+		return s, errors.New("invalid metrics compartment")
 	}
 	return s, nil
 }

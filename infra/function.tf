@@ -9,6 +9,7 @@ locals {
   runtime.state == "ACTIVE" && contains(runtime.supported_architectures, local.release.runtime.architecture)]
   bootstrap = jsonencode({
     tenancyId            = var.tenancy_ocid
+    metricsCompartmentId = var.compartment_ocid
     region               = var.region
     namespace            = oci_objectstorage_bucket.state.namespace
     bucket               = oci_objectstorage_bucket.state.name

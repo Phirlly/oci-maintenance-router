@@ -12,12 +12,20 @@ type operationalObjects interface {
 	reconciliation.PreparationObjects
 }
 
-func (h *Handler) runOperational(original context.Context, started time.Time, s Settings, store Store, p pinnedInputs, request command) (result OperationalResult) {
-	result = OperationalResult{ResponseVersion: 2, Status: "not-ready", Operation: request.operation,
+func initialOperationalResult(s Settings, p pinnedInputs, request command) OperationalResult {
+	return OperationalResult{ResponseVersion: 2, Status: "not-ready", Operation: request.operation,
 		Mode: p.config.Mode, CheckAttemptID: request.attemptID, ConfigurationSHA256: s.ConfigurationSHA256,
 		ReleaseSHA256: s.ReleaseSHA256, RoutingGeneration: p.generation}
+}
+
+func (h *Handler) runOperational(original context.Context, started time.Time, s Settings, store Store, p pinnedInputs, request command) (result OperationalResult) {
+	result = initialOperationalResult(s, p, request)
 	originalDeadline, _ := original.Deadline()
-	deadline := originalDeadline.Add(-10 * time.Second)
+	cleanupLimit := originalDeadline
+	if p.config.Mode == "LIVE" && request.operation == "reconcile" {
+		cleanupLimit = cleanupLimit.Add(-10 * time.Second)
+	}
+	deadline := cleanupLimit.Add(-10 * time.Second)
 	if cap := started.Add(240 * time.Second); cap.Before(deadline) {
 		deadline = cap
 	}
@@ -48,8 +56,8 @@ func (h *Handler) runOperational(original context.Context, started time.Time, s 
 	}
 	defer func() {
 		cleanupDeadline := time.Now().Add(10 * time.Second)
-		if originalDeadline.Before(cleanupDeadline) {
-			cleanupDeadline = originalDeadline
+		if cleanupLimit.Before(cleanupDeadline) {
+			cleanupDeadline = cleanupLimit
 		}
 		cleanup, done := context.WithDeadline(context.WithoutCancel(original), cleanupDeadline)
 		defer done()

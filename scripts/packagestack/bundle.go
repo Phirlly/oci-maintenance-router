@@ -24,7 +24,7 @@ var stackFiles = []string{
 	"operator.tf", "variables_operator.tf", "identity_operator.tf",
 	"closure.tf", "variables_closure.tf", "modules/configuration/closure.tf",
 	"activation.tf", "identity_live.tf",
-	"logging.tf",
+	"logging.tf", "monitoring.tf",
 }
 
 func digest(data []byte) string { sum := sha256.Sum256(data); return hex.EncodeToString(sum[:]) }

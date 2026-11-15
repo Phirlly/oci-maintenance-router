@@ -33,7 +33,7 @@ resource "oci_functions_invoke_function" "closure" {
         jsondecode(self.content).scanCompleted == false &&
         try(jsondecode(self.content).code, "") == "" &&
         try(jsondecode(self.content).cleanupCode, "") == "" &&
-        alltrue([for name in ["diagnostic", "operator", "reporting", "review", "savedNotices", "closureReview"] : try(jsondecode(self.content)[name], null) == null]) &&
+        alltrue([for name in ["diagnostic", "operator", "reporting", "telemetry", "review", "savedNotices", "closureReview"] : try(jsondecode(self.content)[name], null) == null]) &&
         alltrue([for name in ["prepared", "accepted", "deferred", "suppressed", "issues", "attempts"] : jsondecode(self.content).processing[name] == 0]) &&
         jsondecode(self.content).recovery.requestId == module.configuration.closure_request_id &&
         jsondecode(self.content).recovery.status == "CLOSED" &&
@@ -65,7 +65,7 @@ locals {
     local.closure_result.scanCompleted == false &&
     try(local.closure_result.code, "") == "" &&
     try(local.closure_result.cleanupCode, "") == "" &&
-    alltrue([for name in ["diagnostic", "operator", "reporting", "review", "savedNotices", "closureReview"] : try(local.closure_result[name], null) == null]) &&
+    alltrue([for name in ["diagnostic", "operator", "reporting", "telemetry", "review", "savedNotices", "closureReview"] : try(local.closure_result[name], null) == null]) &&
     alltrue([for name in ["prepared", "accepted", "deferred", "suppressed", "issues", "attempts"] : local.closure_result.processing[name] == 0]) &&
     local.closure_result.recovery.requestId == module.configuration.closure_request_id &&
     local.closure_result.recovery.status == "CLOSED" &&

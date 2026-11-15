@@ -35,6 +35,7 @@ func TestLivePolicyGrantsOnlySelectedResourcesAndState(t *testing.T) {
 		"Allow dynamic-group id group to read secret-bundles in tenancy where all {request.permission = 'SECRET_BUNDLE_READ', any {target.secret.id = 'ocid1.vaultsecret.oc1.iad.a', target.secret.id = 'ocid1.vaultsecret.oc1.iad.b'}}",
 		object + "target.object.name = 'control/operator-reporting.json', any {request.permission = 'OBJECT_READ', request.permission = 'OBJECT_CREATE', request.permission = 'OBJECT_OVERWRITE'}}",
 		"Allow dynamic-group id group to use ons-topics in compartment id router-compartment where all {target.compartment.id = 'router-compartment', request.region = 'iad', request.operation = 'PublishMessage', request.permission = 'ONS_TOPIC_PUBLISH'}",
+		"Allow dynamic-group id group to use metrics in compartment id router-compartment where all {target.metrics.namespace = 'maintenance_router', request.region = 'iad', request.operation = 'PostMetricData', request.permission = 'METRIC_WRITE'}",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("LIVE grants differ from exact selected scope: %q", got)

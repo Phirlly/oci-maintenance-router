@@ -21,6 +21,7 @@ type OperationalResult struct {
 	Operator            *TestOutcome       `json:"operator,omitempty"`
 	Processing          *ProcessingOutcome `json:"processing,omitempty"`
 	Reporting           *ReportingOutcome  `json:"reporting,omitempty"`
+	Telemetry           *TelemetryOutcome  `json:"telemetry,omitempty"`
 	Recovery            *RecoveryOutcome   `json:"recovery,omitempty"`
 	Review              *SavedReviewPage   `json:"review,omitempty"`
 	SavedNotices        *SavedNoticePage   `json:"savedNotices,omitempty"`
@@ -56,6 +57,11 @@ type ReportingOutcome struct {
 	Code       string `json:"code,omitempty"`
 }
 
+type TelemetryOutcome struct {
+	Accepted bool   `json:"accepted"`
+	Code     string `json:"code,omitempty"`
+}
+
 type RecoveryOutcome struct {
 	RequestID          string `json:"requestId"`
 	Status             string `json:"status"`
@@ -76,6 +82,10 @@ func (r response) output() (any, bool) {
 		return r.legacy, r.legacy.Status == "deployment-verified"
 	}
 	switch r.operational.Status {
+	case "coalesced":
+		// A duplicate wake-up is handled by the current owner, not failed work.
+		// Apply and explicit operator actions still require their own result.
+		return r.operational, r.operational.Operation == "reconcile"
 	case "operational-verified", "reconciled", "prepared", "idle", "recovery-recorded", "reviewed", "listed", "closure-completed":
 		return r.operational, true
 	default:

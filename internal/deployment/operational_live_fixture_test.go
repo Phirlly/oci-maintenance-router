@@ -1,8 +1,10 @@
 package deployment
 
 import (
+	"context"
 	"testing"
 
+	"oci-maintenance-router/internal/ocimonitoring"
 	"oci-maintenance-router/internal/reconciliation"
 )
 
@@ -38,5 +40,10 @@ func liveOperationFixture(t *testing.T) (*Handler, Settings, *operationalStore, 
 		v["operatorTest"].(map[string]any)["receiptCode"] = operatorCode
 	})
 	h.compose = composeOperations
+	// Existing LIVE tests isolate processing. Metric integration has dedicated
+	// tests that override this seam; this fake makes no managed-ingestion claim.
+	h.metrics = func(Settings, Store, string) (metricPublisher, error) {
+		return observedMetrics{func(context.Context, ocimonitoring.Observation) error { return nil }}, nil
+	}
 	return h, s, objects, baseline
 }

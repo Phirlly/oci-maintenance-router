@@ -14,6 +14,7 @@ type invocationLog struct {
 	ScanCompleted bool               `json:"scanCompleted"`
 	Processing    *ProcessingOutcome `json:"processing,omitempty"`
 	Reporting     *ReportingOutcome  `json:"reporting,omitempty"`
+	Telemetry     *TelemetryOutcome  `json:"telemetry,omitempty"`
 }
 
 func (h *Handler) logResult(result response) {
@@ -24,6 +25,7 @@ func (h *Handler) logResult(result response) {
 	if r := result.operational; r != nil {
 		line.Operation, line.Mode, line.Status, line.Code = r.Operation, r.Mode, r.Status, r.Code
 		line.CleanupCode, line.ScanCompleted, line.Processing, line.Reporting = r.CleanupCode, r.ScanCompleted, r.Processing, r.Reporting
+		line.Telemetry = r.Telemetry
 	}
 	body, _ := json.Marshal(line)
 	h.logger.Print(string(body))
