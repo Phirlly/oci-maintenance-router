@@ -11,6 +11,8 @@ variableGroups:
     variables: ["${test_secret_compartment_ocid}", "${test_secret_ocid}", "${test_nonproduction}", "${test_run}", "${test_receipt_code}"]
   - title: Operator email
     variables: ["${operator_email}", "${operator_test_run}", "${operator_receipt_code}"]
+  - title: Saved-work closure
+    variables: ["${closure_review_code}", "${closure_request_number}", "${closure_confirm}"]
   - title: MySQL scope
     variables: ["${mysql_regions}", "${mysql_compartments}"]
   - title: Ownership tag
@@ -42,7 +44,7 @@ variables:
     enum: [PREVIEW, PAUSED, TEST]
     default: PREVIEW
     title: Mode
-    description: PREVIEW prepares history without alerts. PAUSED stops new work. Saved test settings are used only in TEST, which sends or confirms a nonproduction test.
+    description: PREVIEW prepares history without alerts. PAUSED stops automatic work but permits confirmed closure below. Saved test settings are used only in TEST, which sends or confirms a nonproduction test.
     required: true
   test_secret_compartment_ocid:
     type: oci:identity:compartment:id
@@ -95,6 +97,27 @@ variables:
     title: Operator email confirmation code (optional)
     description: In TEST, paste the code from the received operator test email, together with the PagerDuty code. Keep test numbers unchanged. Clear this code if removing operator email.
     default: ""
+    required: false
+    visible: true
+  closure_review_code:
+    type: string
+    title: Closure review code
+    description: Paste the code from the final page of your selected saved-target review. Leave empty when no closure is needed.
+    default: ""
+    maxLength: 6000
+    required: false
+    visible: true
+  closure_request_number:
+    type: integer
+    title: Closure request number
+    description: Enter 1 for your first closure. Keep number and code unchanged to retry. Use a new number for new intent; history is kept per notice.
+    required: false
+    visible: true
+  closure_confirm:
+    type: boolean
+    title: Close this saved work without sending
+    description: Requires PAUSED. Closure preserves history and cannot be undone. Clear this checkbox and Apply to remove the request; PAUSED alone does not cancel it.
+    default: false
     required: false
     visible: true
   mysql_regions:
@@ -224,6 +247,12 @@ variables:
       hidePublicSubnet: true
       hideAdSubnet: true
 outputs:
+  closure_completed:
+    type: boolean
+    title: Requested closure verified by last Apply
+  closure_result:
+    type: string
+    visible: false
   test_receipt_confirmed:
     type: boolean
     title: PagerDuty receipt confirmed by last check

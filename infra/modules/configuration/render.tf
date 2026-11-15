@@ -38,7 +38,7 @@ locals {
       subscriptionId = var.operator_subscription_id
       endpoint       = local.s.operator_email
     }, local.s.operator_receipt_code != "" ? { receiptCode = local.s.operator_receipt_code } : {})
-  } : {}))
+  } : {}, local.closure_enabled ? { recovery = local.closure_request } : {}))
   catalog_json = jsonencode(var.catalog)
   # Count UTF-8 octets, not Terraform's Unicode character/grapheme count.
   object_base64 = [base64encode(local.configuration_json), base64encode(local.catalog_json)]

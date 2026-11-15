@@ -24,6 +24,7 @@ type operations struct {
 	process           func(context.Context, *reconciliation.Lease) (reconciliation.ProcessingSnapshot, error)
 	review            func(context.Context, command) (*SavedReviewPage, error)
 	list              func(context.Context, command) (*SavedNoticePage, error)
+	closureReview     func(context.Context, command) (*ClosureReviewPage, error)
 }
 
 func composeOperations(s Settings, store Store, p pinnedInputs, operation string) (operations, error) {
@@ -38,9 +39,12 @@ func composeOperations(s Settings, store Store, p pinnedInputs, operation string
 	if operation == "list-notices" {
 		return composeSavedList(s, objects, p)
 	}
+	if operation == "review-closure" {
+		return composeClosureReview(s, objects, p)
+	}
 	location := configuration.LedgerLocation{Namespace: s.Namespace, Bucket: s.Bucket}
 	mode := p.config.Mode
-	if operation == "reconcile" && mode != "LIVE" && p.config.Recovery != nil {
+	if (operation == "reconcile" && mode != "LIVE" || operation == "close-work" && mode == "PAUSED") && p.config.Recovery != nil {
 		processor, err := reconciliation.NewMaintenanceProcessor(p.configBytes, p.catalogBytes, location, s.ReleaseSHA256, nil, objects, nil, nil, nil)
 		if err != nil {
 			return operations{}, err

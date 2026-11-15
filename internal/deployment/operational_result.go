@@ -23,6 +23,7 @@ type OperationalResult struct {
 	Recovery            *RecoveryOutcome   `json:"recovery,omitempty"`
 	Review              *SavedReviewPage   `json:"review,omitempty"`
 	SavedNotices        *SavedNoticePage   `json:"savedNotices,omitempty"`
+	ClosureReview       *ClosureReviewPage `json:"closureReview,omitempty"`
 }
 
 type TestOutcome struct {
@@ -62,7 +63,7 @@ func (r response) output() (any, bool) {
 		return r.legacy, r.legacy.Status == "deployment-verified"
 	}
 	switch r.operational.Status {
-	case "operational-verified", "reconciled", "prepared", "idle", "recovery-recorded", "reviewed", "listed":
+	case "operational-verified", "reconciled", "prepared", "idle", "recovery-recorded", "reviewed", "listed", "closure-completed":
 		return r.operational, true
 	default:
 		return r.operational, false

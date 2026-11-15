@@ -60,7 +60,7 @@ func (h *Handler) run(ctx context.Context, in io.Reader) (result response) {
 	if err != nil {
 		return rejected("bootstrap_invalid")
 	}
-	if request.operation == "deployment-check" && (request.configurationSHA256 != settings.ConfigurationSHA256 || request.releaseSHA256 != settings.ReleaseSHA256) {
+	if (request.operation == "deployment-check" || request.operation == "close-work") && (request.configurationSHA256 != settings.ConfigurationSHA256 || request.releaseSHA256 != settings.ReleaseSHA256) {
 		return rejected("request_mismatch")
 	}
 	store, err := h.connect(settings)
@@ -70,6 +70,9 @@ func (h *Handler) run(ctx context.Context, in io.Reader) (result response) {
 	p, failure := loadPinned(ctx, settings, store)
 	if failure.Status != "" {
 		return response{legacy: failure}
+	}
+	if request.operation == "close-work" && !matchesClosure(p.config, request) {
+		return rejected("closure_intent_mismatch")
 	}
 	if p.config.SchemaVersion == 7 {
 		operational := h.runOperational(original, started, settings, store, p, request)

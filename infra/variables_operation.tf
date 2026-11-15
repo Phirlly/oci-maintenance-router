@@ -2,7 +2,7 @@ variable "mode" {
   type        = string
   nullable    = false
   default     = "PREVIEW"
-  description = "PREVIEW prepares history; PAUSED performs no work; TEST sends or confirms a nonproduction test."
+  description = "PREVIEW prepares history; PAUSED stops automatic work and permits explicitly confirmed closure; TEST sends or confirms a nonproduction test."
 }
 variable "test_secret_compartment_ocid" {
   type        = string

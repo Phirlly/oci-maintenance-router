@@ -2,6 +2,18 @@ output "configuration_json" {
   description = "Validated PREVIEW, PAUSED or nonproduction TEST configuration; no secret contents."
   value       = local.configuration_json
   precondition {
+    condition     = !local.s.closure_confirm || local.s.mode == "PAUSED"
+    error_message = "Closure requires PAUSED. Clear closure confirmation before selecting another mode."
+  }
+  precondition {
+    condition     = !local.s.closure_confirm || local.closure_valid
+    error_message = "Closure review code must be copied exactly from a completed review-closure result for the selected target."
+  }
+  precondition {
+    condition     = !local.s.closure_confirm || try(local.s.closure_request_number >= 1 && local.s.closure_request_number <= 2147483647 && floor(local.s.closure_request_number) == local.s.closure_request_number, false)
+    error_message = "Closure request number must be an integer from 1 to 2147483647. Keep number and code unchanged when retrying; use a new number for changed intent."
+  }
+  precondition {
     condition = local.s.mode != "TEST" || (
       can(regex("^(OMR-[0-9a-f]{32})?$", local.s.test_receipt_code)) &&
       can(regex("^(OMR-OP-[0-9a-f]{32})?$", local.s.operator_receipt_code))

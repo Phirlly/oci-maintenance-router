@@ -24,5 +24,33 @@ Inspection sends no alerts and performs no recovery or business-record writes.
 It briefly acquires the worker lease; `coalesced` means another worker owns it.
 Retry inspection later. Other unsuccessful results must not be treated as an
 empty review or empty inventory. Listing validates saved identities, not current
-issues; inspect each relevant ID separately. Recovery and automatic operator
-notifications remain under development.
+issues; inspect each relevant ID separately. Automatic operator notifications
+remain under development.
+
+## Close saved work without sending
+
+1. Invoke [review-closure.json](review-closure.json) with the saved notice ID. Read
+   every `closureReview` page using its `nextCursor`. This lists retained revisions,
+   batches and previous recovery outcomes.
+2. Review one target by adding `kind: "CLOSE_REVISION"` and its `targetId`, or
+   `kind: "CLOSE_BATCH"` and the batch ID. Start without a cursor. Read every page;
+   the final `CLOSURE` item contains the code for an eligible target. On
+   `review_changed`, restart. Missing or blocked targets have no usable code.
+3. In the RM stack, select **PAUSED**. Paste the code under **Saved-work closure**,
+   enter a request number, and select **Close this saved work without sending**.
+   Review Plan, then Apply. `closure_completed: true` confirms that exact request.
+
+Closure is permanent. Closing a revision closes its unfinished work, including
+unassigned resources; accepted deliveries and history stay intact. Earlier send
+uncertainty remains visible. A `SENDING` batch blocks closure even after its saved
+expiry. This inspection does not expire attempts or fetch current service data.
+
+If Apply fails or its outcome is uncertain, inspect `closure_result` or run the
+review again. Retry with the **same code and number**. For a rejected request or
+changed intent, review again and use a new number. Number conflicts are enforced
+within each notice; another notice has separate history. To remove configured
+intent, clear the confirmation checkbox and **Apply**; PAUSED alone does not cancel
+it. Clearing inputs or rolling back a package never reopens closed work.
+
+This development interface has offline validation. Native RM persistence and
+managed closure acceptance are still pending.
