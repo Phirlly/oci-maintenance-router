@@ -30,7 +30,7 @@ func TestClosureInvocationRejectsStalePartialAndOtherWork(t *testing.T) {
 	if len(outputMatch) != 2 {
 		t.Fatal("missing closure output predicate")
 	}
-	for _, kind := range []string{"valid", "version", "operation", "mode", "status", "attempt", "configuration", "release", "generation", "prepared", "selected", "scan", "code", "cleanup", "diagnostic", "operator", "review", "savedNotices", "closureReview", "work", "missing-count", "request", "rejected", "ambiguous", "reason", "invalidation", "missing", "malformed", "typed"} {
+	for _, kind := range []string{"valid", "version", "operation", "mode", "status", "attempt", "configuration", "release", "generation", "prepared", "selected", "scan", "code", "cleanup", "diagnostic", "operator", "reporting", "review", "savedNotices", "closureReview", "work", "missing-count", "request", "rejected", "ambiguous", "reason", "invalidation", "missing", "malformed", "typed"} {
 		t.Run(kind, func(t *testing.T) {
 			v := closureResult()
 			r := v["recovery"].(map[string]any)
@@ -62,7 +62,7 @@ func TestClosureInvocationRejectsStalePartialAndOtherWork(t *testing.T) {
 				v["code"] = "failed"
 			case "cleanup":
 				v["cleanupCode"] = "failed"
-			case "diagnostic", "operator", "review", "savedNotices", "closureReview":
+			case "diagnostic", "operator", "reporting", "review", "savedNotices", "closureReview":
 				v[kind] = map[string]any{}
 			case "work":
 				p["attempts"] = 1

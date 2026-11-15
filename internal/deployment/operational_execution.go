@@ -71,7 +71,7 @@ func (ops operations) execute(ctx context.Context, lease *reconciliation.Lease, 
 				return err
 			}
 			result.BaselineSelected = true
-		} else if err := ops.processWork(ctx, lease, true, result); err != nil {
+		} else if err := ops.processLive(ctx, lease, result); err != nil {
 			return err
 		}
 	default:

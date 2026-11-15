@@ -31,6 +31,9 @@ resource "oci_functions_application" "router" {
   display_name   = local.name
   shape          = "GENERIC_X86"
   subnet_ids     = var.create_network ? [oci_core_subnet.router[0].id] : [data.oci_core_subnet.existing[0].id]
+  logging {
+    line_format = "JSON"
+  }
 }
 resource "oci_functions_function" "router" {
   application_id     = oci_functions_application.router.id

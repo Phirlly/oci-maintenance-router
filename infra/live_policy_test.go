@@ -19,6 +19,7 @@ func TestLivePolicyGrantsOnlySelectedResourcesAndState(t *testing.T) {
 		"var.mysql_compartments", `["ocid1.tenancy.oc1..root", "ocid1.compartment.oc1..selected"]`,
 		"var.mysql_regions", `["us-ashburn-1", "us-phoenix-1"]`, "local.catalog.regions", `{"us-ashburn-1"="iad", "us-phoenix-1"="phx"}`,
 		"var.destinations", `{"team-a"="ocid1.vaultsecret.oc1.iad.a", "team-b"="ocid1.vaultsecret.oc1.iad.b", "shared"="ocid1.vaultsecret.oc1.iad.a"}`, "\n", " ",
+		"var.region", `"us-ashburn-1"`,
 	).Replace(policyStatements(t, source))
 	output, err := terraform(t, t.TempDir(), "jsonencode("+expression+")\n", "console", "-no-color")
 	var encoded string
@@ -32,6 +33,8 @@ func TestLivePolicyGrantsOnlySelectedResourcesAndState(t *testing.T) {
 		object + "target.object.name = 'review/preparation/*', any {request.permission = 'OBJECT_READ', request.permission = 'OBJECT_CREATE', request.permission = 'OBJECT_OVERWRITE'}}",
 		"Allow dynamic-group id group to read mysql-instances in tenancy where all {request.operation = 'GetDbSystem', request.permission = 'MYSQL_INSTANCE_READ', any {target.compartment.id = 'ocid1.tenancy.oc1..root', target.compartment.id = 'ocid1.compartment.oc1..selected'}, any {request.region = 'iad', request.region = 'phx'}}",
 		"Allow dynamic-group id group to read secret-bundles in tenancy where all {request.permission = 'SECRET_BUNDLE_READ', any {target.secret.id = 'ocid1.vaultsecret.oc1.iad.a', target.secret.id = 'ocid1.vaultsecret.oc1.iad.b'}}",
+		object + "target.object.name = 'control/operator-reporting.json', any {request.permission = 'OBJECT_READ', request.permission = 'OBJECT_CREATE', request.permission = 'OBJECT_OVERWRITE'}}",
+		"Allow dynamic-group id group to use ons-topics in compartment id router-compartment where all {target.compartment.id = 'router-compartment', request.region = 'iad', request.operation = 'PublishMessage', request.permission = 'ONS_TOPIC_PUBLISH'}",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("LIVE grants differ from exact selected scope: %q", got)

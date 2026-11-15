@@ -41,7 +41,7 @@ func TestLiveInvocationAndOutputRequireExactNonSendingSelection(t *testing.T) {
 	if !regexp.MustCompile(`value\s*=\s*local.live_check_verified`).MatchString(checksumBlock(readChecksumSource(t, "outputs.tf"), `output "sending_enabled"`)) {
 		t.Fatal("sending output must use complete verified result")
 	}
-	for _, kind := range []string{"valid", "missing", "unselected", "string-selection", "null-selection", "prepared", "scan", "version", "status", "operation", "mode", "attempt", "configuration", "release", "generation", "error", "cleanup", "diagnostic", "operator", "processing", "recovery", "paused"} {
+	for _, kind := range []string{"valid", "missing", "unselected", "string-selection", "null-selection", "prepared", "scan", "version", "status", "operation", "mode", "attempt", "configuration", "release", "generation", "error", "cleanup", "diagnostic", "operator", "processing", "reporting", "recovery", "paused"} {
 		t.Run(kind, func(t *testing.T) {
 			r, mode := liveResult(), "LIVE"
 			switch kind {
@@ -77,7 +77,7 @@ func TestLiveInvocationAndOutputRequireExactNonSendingSelection(t *testing.T) {
 				r["code"] = "failed"
 			case "cleanup":
 				r["cleanupCode"] = "release_failed"
-			case "diagnostic", "operator", "processing", "recovery":
+			case "diagnostic", "operator", "processing", "reporting", "recovery":
 				r[kind] = map[string]any{}
 			case "paused":
 				mode = "PAUSED"

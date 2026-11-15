@@ -22,6 +22,8 @@ type operations struct {
 	operatorReceipt   func(context.Context, *reconciliation.Lease) (reconciliation.OperatorReceipt, error)
 	selectLive        func(context.Context, *reconciliation.Lease) (reconciliation.Baseline, error)
 	process           func(context.Context, *reconciliation.Lease) (reconciliation.ProcessingSnapshot, error)
+	reportRetry       func(context.Context, *reconciliation.Lease) (reconciliation.ReportingResult, error)
+	reportRefresh     func(context.Context, *reconciliation.Lease, reconciliation.ProcessingSnapshot) (reconciliation.ReportingResult, error)
 	review            func(context.Context, command) (*SavedReviewPage, error)
 	list              func(context.Context, command) (*SavedNoticePage, error)
 	closureReview     func(context.Context, command) (*ClosureReviewPage, error)
@@ -126,6 +128,11 @@ func composeOperations(s Settings, store Store, p pinnedInputs, operation string
 		return operations{}, err
 	}
 	result.process = processingOperation(processor)
+	reporter, err := reconciliation.NewIssueReporter(p.configBytes, p.catalogBytes, location, objects, channel)
+	if err != nil {
+		return operations{}, err
+	}
+	result.reportRetry, result.reportRefresh = reporter.Retry, reporter.Refresh
 	return result, nil
 }
 

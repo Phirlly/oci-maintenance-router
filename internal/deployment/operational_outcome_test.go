@@ -20,6 +20,7 @@ func TestOperationalErrorsExposeOnlyControlledCodes(t *testing.T) {
 		{"operator", &reconciliation.OperatorRunError{Code: "channel_read"}, "channel_read"},
 		{"selection", &reconciliation.LiveSelectionError{Code: "readiness_required"}, "readiness_required"},
 		{"processing", &reconciliation.ProcessingError{Code: "write_failed"}, "write_failed"},
+		{"reporting", &reconciliation.ReportingError{Code: "publication_unconfirmed"}, "publication_unconfirmed"},
 		{"foreign", errors.New("private provider detail"), "operation_failed"},
 		{"invalid-code", &reconciliation.ProcessingError{Code: "https://private.example/credential"}, "operation_failed"},
 	} {
@@ -71,7 +72,8 @@ func TestTestFailurePreservesConfirmedDiagnosticAndStopsDependentWork(t *testing
 func TestCompletedProcessingWithFailedCleanupIsNotSuccessfulScan(t *testing.T) {
 	h, _, objects, _ := liveOperationFixture(t)
 	h.compose = func(Settings, Store, pinnedInputs, string) (operations, error) {
-		return operations{process: func(context.Context, *reconciliation.Lease) (reconciliation.ProcessingSnapshot, error) {
+		ops := successfulReporting()
+		ops.process = func(context.Context, *reconciliation.Lease) (reconciliation.ProcessingSnapshot, error) {
 			objects.before = func(_ context.Context, method, _ string) error {
 				if method == "REPLACE" {
 					return errors.New("private cleanup detail")
@@ -79,7 +81,8 @@ func TestCompletedProcessingWithFailedCleanupIsNotSuccessfulScan(t *testing.T) {
 				return nil
 			}
 			return reconciliation.ProcessingSnapshot{Completed: true, Accepted: 2}, nil
-		}}, nil
+		}
+		return ops, nil
 	}
 	got := invokeOperational(t, h, `{"operation":"reconcile"}`)
 	if got.Status != "not-ready" || got.ScanCompleted || got.CleanupCode != "release_failed" || got.Processing == nil || got.Processing.Accepted != 2 {

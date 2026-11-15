@@ -42,7 +42,8 @@ func TestLiveReconcileReportsCompletionAndPreservesPartialFailure(t *testing.T) 
 				if operation != "reconcile" {
 					t.Fatal("unexpected command")
 				}
-				return operations{process: func(ctx context.Context, lease *reconciliation.Lease) (reconciliation.ProcessingSnapshot, error) {
+				ops := successfulReporting()
+				ops.process = func(ctx context.Context, lease *reconciliation.Lease) (reconciliation.ProcessingSnapshot, error) {
 					called++
 					if err := lease.Check(ctx, time.Second); err != nil {
 						t.Fatal("processing lacks ownership", err)
@@ -59,7 +60,8 @@ func TestLiveReconcileReportsCompletionAndPreservesPartialFailure(t *testing.T) 
 						return result, errors.New("private-provider-error")
 					}
 					return result, nil
-				}}, nil
+				}
+				return ops, nil
 			}
 			got := invokeOperational(t, h, `{"operation":"reconcile"}`)
 			if (got.Status == "reconciled") != (kind == "complete") || got.ScanCompleted != (kind == "complete") || called != 1 || got.Processing == nil || *got.Processing != (ProcessingOutcome{Prepared: 2, Accepted: 1, Deferred: 1, Suppressed: 3, Issues: 1, Attempts: 1}) || got.Recovery == nil || got.Recovery.Status != "REJECTED" {

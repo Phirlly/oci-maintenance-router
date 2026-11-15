@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log"
+	"os"
 	"regexp"
 	"time"
 
@@ -18,14 +20,16 @@ type Handler struct {
 	getenv  func(string) string
 	connect func(Settings) (Store, error)
 	compose func(Settings, Store, pinnedInputs, string) (operations, error)
+	logger  *log.Logger
 }
 
 func New(getenv func(string) string) *Handler {
-	return &Handler{getenv: getenv, connect: connect, compose: composeOperations}
+	return &Handler{getenv: getenv, connect: connect, compose: composeOperations, logger: log.New(os.Stderr, "", 0)}
 }
 
 func (h *Handler) Serve(ctx context.Context, in io.Reader, out io.Writer) {
 	result := h.run(ctx, in)
+	h.logResult(result)
 	body, success := result.output()
 	fdk.SetHeader(out, "Content-Type", "application/json")
 	if !success {

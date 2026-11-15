@@ -20,6 +20,7 @@ type OperationalResult struct {
 	Diagnostic          *TestOutcome       `json:"diagnostic,omitempty"`
 	Operator            *TestOutcome       `json:"operator,omitempty"`
 	Processing          *ProcessingOutcome `json:"processing,omitempty"`
+	Reporting           *ReportingOutcome  `json:"reporting,omitempty"`
 	Recovery            *RecoveryOutcome   `json:"recovery,omitempty"`
 	Review              *SavedReviewPage   `json:"review,omitempty"`
 	SavedNotices        *SavedNoticePage   `json:"savedNotices,omitempty"`
@@ -41,6 +42,18 @@ type ProcessingOutcome struct {
 	Suppressed int `json:"suppressed"`
 	Issues     int `json:"issues"`
 	Attempts   int `json:"attempts"`
+}
+
+type ReportingOutcome struct {
+	Known      bool   `json:"known"`
+	Issues     int    `json:"issues"`
+	Reviewed   int    `json:"reviewed"`
+	Remaining  int    `json:"remaining"`
+	Deferred   int    `json:"deferred"`
+	Pending    bool   `json:"pending"`
+	Dispatched bool   `json:"dispatched"`
+	Accepted   bool   `json:"accepted"`
+	Code       string `json:"code,omitempty"`
 }
 
 type RecoveryOutcome struct {

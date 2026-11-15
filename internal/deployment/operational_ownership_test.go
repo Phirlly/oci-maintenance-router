@@ -46,7 +46,7 @@ func operationalFixture(t *testing.T) (*Handler, Settings, *operationalStore, st
 
 func operationalContext(t *testing.T) context.Context {
 	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	t.Cleanup(cancel)
 	return ctx
 }

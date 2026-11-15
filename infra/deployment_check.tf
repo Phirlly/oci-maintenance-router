@@ -13,7 +13,7 @@ resource "oci_functions_invoke_function" "deployment_check" {
     configurationSha256 = sha256(module.configuration.configuration_json)
     releaseSha256       = local.release_sha256
   })
-  depends_on = [oci_identity_policy.router, oci_identity_policy.announcements, oci_identity_policy.diagnostic, oci_identity_policy.operator, oci_identity_policy.live, data.oci_functions_function.archive]
+  depends_on = [oci_identity_policy.router, oci_identity_policy.announcements, oci_identity_policy.diagnostic, oci_identity_policy.operator, oci_identity_policy.live, oci_logging_log.router, data.oci_functions_function.archive]
   lifecycle {
     postcondition {
       condition = try(
@@ -61,6 +61,7 @@ resource "oci_functions_invoke_function" "deployment_check" {
           ))
         ) : try(jsondecode(self.content).operator, null) == null) &&
         try(jsondecode(self.content).processing, null) == null &&
+        try(jsondecode(self.content).reporting, null) == null &&
         try(jsondecode(self.content).recovery, null) == null,
         false
       )
