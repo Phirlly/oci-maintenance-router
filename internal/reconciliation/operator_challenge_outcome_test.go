@@ -15,6 +15,7 @@ func TestOperatorChallengePublicationOutcomesAreTerminal(t *testing.T) {
 		ambiguous bool
 	}{
 		{200, "550e8400-e29b-41d4-a716-446655440000", OperatorAccepted, "", false},
+		{202, "message-accepted", OperatorAccepted, "", false},
 		{200, "", OperatorReview, "response_unverified", true}, {0, "", OperatorReview, "outcome_unknown", true},
 		{100, "", OperatorReview, "response", true}, {202, "", OperatorReview, "response", true}, {299, "", OperatorReview, "response", true},
 		{300, "", OperatorReview, "response", false}, {400, "", OperatorReview, "response", false}, {429, "", OperatorReview, "response", false},

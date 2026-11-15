@@ -18,7 +18,7 @@ func validOperatorChallengeData(d *operatorChallengeData) bool {
 	case OperatorPublishing:
 		return d.HTTPStatus == 0 && d.MessageID == "" && d.Reason == "" && !d.Ambiguous && d.AcceptedAt == nil && updated.Equal(start)
 	case OperatorAccepted:
-		return d.HTTPStatus == 200 && operatorOpaqueText(d.MessageID, 256) && d.Reason == "" && !d.Ambiguous && d.AcceptedAt != nil && *d.AcceptedAt == d.UpdatedAt && updated.Before(expiry)
+		return (d.HTTPStatus == 200 || d.HTTPStatus == 202) && operatorOpaqueText(d.MessageID, 256) && d.Reason == "" && !d.Ambiguous && d.AcceptedAt != nil && *d.AcceptedAt == d.UpdatedAt && updated.Before(expiry)
 	case OperatorReview:
 		if d.AcceptedAt != nil || d.MessageID != "" {
 			return false

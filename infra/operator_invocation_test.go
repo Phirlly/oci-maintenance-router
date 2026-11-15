@@ -20,7 +20,7 @@ func TestOperatorInvocationRequiresMatchingAcceptedOutcome(t *testing.T) {
 		t.Fatal("missing actual postcondition")
 	}
 	for _, configured := range []bool{false, true} {
-		for _, kind := range []string{"accepted", "reused", "missing", "pending", "error", "status", "string status", "string dispatch", "reused status", "null dispatch"} {
+		for _, kind := range []string{"accepted", "accepted202", "review202", "reused", "missing", "pending", "error", "status", "string status", "string dispatch", "reused status", "null dispatch"} {
 			t.Run(strconv.FormatBool(configured)+"/"+kind, func(t *testing.T) {
 				operator := map[string]any{"state": "API_ACCEPTED", "dispatched": true, "observedStatus": 200}
 				result := map[string]any{"responseVersion": 2, "status": "operational-verified", "operation": "deployment-check", "mode": "TEST",
@@ -28,6 +28,12 @@ func TestOperatorInvocationRequiresMatchingAcceptedOutcome(t *testing.T) {
 					"baselinePrepared": false, "baselineSelected": false, "scanCompleted": false,
 					"diagnostic": map[string]any{"state": "API_ACCEPTED", "dispatched": false}, "operator": operator}
 				switch kind {
+				case "accepted202":
+					operator["observedStatus"] = 202
+				case "review202":
+					operator["state"] = "REVIEW_REQUIRED"
+					operator["observedStatus"] = 202
+					operator["code"] = "response"
 				case "reused":
 					operator["dispatched"] = false
 					delete(operator, "observedStatus")
@@ -38,7 +44,7 @@ func TestOperatorInvocationRequiresMatchingAcceptedOutcome(t *testing.T) {
 				case "error":
 					operator["code"] = "channel_read"
 				case "status":
-					operator["observedStatus"] = 202
+					operator["observedStatus"] = 201
 				case "string status":
 					operator["observedStatus"] = "200"
 				case "string dispatch":
@@ -54,7 +60,7 @@ func TestOperatorInvocationRequiresMatchingAcceptedOutcome(t *testing.T) {
 				expression := strings.NewReplacer("self.content", string(quoted), "var.mode", `"TEST"`, "local.operator_test_enabled", strconv.FormatBool(configured),
 					"local.check_attempt_id", `"attempt"`, "sha256(module.configuration.configuration_json)", `"`+strings.Repeat("a", 64)+`"`, "local.release_sha256", `"`+strings.Repeat("b", 64)+`"`, "\n", " ").Replace(string(match[1]))
 				output, err := terraform(t, t.TempDir(), expression+"\n", "console", "-no-color")
-				want := configured && (kind == "accepted" || kind == "reused") || !configured && kind == "missing"
+				want := configured && (kind == "accepted" || kind == "accepted202" || kind == "reused") || !configured && kind == "missing"
 				if err != nil || strings.TrimSpace(string(output)) != strconv.FormatBool(want) {
 					t.Fatalf("acceptance got %s (%v), want %v", output, err, want)
 				}

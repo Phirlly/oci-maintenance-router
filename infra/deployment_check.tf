@@ -41,7 +41,7 @@ resource "oci_functions_invoke_function" "deployment_check" {
         (local.operator_test_enabled ? (
           jsondecode(self.content).operator.state == "API_ACCEPTED" &&
           try(jsondecode(self.content).operator.code, "") == "" &&
-          ((jsondecode(self.content).operator.dispatched == true && try(jsondecode(self.content).operator.observedStatus, 0) == 200) ||
+          ((jsondecode(self.content).operator.dispatched == true && (try(jsondecode(self.content).operator.observedStatus, 0) == 200 || try(jsondecode(self.content).operator.observedStatus, 0) == 202)) ||
           (jsondecode(self.content).operator.dispatched == false && try(jsondecode(self.content).operator.observedStatus, null) == null))
         ) : try(jsondecode(self.content).operator, null) == null) &&
         try(jsondecode(self.content).processing, null) == null &&

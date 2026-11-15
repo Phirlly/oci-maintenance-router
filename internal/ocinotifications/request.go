@@ -56,7 +56,9 @@ func (c *Client) exchange(ctx context.Context, method, target string, body []byt
 		return nil, 0, failure(ctx, Transport, 0, publish)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
+	// Publication may return202; channel metadata still requires200. Both
+	// admitted publication statuses must pass the same complete body validation.
+	if resp.StatusCode != http.StatusOK && !(publish && resp.StatusCode == http.StatusAccepted) {
 		return nil, resp.StatusCode, failure(ctx, Service, resp.StatusCode, publish)
 	}
 	data, err := readBody(ctx, resp, publish)

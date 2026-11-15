@@ -6,7 +6,7 @@ import (
 )
 
 func TestOperatorChallengeStoreRetainsEveryTerminalOutcomeAcrossRestart(t *testing.T) {
-	for _, outcome := range []string{"accepted", "unverified", "unknown", "rejected", "expired"} {
+	for _, outcome := range []string{"accepted", "accepted202", "review202", "unverified", "unknown", "rejected", "expired"} {
 		t.Run(outcome, func(t *testing.T) {
 			s, objects, backend := operatorStoreFixture(t)
 			old := operatorSaved(t, s)
@@ -16,6 +16,10 @@ func TestOperatorChallengeStoreRetainsEveryTerminalOutcomeAcrossRestart(t *testi
 			switch outcome {
 			case "accepted":
 				next, err = old.Record().Finish(operatorReference(c), 200, operatorMessageID, c.Now)
+			case "accepted202":
+				next, err = old.Record().Finish(operatorReference(c), 202, operatorMessageID, c.Now)
+			case "review202":
+				next, err = old.Record().Finish(operatorReference(c), 202, "", c.Now)
 			case "unverified":
 				next, err = old.Record().Finish(operatorReference(c), 200, "", c.Now)
 			case "unknown":

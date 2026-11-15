@@ -14,6 +14,7 @@ func TestFunctionTestCheckRequiresEverySavedAcceptanceWithoutResending(t *testin
 	}{
 		{"diagnostic accepted", 202, 0, false, true},
 		{"both accepted", 202, 200, true, true},
+		{"operator accepted202", 202, 202, true, true},
 		{"diagnostic review", 400, 200, true, false},
 		{"diagnostic active", 0, 200, true, false},
 		{"operator review", 202, 400, true, false},

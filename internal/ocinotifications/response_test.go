@@ -71,22 +71,28 @@ type brokenReader struct{}
 func (brokenReader) Read([]byte) (int, error) { return 0, errors.New("synthetic-private-response") }
 
 func TestReadAndCloseFailuresDiscardBytes(t *testing.T) {
-	for _, phase := range []string{"read", "close", "canceled close"} {
-		ctx, cancel := context.WithCancel(budget(t))
-		defer cancel()
-		body := responseBody{Reader: bytes.NewBufferString(topicJSON), close: func() error { return errors.New("synthetic-private-close") }}
-		code := InvalidResponse
-		if phase == "read" {
-			body.Reader = brokenReader{}
+	for _, sent := range []bool{false, true} {
+		for _, status := range []int{200, 202} {
+			for _, phase := range []string{"read", "close", "canceled close"} {
+				ctx, cancel := context.WithCancel(budget(t))
+				defer cancel()
+				body := responseBody{Reader: bytes.NewBufferString(topicJSON), close: func() error { return errors.New("synthetic-private-close") }}
+				code := InvalidResponse
+				if phase == "read" {
+					body.Reader = brokenReader{}
+				}
+				if phase == "canceled close" {
+					body.close = func() error { cancel(); return nil }
+					code = Canceled
+				}
+				data, err := readBody(ctx, &http.Response{StatusCode: status, Body: body}, sent)
+				wantError(t, err, code, status, sent)
+				if data != nil {
+					t.Fatal("partial bytes escaped")
+				}
+			}
 		}
-		if phase == "canceled close" {
-			body.close = func() error { cancel(); return nil }
-			code = Canceled
-		}
-		data, err := readBody(ctx, &http.Response{StatusCode: 200, Body: body}, false)
-		wantError(t, err, code, 200, false)
-		if data != nil {
-			t.Fatal("partial bytes escaped")
-		}
+
 	}
+
 }

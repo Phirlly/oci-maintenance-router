@@ -130,3 +130,15 @@ func operatorReconfigure(t *testing.T, f *operatorCoordinatorFixture, change fun
 	f.coordinator = d
 	f.objects.seed("configuration/router.json", cfg)
 }
+
+func operatorStatusFixture(t *testing.T, status int) *operatorCoordinatorFixture {
+	t.Helper()
+	f := operatorCoordinatorFixtureFor(t)
+	publish := f.publish
+	f.publish = func(ctx context.Context, body []byte) (ocinotifications.Publication, error) {
+		result, err := publish(ctx, body)
+		result.Status = status
+		return result, err
+	}
+	return f
+}

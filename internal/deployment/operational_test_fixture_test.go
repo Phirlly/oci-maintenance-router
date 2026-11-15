@@ -91,7 +91,7 @@ func retainOperator(t *testing.T, objects *operationalStore, environment string,
 	}
 	if status != 0 {
 		message := ""
-		if status == 200 {
+		if status == 200 || status == 202 {
 			message = "synthetic-message"
 		}
 		next, err := record.Finish(reconciliation.OperatorClaimRef{OwnerToken: owner, ClaimToken: token}, status, message, now.Add(time.Millisecond))

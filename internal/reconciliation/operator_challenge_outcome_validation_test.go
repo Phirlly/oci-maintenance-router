@@ -22,7 +22,7 @@ func TestOperatorChallengeRejectsInvalidPublicationOutcomes(t *testing.T) {
 			t.Fatal("message identifier leaked")
 		}
 	}
-	for _, status := range []int{0, 202, 400, 503} {
+	for _, status := range []int{0, 201, 400, 503} {
 		got, err := r.Finish(operatorReference(c), status, "message", c.Now)
 		operatorRejected(t, got, err, "invalid_message_id")
 	}

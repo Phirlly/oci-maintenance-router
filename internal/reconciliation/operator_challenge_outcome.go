@@ -23,7 +23,7 @@ func (r OperatorChallenge) Finish(ref OperatorClaimRef, status int, messageID st
 	if status != 0 && (status < 100 || status > 599) {
 		return OperatorChallenge{}, &OperatorChallengeError{Code: "invalid_status"}
 	}
-	if messageID != "" && (status != 200 || !operatorOpaqueText(messageID, 256)) {
+	if messageID != "" && ((status != 200 && status != 202) || !operatorOpaqueText(messageID, 256)) {
 		return OperatorChallenge{}, &OperatorChallengeError{Code: "invalid_message_id"}
 	}
 	d.UpdatedAt = now.Format(leaseTimeFormat)
@@ -34,11 +34,12 @@ func (r OperatorChallenge) Finish(ref OperatorClaimRef, status int, messageID st
 		d.Reason = "outcome_unknown"
 	case 200:
 		d.Reason = "response_unverified"
-		if messageID != "" {
-			d.State, d.Reason, d.Ambiguous = OperatorAccepted, "", false
-			accepted := d.UpdatedAt
-			d.AcceptedAt = &accepted
-		}
+	}
+	// Keep202 without a verified ID in its original terminal response shape.
+	if messageID != "" {
+		d.State, d.Reason, d.Ambiguous = OperatorAccepted, "", false
+		accepted := d.UpdatedAt
+		d.AcceptedAt = &accepted
 	}
 	return OperatorChallenge{data: &d, parent: r.data}, nil
 }

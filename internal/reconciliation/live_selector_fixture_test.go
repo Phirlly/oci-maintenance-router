@@ -39,6 +39,11 @@ func liveSelectionFailure(t *testing.T, b Baseline, err error, code string) *Liv
 
 func liveSelectorFixtureFor(t *testing.T, initial ...notices.Notice) *liveSelectorFixture {
 	t.Helper()
+	return liveSelectorStatusFixture(t, 200, initial...)
+}
+
+func liveSelectorStatusFixture(t *testing.T, status int, initial ...notices.Notice) *liveSelectorFixture {
+	t.Helper()
 	p, objects, lease := preparationFixture(t, initial)
 	if err := p.Initialize(leaseBudget(t), lease); err != nil {
 		t.Fatal(err)
@@ -69,7 +74,7 @@ func liveSelectorFixtureFor(t *testing.T, initial ...notices.Notice) *liveSelect
 	o.read = func(context.Context) (operatorObservation, error) {
 		return operatorObservation{o.desired, func(context.Context, []byte) (ocinotifications.Publication, error) {
 			f.operatorSends.Add(1)
-			return ocinotifications.Publication{Status: 200, MessageID: "synthetic-message", MayHaveSent: true}, nil
+			return ocinotifications.Publication{Status: status, MessageID: "synthetic-message", MayHaveSent: true}, nil
 		}}, nil
 	}
 	or, err := o.Run(leaseBudget(t), lease)

@@ -26,8 +26,8 @@ func (r *operatorRun) dispatch(saved StoredOperatorChallenge) (OperatorResult, e
 		r.result.status = response.Status
 	}
 	// Preserve status even after an incomplete response; a valid message ID is
-	// evidence only when the bounded adapter completed a successful200 response.
-	if response.Status == 200 && failure == nil && operatorOpaqueText(response.MessageID, 256) {
+	// evidence only when the bounded adapter completed a valid200/202 response.
+	if (response.Status == 200 || response.Status == 202) && failure == nil && operatorOpaqueText(response.MessageID, 256) {
 		r.result.messageID = response.MessageID
 	}
 	return r.finish(saved)

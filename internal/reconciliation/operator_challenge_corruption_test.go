@@ -65,7 +65,7 @@ func TestOperatorChallengeCanonicalCodecRevalidatesStateAndClock(t *testing.T) {
 		{r, func(d *operatorChallengeData) { d.State = "RETRY_WAIT" }}, {r, func(d *operatorChallengeData) { d.HTTPStatus = 200 }}, {r, func(d *operatorChallengeData) { d.Reason = "response" }},
 		{r, func(d *operatorChallengeData) { d.Ambiguous = true }}, {r, func(d *operatorChallengeData) { d.MessageID = "message" }},
 		{r, func(d *operatorChallengeData) { v := d.StartedAt; d.AcceptedAt = &v }}, {r, func(d *operatorChallengeData) { d.UpdatedAt = c.Now.Add(time.Millisecond).Format(leaseTimeFormat) }},
-		{accepted, func(d *operatorChallengeData) { d.AcceptedAt = nil }}, {accepted, func(d *operatorChallengeData) { d.HTTPStatus = 202 }},
+		{accepted, func(d *operatorChallengeData) { d.AcceptedAt = nil }}, {accepted, func(d *operatorChallengeData) { d.HTTPStatus = 201 }},
 		{accepted, func(d *operatorChallengeData) { d.MessageID = "" }}, {accepted, func(d *operatorChallengeData) { d.MessageID = "bad\n" }},
 		{accepted, func(d *operatorChallengeData) { d.Ambiguous = true }}, {accepted, func(d *operatorChallengeData) { d.Reason = "expired" }},
 		{accepted, func(d *operatorChallengeData) { v := d.ExpiresAt; d.AcceptedAt = &v }},
