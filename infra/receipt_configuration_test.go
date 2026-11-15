@@ -101,3 +101,37 @@ func TestEmptyReceiptControlsAndInactiveModesPreserveConfiguration(t *testing.T)
 		}
 	}
 }
+
+// This exercises actual Terraform rendering, not native RM persistence.
+func TestRetainedTestSettingsSurviveInactiveRendering(t *testing.T) {
+	s := receiptSettings()
+	installation, subscription := "b1-"+strings.Repeat("a", 64), "ocid1.onssubscription.oc1.iad.operator"
+	original, message, err := renderWithInstallation(t, s, installation, subscription)
+	if err != nil {
+		t.Fatalf("original TEST: %s (%v)", message, err)
+	}
+	for _, mode := range []string{"PAUSED", "PREVIEW", "TEST"} {
+		s["mode"] = mode
+		retained, message, err := renderWithInstallation(t, s, installation, subscription)
+		if err != nil {
+			t.Fatalf("retained %s: %s (%v)", mode, message, err)
+		}
+		if mode == "TEST" {
+			if retained["configuration"] != original["configuration"] || retained["confirmation"] != "true" {
+				t.Fatal("returning to TEST changed intent or request identity")
+			}
+			continue
+		}
+		without := make(map[string]any, len(s))
+		for key, value := range s {
+			without[key] = value
+		}
+		for _, key := range []string{"test_secret_ocid", "test_nonproduction", "test_run", "test_receipt_code", "operator_test_run", "operator_receipt_code"} {
+			delete(without, key)
+		}
+		empty, message, err := renderWithInstallation(t, without, installation, subscription)
+		if err != nil || retained["configuration"] != empty["configuration"] || retained["confirmation"] != "false" {
+			t.Fatalf("retained settings changed inactive behavior: %s (%v)", message, err)
+		}
+	}
+}

@@ -42,52 +42,43 @@ variables:
     enum: [PREVIEW, PAUSED, TEST]
     default: PREVIEW
     title: Mode
-    description: PREVIEW prepares history without alerts. PAUSED stops new work. TEST sends or confirms a nonproduction test; it does not enable maintenance delivery.
+    description: PREVIEW prepares history without alerts. PAUSED stops new work. Saved test settings are used only in TEST, which sends or confirms a nonproduction test.
     required: true
   test_secret_compartment_ocid:
     type: oci:identity:compartment:id
     title: Test secret compartment
-    description: Select the compartment containing your test secret in the stack region.
+    description: For TEST, select the compartment containing your test secret in the stack region.
     default: ${secret_compartment_ocid}
-    required: true
-    visible:
-      eq: ["${mode}", TEST]
+    required: false
+    visible: true
   test_secret_ocid:
     type: oci:kms:secret:id
     title: Nonproduction PagerDuty secret
-    description: Select a Vault secret containing the Events API V2 integration key for your test service. Never paste the key here. Reselect if blank when editing.
-    required: true
-    visible:
-      eq: ["${mode}", TEST]
+    description: Required in TEST. Select a Vault secret containing your nonproduction Events API V2 key. Never paste the key here. Reselect if blank when editing.
+    required: false
+    visible: true
     dependsOn:
       compartmentId: ${test_secret_compartment_ocid}
   test_nonproduction:
     type: boolean
     title: This service may receive a nonproduction test alert
-    description: Confirm this test will not page production responders.
+    description: Required in TEST. Confirm this test will not page production responders.
     default: false
-    required: true
-    visible:
-      eq: ["${mode}", TEST]
+    required: false
+    visible: true
   test_run:
     type: integer
     title: Test run number
-    description: Enter 1 for your first test. Keep unchanged to retry or confirm receipt. For another test, including after a service, PagerDuty region or package change, clear both confirmation codes and increase the number.
-    minimum: 1
-    maximum: 2147483647
-    required: true
-    visible:
-      eq: ["${mode}", TEST]
+    description: Required in TEST. Enter 1 for your first test. Keep unchanged to retry or confirm receipt. For another test, including after a service, PagerDuty region or package change, clear both confirmation codes and increase the number.
+    required: false
+    visible: true
   test_receipt_code:
     type: string
     title: PagerDuty confirmation code (optional)
-    description: Paste confirmation_code from the received PagerDuty test. Keep test numbers unchanged. If operator email is configured, enter its code too; confirmation sends nothing.
+    description: In TEST, paste confirmation_code from the received PagerDuty test. Keep test numbers unchanged. If operator email is configured, enter its code too; confirmation sends nothing.
     default: ""
-    pattern: "^(OMR-[0-9a-f]{32})?$"
-    maxLength: 36
     required: false
-    visible:
-      eq: ["${mode}", TEST]
+    visible: true
   operator_email:
     type: string
     title: Operator email (optional)
@@ -97,31 +88,16 @@ variables:
   operator_test_run:
     type: integer
     title: Operator test run number
-    description: Enter 1 for the first test. Keep unchanged to retry or confirm receipt. For another test or a changed email/subscription, clear both confirmation codes and use a new number.
-    minimum: 1
-    maximum: 2147483647
-    required: true
-    visible:
-      and:
-        - eq: ["${mode}", TEST]
-        - not:
-            - eq: ["${operator_email}", ""]
+    description: Required in TEST with an operator email. Enter 1 for the first test. Keep unchanged to retry or confirm receipt. For another test or a changed email/subscription, clear both confirmation codes and use a new number.
+    required: false
+    visible: true
   operator_receipt_code:
     type: string
     title: Operator email confirmation code (optional)
-    description: Paste the confirmation code from the received operator test email, together with the PagerDuty code. Keep test numbers unchanged. Clear this code if removing operator email.
+    description: In TEST, paste the code from the received operator test email, together with the PagerDuty code. Keep test numbers unchanged. Clear this code if removing operator email.
     default: ""
-    pattern: "^(OMR-OP-[0-9a-f]{32})?$"
-    maxLength: 39
     required: false
-    visible:
-      and:
-        - eq: ["${mode}", TEST]
-        - or:
-            - not:
-                - eq: ["${operator_email}", ""]
-            - not:
-                - eq: ["${operator_receipt_code}", ""]
+    visible: true
   mysql_regions:
     type: list
     valueType: mysql_region

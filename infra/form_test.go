@@ -28,6 +28,7 @@ type stackForm struct {
 	VariableGroups []struct {
 		Title     string
 		Variables []string
+		Visible   any
 	}
 }
 

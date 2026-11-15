@@ -1,7 +1,6 @@
 package infra_test
 
 import (
-	"reflect"
 	"strings"
 	"testing"
 )
@@ -18,11 +17,10 @@ func TestOperatorFormExplainsConfirmationAndExplicitTest(t *testing.T) {
 		}
 	}
 	run := f.Variables["operator_test_run"]
-	visible := map[string]any{"and": []any{map[string]any{"eq": []any{"${mode}", "TEST"}}, map[string]any{"not": []any{map[string]any{"eq": []any{"${operator_email}", ""}}}}}}
-	if run.Type != "integer" || !run.Required || run.Default != nil || run.Minimum != 1 || run.Maximum != 2147483647 || !reflect.DeepEqual(run.Visible, visible) {
-		t.Fatal("operator test requires an explicit bounded run only when TEST and email are selected")
+	if run.Type != "integer" || run.Required || run.Default != nil || run.Minimum != 0 || run.Maximum != 0 || run.Visible != true {
+		t.Fatal("operator run must remain optional and editable without email; Terraform validates TEST bounds")
 	}
-	for _, hint := range []string{"unchanged", "new number", "email"} {
+	for _, hint := range []string{"unchanged", "new number", "email", "TEST"} {
 		if !strings.Contains(run.Description, hint) {
 			t.Errorf("operator test lacks %s guidance", hint)
 		}
