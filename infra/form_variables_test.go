@@ -33,7 +33,7 @@ func TestFormCoversActualTerraformInputs(t *testing.T) {
 			}
 		}
 	}
-	if len(inputs) != 30 {
+	if len(inputs) != 33 {
 		t.Fatalf("review new input contract: %d", len(inputs))
 	}
 	for name, field := range form.Variables {

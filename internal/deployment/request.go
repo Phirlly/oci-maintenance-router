@@ -58,7 +58,7 @@ func parseCommand(body []byte) (command, error) {
 	}
 	c := command{operation: fields["operation"], configurationSHA256: fields["configurationSha256"], releaseSHA256: fields["releaseSha256"], attemptID: fields["checkAttemptId"], noticeID: fields["noticeId"], cursor: fields["cursor"]}
 	c.kind, c.targetID, c.recoveryRequestID = fields["kind"], fields["targetId"], fields["recoveryRequestId"]
-	if c.operation != "review-notice" && c.operation != "review-closure" && len(body) > 1024 {
+	if c.operation != "review-notice" && c.operation != "review-closure" && c.operation != "review-recovery" && len(body) > 1024 {
 		return command{}, invalid
 	}
 	switch c.operation {
@@ -66,7 +66,7 @@ func parseCommand(body []byte) (command, error) {
 		if len(fields) != 4 || !attemptPattern.MatchString(c.attemptID) || !hashPattern.MatchString(c.configurationSHA256) || !hashPattern.MatchString(c.releaseSHA256) {
 			return command{}, invalid
 		}
-	case "close-work":
+	case "close-work", "recover-work":
 		if len(fields) != 5 || !attemptPattern.MatchString(c.attemptID) || !hashPattern.MatchString(c.configurationSHA256) || !hashPattern.MatchString(c.releaseSHA256) || !closureRequestIDPattern.MatchString(c.recoveryRequestID) {
 			return command{}, invalid
 		}
@@ -86,9 +86,9 @@ func parseCommand(body []byte) (command, error) {
 		if _, err := parseListingCursor(c.cursor); err != nil {
 			return command{}, invalid
 		}
-	case "review-notice", "review-closure":
+	case "review-notice", "review-closure", "review-recovery":
 		for name := range fields {
-			if c.operation == "review-closure" && (name == "kind" || name == "targetId") {
+			if (c.operation == "review-closure" || c.operation == "review-recovery") && (name == "kind" || name == "targetId") {
 				continue
 			}
 			if name != "operation" && name != "noticeId" && name != "cursor" {
@@ -103,7 +103,11 @@ func parseCommand(body []byte) (command, error) {
 		}
 		_, kindPresent := fields["kind"]
 		_, targetPresent := fields["targetId"]
-		if kindPresent != targetPresent || kindPresent && (c.kind != "CLOSE_BATCH" && c.kind != "CLOSE_REVISION" || !hashPattern.MatchString(c.targetID)) {
+		validKind := c.kind == "CLOSE_BATCH" || c.kind == "CLOSE_REVISION"
+		if c.operation == "review-recovery" {
+			validKind = c.kind == "RETRY_BATCH" || c.kind == "APPROVE_REVISION"
+		}
+		if kindPresent != targetPresent || kindPresent && (!validKind || !hashPattern.MatchString(c.targetID)) {
 			return command{}, invalid
 		}
 	default:

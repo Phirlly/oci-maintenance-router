@@ -37,6 +37,11 @@ func closureTerraform(t *testing.T, dir string, args ...string) []byte {
 
 func renderProducedClosure(t *testing.T, f savedReviewFixture, code string) []byte {
 	t.Helper()
+	return renderProducedIntent(t, f, map[string]any{"mode": "PAUSED", "closure_confirm": true, "closure_request_number": 1, "closure_review_code": code})
+}
+
+func renderProducedIntent(t *testing.T, f savedReviewFixture, overrides map[string]any) []byte {
+	t.Helper()
 	dir := t.TempDir()
 	var version struct {
 		Version string `json:"terraform_version"`
@@ -62,13 +67,17 @@ func renderProducedClosure(t *testing.T, f savedReviewFixture, code string) []by
 	}
 	settings := map[string]any{"environment_name": c.EnvironmentName, "tenancy_ocid": c.TenancyID, "region": c.DeploymentRegion,
 		"mysql_regions": regions, "mysql_compartments": c.CompartmentIDs, "ownership_kind": c.Ownership.Kind, "ownership_namespace": c.Ownership.Namespace, "ownership_key": c.Ownership.Key,
-		"destinations": destinations, "routes": routes, "pagerduty_region": c.PagerDutyRegion, "mode": "PAUSED", "closure_confirm": true, "closure_request_number": 1, "closure_review_code": code}
+		"destinations": destinations, "routes": routes, "pagerduty_region": c.PagerDutyRegion, "mode": "PAUSED"}
+	for k, v := range overrides {
+		settings[k] = v
+	}
 	source, err := filepath.Abs("../../infra/modules/configuration")
 	if err != nil {
 		t.Fatal(err)
 	}
 	module := map[string]any{"source": source, "settings": settings, "catalog": map[string]any{"regions": p.catalog.Regions, "mysqlServices": p.catalog.MySQLServices},
-		"installation_id": "b1-" + strings.Repeat("a", 64), "topics": map[string]string{"intake": c.IntakeTopicID, "operator": c.OperatorTopicID}}
+		"operator_subscription_id": "ocid1.onssubscription.oc1.iad.operator",
+		"installation_id":          "b1-" + strings.Repeat("a", 64), "topics": map[string]string{"intake": c.IntakeTopicID, "operator": c.OperatorTopicID}}
 	bundle := map[string]any{"module": map[string]any{"configuration": module}, "output": map[string]any{"configuration": map[string]string{"value": "${module.configuration.configuration_json}"}}}
 	body, _ := json.Marshal(bundle)
 	if err = os.WriteFile(filepath.Join(dir, "main.tf.json"), body, 0600); err != nil {

@@ -63,6 +63,7 @@ resource "oci_functions_invoke_function" "deployment_check" {
         try(jsondecode(self.content).processing, null) == null &&
         try(jsondecode(self.content).reporting, null) == null &&
         try(jsondecode(self.content).telemetry, null) == null &&
+        try(jsondecode(self.content).recoveryReview, null) == null &&
         try(jsondecode(self.content).recovery, null) == null,
         false
       )

@@ -83,7 +83,7 @@ func TestBundleContainsOnlyDeploymentInputs(t *testing.T) {
 			t.Errorf("missing automatic deployment input %s", name)
 		}
 	}
-	for _, name := range []string{"schema.yaml", "versions.tf", ".terraform.lock.hcl", "modules/configuration/render.tf", "function.zip", "function-manifest.json", "release.json", "variables_operation.tf", "identity_diagnostic.tf", "operator.tf", "variables_operator.tf", "identity_operator.tf", "closure.tf", "variables_closure.tf", "modules/configuration/closure.tf", "identity_live.tf", "activation.tf", "logging.tf", "monitoring.tf"} {
+	for _, name := range []string{"schema.yaml", "versions.tf", ".terraform.lock.hcl", "modules/configuration/render.tf", "function.zip", "function-manifest.json", "release.json", "variables_operation.tf", "identity_diagnostic.tf", "operator.tf", "variables_operator.tf", "identity_operator.tf", "closure.tf", "variables_closure.tf", "modules/configuration/closure.tf", "recovery.tf", "variables_recovery.tf", "modules/configuration/recovery.tf", "identity_live.tf", "activation.tf", "logging.tf", "monitoring.tf"} {
 		if !names[name] {
 			t.Errorf("missing %s", name)
 		}

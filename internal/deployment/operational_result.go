@@ -4,28 +4,29 @@ package deployment
 // never receipt codes, credentials or complete business records.
 // Version 2 is separate from the legacy nonsending installation-check contract.
 type OperationalResult struct {
-	ResponseVersion     int                `json:"responseVersion"`
-	Status              string             `json:"status"`
-	Operation           string             `json:"operation"`
-	Mode                string             `json:"mode"`
-	CheckAttemptID      string             `json:"checkAttemptId,omitempty"`
-	ConfigurationSHA256 string             `json:"configurationSha256"`
-	ReleaseSHA256       string             `json:"releaseSha256"`
-	RoutingGeneration   string             `json:"routingGeneration"`
-	Code                string             `json:"code,omitempty"`
-	CleanupCode         string             `json:"cleanupCode,omitempty"`
-	BaselinePrepared    bool               `json:"baselinePrepared"`
-	BaselineSelected    bool               `json:"baselineSelected"`
-	ScanCompleted       bool               `json:"scanCompleted"`
-	Diagnostic          *TestOutcome       `json:"diagnostic,omitempty"`
-	Operator            *TestOutcome       `json:"operator,omitempty"`
-	Processing          *ProcessingOutcome `json:"processing,omitempty"`
-	Reporting           *ReportingOutcome  `json:"reporting,omitempty"`
-	Telemetry           *TelemetryOutcome  `json:"telemetry,omitempty"`
-	Recovery            *RecoveryOutcome   `json:"recovery,omitempty"`
-	Review              *SavedReviewPage   `json:"review,omitempty"`
-	SavedNotices        *SavedNoticePage   `json:"savedNotices,omitempty"`
-	ClosureReview       *ClosureReviewPage `json:"closureReview,omitempty"`
+	ResponseVersion     int                 `json:"responseVersion"`
+	Status              string              `json:"status"`
+	Operation           string              `json:"operation"`
+	Mode                string              `json:"mode"`
+	CheckAttemptID      string              `json:"checkAttemptId,omitempty"`
+	ConfigurationSHA256 string              `json:"configurationSha256"`
+	ReleaseSHA256       string              `json:"releaseSha256"`
+	RoutingGeneration   string              `json:"routingGeneration"`
+	Code                string              `json:"code,omitempty"`
+	CleanupCode         string              `json:"cleanupCode,omitempty"`
+	BaselinePrepared    bool                `json:"baselinePrepared"`
+	BaselineSelected    bool                `json:"baselineSelected"`
+	ScanCompleted       bool                `json:"scanCompleted"`
+	Diagnostic          *TestOutcome        `json:"diagnostic,omitempty"`
+	Operator            *TestOutcome        `json:"operator,omitempty"`
+	Processing          *ProcessingOutcome  `json:"processing,omitempty"`
+	Reporting           *ReportingOutcome   `json:"reporting,omitempty"`
+	Telemetry           *TelemetryOutcome   `json:"telemetry,omitempty"`
+	Recovery            *RecoveryOutcome    `json:"recovery,omitempty"`
+	Review              *SavedReviewPage    `json:"review,omitempty"`
+	SavedNotices        *SavedNoticePage    `json:"savedNotices,omitempty"`
+	ClosureReview       *ClosureReviewPage  `json:"closureReview,omitempty"`
+	RecoveryReview      *RecoveryReviewPage `json:"recoveryReview,omitempty"`
 }
 
 type TestOutcome struct {
@@ -86,7 +87,7 @@ func (r response) output() (any, bool) {
 		// A duplicate wake-up is handled by the current owner, not failed work.
 		// Apply and explicit operator actions still require their own result.
 		return r.operational, r.operational.Operation == "reconcile"
-	case "operational-verified", "reconciled", "prepared", "idle", "recovery-recorded", "reviewed", "listed", "closure-completed":
+	case "operational-verified", "reconciled", "prepared", "idle", "recovery-recorded", "reviewed", "listed", "closure-completed", "recovery-verified":
 		return r.operational, true
 	default:
 		return r.operational, false

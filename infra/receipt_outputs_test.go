@@ -13,7 +13,7 @@ func TestReceiptOutputsNeverPromotePartialOrUnrequestedProof(t *testing.T) {
 	if len(match) != 2 {
 		t.Fatal("complete confirmation result predicate missing")
 	}
-	for _, kind := range []string{"both", "diagnostic-only", "partial", "failed", "stale", "configuration", "release", "cleanup", "unrequested", "malformed", "dispatch", "status-key", "false-proof", "null-proof", "string-proof", "unexpected-operator", "prepared", "selected", "scan", "recovery", "processing", "reporting", "telemetry"} {
+	for _, kind := range []string{"both", "diagnostic-only", "partial", "failed", "stale", "configuration", "release", "cleanup", "unrequested", "malformed", "dispatch", "status-key", "false-proof", "null-proof", "string-proof", "unexpected-operator", "prepared", "selected", "scan", "recovery", "processing", "reporting", "telemetry", "recoveryReview"} {
 		t.Run(kind, func(t *testing.T) {
 			result := receiptResult()
 			operator, confirming := true, true
@@ -55,7 +55,7 @@ func TestReceiptOutputsNeverPromotePartialOrUnrequestedProof(t *testing.T) {
 				result["baselineSelected"] = true
 			case "scan":
 				result["scanCompleted"] = true
-			case "recovery", "processing", "reporting", "telemetry":
+			case "recovery", "processing", "reporting", "telemetry", "recoveryReview":
 				result[kind] = map[string]any{}
 			}
 			expression := strings.ReplaceAll(match[1], "oci_functions_invoke_function.deployment_check.content", "self.content")

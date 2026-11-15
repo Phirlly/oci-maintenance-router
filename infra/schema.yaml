@@ -13,6 +13,8 @@ variableGroups:
     variables: ["${operator_email}", "${operator_test_run}", "${operator_receipt_code}"]
   - title: Saved-work closure
     variables: ["${closure_review_code}", "${closure_request_number}", "${closure_confirm}"]
+  - title: Sending recovery (optional)
+    variables: ["${recovery_review_code}", "${recovery_request_number}", "${recovery_confirm}"]
   - title: MySQL scope
     variables: ["${mysql_regions}", "${mysql_compartments}"]
   - title: Ownership tag
@@ -117,6 +119,27 @@ variables:
     type: boolean
     title: Close this saved work without sending
     description: Requires PAUSED. Closure preserves history and cannot be undone. Clear this checkbox and Apply to remove the request; PAUSED alone does not cancel it.
+    default: false
+    required: false
+    visible: true
+  recovery_review_code:
+    type: string
+    title: Recovery review code
+    description: Paste the final code from review-recovery for the selected retry or revision approval. Leave empty when no recovery is needed.
+    default: ""
+    maxLength: 6000
+    required: false
+    visible: true
+  recovery_request_number:
+    type: integer
+    title: Recovery request number
+    description: Enter 1 for your first recovery. Keep number and code unchanged to retry. Use a new number for new intent; history is kept per notice.
+    required: false
+    visible: true
+  recovery_confirm:
+    type: boolean
+    title: Authorize this reviewed sending recovery
+    description: Requires LIVE and may send alerts. Approval authorizes recorded work; it does not prove delivery. Clear and Apply to remove the request. Already approved batches remain authorized.
     default: false
     required: false
     visible: true
@@ -247,6 +270,12 @@ variables:
       hidePublicSubnet: true
       hideAdSubnet: true
 outputs:
+  recovery_verified:
+    type: boolean
+    title: Requested recovery verified by last Apply
+  recovery_result:
+    type: string
+    visible: false
   closure_completed:
     type: boolean
     title: Requested closure verified by last Apply

@@ -23,6 +23,7 @@ var stackFiles = []string{
 	"modules/configuration/variables.tf", "modules/configuration/render.tf", "modules/configuration/outputs.tf",
 	"operator.tf", "variables_operator.tf", "identity_operator.tf",
 	"closure.tf", "variables_closure.tf", "modules/configuration/closure.tf",
+	"recovery.tf", "variables_recovery.tf", "modules/configuration/recovery.tf",
 	"activation.tf", "identity_live.tf",
 	"logging.tf", "monitoring.tf",
 	"automation.tf", "identity_automation.tf",

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"oci-maintenance-router/internal/delivery"
 	"oci-maintenance-router/internal/noticeledger"
-	"oci-maintenance-router/internal/ocistorage"
 )
 
 func (r *processingRun) recoverLive(works []processingNoticeWork) error {
@@ -35,7 +34,7 @@ func (r *processingRun) recoverLive(works []processingNoticeWork) error {
 	if exists {
 		return r.guard()
 	}
-	digest, reason := recoveryTarget(saved, q)
+	digest, reason := recoveryTarget(saved.Record(), q)
 	if reason != "" {
 		return r.rejectRecovery(saved, reason)
 	}
@@ -77,9 +76,15 @@ func (r *processingRun) recoverLive(works []processingNoticeWork) error {
 	return r.approveRecovery(saved, n, lookups)
 }
 
-func recoveryTarget(saved ocistorage.StoredNotice, q noticeledger.RecoveryRequest) (string, string) {
+func recoveryTarget(record noticeledger.Record, q noticeledger.RecoveryRequest) (string, string) {
 	if q.Kind == noticeledger.RetryBatch {
-		b, found := processingBatch(saved, q.TargetID)
+		var b delivery.BatchSnapshot
+		found := false
+		for _, candidate := range record.Snapshot().Batches {
+			if candidate.Message.BatchID == q.TargetID {
+				b, found = candidate, true
+			}
+		}
 		if !found {
 			return "", "target_missing"
 		}
@@ -94,12 +99,12 @@ func recoveryTarget(saved ocistorage.StoredNotice, q noticeledger.RecoveryReques
 			return "", "no_eligible_work"
 		}
 	}
-	for _, action := range saved.Record().Snapshot().Recovery.Actions {
+	for _, action := range record.Snapshot().Recovery.Actions {
 		if action.Status == noticeledger.RecoveryClosed && action.Request.Kind == noticeledger.CloseRevision && action.Request.TargetID == q.TargetID {
 			return "", "target_terminal"
 		}
 	}
-	for _, revision := range saved.Record().Snapshot().Revisions {
+	for _, revision := range record.Snapshot().Revisions {
 		if revision.Digest == q.TargetID {
 			return q.TargetID, ""
 		}

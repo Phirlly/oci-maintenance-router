@@ -9,6 +9,17 @@ import (
 
 func (ops operations) execute(ctx context.Context, lease *reconciliation.Lease, c configuration.Config, request command, result *OperationalResult) error {
 	operation := request.operation
+	if operation == "review-recovery" {
+		page, err := ops.recoveryReview(ctx, request)
+		if err != nil {
+			return err
+		}
+		result.RecoveryReview, result.Status = page, "reviewed"
+		return nil
+	}
+	if operation == "recover-work" {
+		return ops.recoverWork(ctx, lease, c, request, result)
+	}
 	if operation == "review-closure" {
 		page, err := ops.closureReview(ctx, request)
 		if err != nil {

@@ -22,11 +22,12 @@ func composeMetrics(s Settings, store Store, installation string) (metricPublish
 
 func metricObservation(result OperationalResult, at time.Time) ocimonitoring.Observation {
 	o := ocimonitoring.Observation{At: at}
-	if result.Mode != "LIVE" || result.Operation != "reconcile" || result.Status == "coalesced" {
+	if result.Mode != "LIVE" || !liveProcessingOperation(result.Operation) || result.Status == "coalesced" {
 		return o
 	}
 	report := result.Reporting
-	o.CompletedScan = result.Status == "reconciled" && result.ScanCompleted && result.Code == "" && result.CleanupCode == "" && report != nil && report.Code == ""
+	completed := result.Operation == "reconcile" && result.Status == "reconciled" || result.Operation == "recover-work" && result.Status == "recovery-verified"
+	o.CompletedScan = completed && result.ScanCompleted && result.Code == "" && result.CleanupCode == "" && report != nil && report.Code == ""
 	if report == nil {
 		return o
 	}

@@ -22,7 +22,7 @@ func (h *Handler) runOperational(original context.Context, started time.Time, s 
 	result = initialOperationalResult(s, p, request)
 	originalDeadline, _ := original.Deadline()
 	cleanupLimit := originalDeadline
-	if p.config.Mode == "LIVE" && request.operation == "reconcile" {
+	if p.config.Mode == "LIVE" && liveProcessingOperation(request.operation) {
 		cleanupLimit = cleanupLimit.Add(-10 * time.Second)
 	}
 	deadline := cleanupLimit.Add(-10 * time.Second)
@@ -66,6 +66,7 @@ func (h *Handler) runOperational(original context.Context, started time.Time, s 
 			result.Review = nil
 			result.SavedNotices = nil
 			result.ClosureReview = nil
+			result.RecoveryReview = nil
 		}
 	}()
 	if err := verifyCurrent(ctx, lease, store, s); err != nil {
@@ -86,6 +87,7 @@ func (h *Handler) runOperational(original context.Context, started time.Time, s 
 		result.Review = nil
 		result.SavedNotices = nil
 		result.ClosureReview = nil
+		result.RecoveryReview = nil
 	}
 	return result
 }

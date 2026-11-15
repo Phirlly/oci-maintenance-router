@@ -21,7 +21,7 @@ func TestActualInvocationPredicateRejectsStaleOrMalformedResults(t *testing.T) {
 	expectedConfig := strings.Repeat("a", 64)
 	expectedRelease := strings.Repeat("b", 64)
 	attempt := "12345678-1234-1234-1234-123456789abc"
-	for _, kind := range []string{"valid", "version", "operation", "mode", "status", "coalesced", "prepared", "selected", "scan", "typed", "attempt", "configuration", "release", "generation", "code", "cleanupCode", "diagnostic", "operator", "processing", "recovery", "missing", "legacy", "malformed"} {
+	for _, kind := range []string{"valid", "version", "operation", "mode", "status", "coalesced", "prepared", "selected", "scan", "typed", "attempt", "configuration", "release", "generation", "code", "cleanupCode", "diagnostic", "operator", "processing", "recovery", "recoveryReview", "missing", "legacy", "malformed"} {
 		t.Run(kind, func(t *testing.T) {
 			result := map[string]any{
 				"responseVersion": 2, "status": "operational-verified", "operation": "deployment-check", "mode": "PREVIEW",
@@ -57,7 +57,7 @@ func TestActualInvocationPredicateRejectsStaleOrMalformedResults(t *testing.T) {
 				result["routingGeneration"] = "bad"
 			case "code", "cleanupCode":
 				result[kind] = "failed"
-			case "diagnostic", "operator", "processing", "recovery":
+			case "diagnostic", "operator", "processing", "recovery", "recoveryReview":
 				result[kind] = map[string]any{"dispatched": true}
 			case "missing":
 				delete(result, "baselinePrepared")

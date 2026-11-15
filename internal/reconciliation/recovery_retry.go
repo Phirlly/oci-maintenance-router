@@ -1,6 +1,7 @@
 package reconciliation
 
 import (
+	"oci-maintenance-router/internal/configuration"
 	"oci-maintenance-router/internal/delivery"
 	"oci-maintenance-router/internal/notices"
 	"oci-maintenance-router/internal/ocistorage"
@@ -11,7 +12,7 @@ import (
 func (r *processingRun) retryRecovery(saved ocistorage.StoredNotice, n notices.Notice, lookups map[string]routing.Lookup) error {
 	b, _ := processingBatch(saved, r.recoveryRequest().TargetID)
 	plan := r.owner.policy.Resolve(n, true, lookups)
-	if reason := r.retryCompatibility(b, plan); reason != "" {
+	if reason := retryCompatibility(r.owner.config, b, plan); reason != "" {
 		return r.rejectRecovery(saved, reason)
 	}
 	if err := r.before(); err != nil {
@@ -57,17 +58,17 @@ func (r *processingRun) retryRecovery(saved ocistorage.StoredNotice, n notices.N
 	return err
 }
 
-func (r *processingRun) retryCompatibility(b delivery.BatchSnapshot, plan routing.Plan) string {
+func retryCompatibility(config configuration.Config, b delivery.BatchSnapshot, plan routing.Plan) string {
 	if plan.Assessment.State != routing.SupportedShape || plan.Revision != b.Message.Revision {
 		return "source_changed"
 	}
 	secret := ""
-	for _, d := range r.owner.config.Destinations {
+	for _, d := range config.Destinations {
 		if d.ID == b.Message.DestinationID {
 			secret = d.SecretID
 		}
 	}
-	if secret != b.Message.SecretID || r.owner.config.PagerDutyRegion != b.Message.PagerDutyRegion {
+	if secret != b.Message.SecretID || config.PagerDutyRegion != b.Message.PagerDutyRegion {
 		return "configuration_changed"
 	}
 	decisions := map[string]routing.Decision{}

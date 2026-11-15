@@ -2,6 +2,22 @@ output "configuration_json" {
   description = "Validated PREVIEW, PAUSED, TEST or guarded LIVE configuration; no secret contents."
   value       = local.configuration_json
   precondition {
+    condition     = !local.s.recovery_confirm || local.s.mode == "LIVE"
+    error_message = "Recovery requires LIVE. Clear recovery confirmation before selecting another mode."
+  }
+  precondition {
+    condition     = !local.s.recovery_confirm || !local.s.closure_confirm
+    error_message = "Recovery and closure cannot both be confirmed. Select only the reviewed action."
+  }
+  precondition {
+    condition     = !local.s.recovery_confirm || local.recovery_valid
+    error_message = "Recovery review code must be copied exactly from the final review-recovery page for the selected target."
+  }
+  precondition {
+    condition     = !local.s.recovery_confirm || try(local.s.recovery_request_number >= 1 && local.s.recovery_request_number <= 2147483647 && floor(local.s.recovery_request_number) == local.s.recovery_request_number, false)
+    error_message = "Recovery request number must be an integer from 1 to 2147483647. Keep number and code unchanged when retrying; use a new number for changed intent."
+  }
+  precondition {
     condition     = !local.s.closure_confirm || local.s.mode == "PAUSED"
     error_message = "Closure requires PAUSED. Clear closure confirmation before selecting another mode."
   }

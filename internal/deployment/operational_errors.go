@@ -50,6 +50,10 @@ func operationCode(ctx context.Context, err error) string {
 		if e != nil {
 			code = e.Code
 		}
+	case *reconciliation.RecoveryReviewError:
+		if e != nil {
+			code = e.Code
+		}
 	}
 	if !controlledCode.MatchString(code) {
 		return "operation_failed"

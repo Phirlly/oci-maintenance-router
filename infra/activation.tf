@@ -16,7 +16,7 @@ locals {
     jsondecode(oci_functions_invoke_function.deployment_check.content).scanCompleted == false &&
     try(jsondecode(oci_functions_invoke_function.deployment_check.content).code, "") == "" &&
     try(jsondecode(oci_functions_invoke_function.deployment_check.content).cleanupCode, "") == "" &&
-    alltrue([for key in ["diagnostic", "operator", "processing", "reporting", "telemetry", "recovery"] : try(jsondecode(oci_functions_invoke_function.deployment_check.content)[key], null) == null]),
+    alltrue([for key in ["diagnostic", "operator", "processing", "reporting", "telemetry", "recovery", "recoveryReview"] : try(jsondecode(oci_functions_invoke_function.deployment_check.content)[key], null) == null]),
     false
   )
 }

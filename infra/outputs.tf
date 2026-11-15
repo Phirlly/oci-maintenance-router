@@ -47,6 +47,7 @@ locals {
     try(jsondecode(oci_functions_invoke_function.deployment_check.content).processing, null) == null &&
     try(jsondecode(oci_functions_invoke_function.deployment_check.content).reporting, null) == null &&
     try(jsondecode(oci_functions_invoke_function.deployment_check.content).telemetry, null) == null &&
+    try(jsondecode(oci_functions_invoke_function.deployment_check.content).recoveryReview, null) == null &&
     try(jsondecode(oci_functions_invoke_function.deployment_check.content).recovery, null) == null &&
     (local.operator_test_enabled || try(jsondecode(oci_functions_invoke_function.deployment_check.content).operator, null) == null) &&
     alltrue([for channel in concat(["diagnostic"], local.operator_test_enabled ? ["operator"] : []) :

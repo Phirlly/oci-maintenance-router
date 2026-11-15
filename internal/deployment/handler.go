@@ -61,7 +61,7 @@ func (h *Handler) run(ctx context.Context, in io.Reader) (result response) {
 	if err != nil {
 		return rejected("bootstrap_invalid")
 	}
-	if (request.operation == "deployment-check" || request.operation == "close-work") && (request.configurationSHA256 != settings.ConfigurationSHA256 || request.releaseSHA256 != settings.ReleaseSHA256) {
+	if (request.operation == "deployment-check" || request.operation == "close-work" || request.operation == "recover-work") && (request.configurationSHA256 != settings.ConfigurationSHA256 || request.releaseSHA256 != settings.ReleaseSHA256) {
 		return rejected("request_mismatch")
 	}
 	store, err := h.connect(settings)
@@ -78,6 +78,12 @@ func (h *Handler) run(ctx context.Context, in io.Reader) (result response) {
 	if request.operation == "close-work" && !matchesClosure(p.config, request) {
 		return rejected("closure_intent_mismatch")
 	}
+	if request.operation == "recover-work" && !matchesSendingRecovery(p.config, request) {
+		return rejected("recovery_intent_mismatch")
+	}
+	if request.operation == "review-recovery" && p.config.Mode != "LIVE" {
+		return rejected("recovery_review_requires_live")
+	}
 	if p.config.SchemaVersion == 7 {
 		// Delayed automatic requests must not prepare a baseline, execute saved
 		// recovery or run tests while the installation is not LIVE.
@@ -87,7 +93,7 @@ func (h *Handler) run(ctx context.Context, in io.Reader) (result response) {
 			return response{operational: &idle}
 		}
 		var publisher metricPublisher
-		if p.config.Mode == "LIVE" && (request.operation == "reconcile" || request.operation == "deployment-check") {
+		if p.config.Mode == "LIVE" && (liveProcessingOperation(request.operation) || request.operation == "deployment-check") {
 			publisher, err = h.metrics(settings, store, p.config.InstallationID)
 			if err != nil || publisher == nil {
 				failed := initialOperationalResult(settings, p, request)
@@ -96,7 +102,7 @@ func (h *Handler) run(ctx context.Context, in io.Reader) (result response) {
 			}
 		}
 		operational := h.runOperational(original, started, settings, store, p, request)
-		if publisher != nil && request.operation == "reconcile" {
+		if publisher != nil && liveProcessingOperation(request.operation) {
 			publishOperationalMetrics(original, publisher, &operational)
 		}
 		return response{operational: &operational}

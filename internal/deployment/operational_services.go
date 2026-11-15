@@ -27,6 +27,7 @@ type operations struct {
 	review            func(context.Context, command) (*SavedReviewPage, error)
 	list              func(context.Context, command) (*SavedNoticePage, error)
 	closureReview     func(context.Context, command) (*ClosureReviewPage, error)
+	recoveryReview    func(context.Context, command) (*RecoveryReviewPage, error)
 }
 
 func composeOperations(s Settings, store Store, p pinnedInputs, operation string) (operations, error) {
@@ -43,6 +44,9 @@ func composeOperations(s Settings, store Store, p pinnedInputs, operation string
 	}
 	if operation == "review-closure" {
 		return composeClosureReview(s, objects, p)
+	}
+	if operation == "review-recovery" {
+		return composeRecoveryReview(s, store, objects, p)
 	}
 	location := configuration.LedgerLocation{Namespace: s.Namespace, Bucket: s.Bucket}
 	mode := p.config.Mode
@@ -62,7 +66,7 @@ func composeOperations(s Settings, store Store, p pinnedInputs, operation string
 	}
 	key := p.catalog.Regions[s.Region]
 	var announcements reconciliation.AnnouncementSource
-	if mode == "PREVIEW" || mode == "LIVE" && operation == "reconcile" {
+	if mode == "PREVIEW" || mode == "LIVE" && liveProcessingOperation(operation) {
 		client, err := ociannouncements.New(s.Region, s.TenancyID, managed.principal)
 		if err != nil {
 			return operations{}, err
