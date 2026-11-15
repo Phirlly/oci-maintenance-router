@@ -31,8 +31,12 @@ func TestNativeTestControlsRetainExplicitScopedIntent(t *testing.T) {
 		t.Fatal("mode hint must explain when saved test settings are used")
 	}
 	secret := form.Variables["test_secret_ocid"]
-	if secret.Type != "oci:kms:secret:id" || secret.DependsOn["compartmentId"] != "${test_secret_compartment_ocid}" || form.Variables["test_secret_compartment_ocid"].Default != "${secret_compartment_ocid}" {
-		t.Fatal("test secret must use a separate scoped picker with a convenient compartment default")
+	if secret.Type != "oci:kms:secret:id" || secret.DependsOn["compartmentId"] != "${test_secret_compartment_ocid}" {
+		t.Fatal("test secret must use a separate scoped picker")
+	}
+	compartment := form.Variables["test_secret_compartment_ocid"]
+	if compartment.Type != "oci:identity:compartment:id" || compartment.Default != nil {
+		t.Fatal("optional test compartment must start unselected without a literal or expression default")
 	}
 	run := form.Variables["test_run"]
 	if run.Type != "integer" || run.Minimum != 0 || run.Maximum != 0 || run.Default != nil {

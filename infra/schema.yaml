@@ -48,7 +48,6 @@ variables:
     type: oci:identity:compartment:id
     title: Test secret compartment
     description: For TEST, select the compartment containing your test secret in the stack region.
-    default: ${secret_compartment_ocid}
     required: false
     visible: true
   test_secret_ocid:
