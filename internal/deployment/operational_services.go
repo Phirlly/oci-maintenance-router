@@ -14,12 +14,14 @@ import (
 
 // Operation closures retain genuine coordinators; no decoded result grants authority.
 type operations struct {
-	initialize func(context.Context, *reconciliation.Lease) error
-	prepare    func(context.Context, *reconciliation.Lease) (reconciliation.Baseline, error)
-	diagnostic func(context.Context, *reconciliation.Lease) (reconciliation.DiagnosticResult, error)
-	operator   func(context.Context, *reconciliation.Lease) (reconciliation.OperatorResult, error)
-	selectLive func(context.Context, *reconciliation.Lease) (reconciliation.Baseline, error)
-	process    func(context.Context, *reconciliation.Lease) (reconciliation.ProcessingSnapshot, error)
+	initialize        func(context.Context, *reconciliation.Lease) error
+	prepare           func(context.Context, *reconciliation.Lease) (reconciliation.Baseline, error)
+	diagnostic        func(context.Context, *reconciliation.Lease) (reconciliation.DiagnosticResult, error)
+	operator          func(context.Context, *reconciliation.Lease) (reconciliation.OperatorResult, error)
+	diagnosticReceipt func(context.Context, *reconciliation.Lease) (reconciliation.DiagnosticReceipt, error)
+	operatorReceipt   func(context.Context, *reconciliation.Lease) (reconciliation.OperatorReceipt, error)
+	selectLive        func(context.Context, *reconciliation.Lease) (reconciliation.Baseline, error)
+	process           func(context.Context, *reconciliation.Lease) (reconciliation.ProcessingSnapshot, error)
 }
 
 func composeOperations(s Settings, store Store, p pinnedInputs, operation string) (operations, error) {
@@ -76,6 +78,9 @@ func composeOperations(s Settings, store Store, p pinnedInputs, operation string
 		}
 		result.selectLive = selector.Select
 		return result, nil
+	}
+	if mode == "TEST" && (p.config.Diagnostic.ReceiptCode != "" || p.config.OperatorTest != nil && p.config.OperatorTest.ReceiptCode != "") {
+		return composeReceiptOperations(s, objects, p, channel)
 	}
 	vault, err := ocisecrets.New(s.Region, key, managed.principal)
 	if err != nil {

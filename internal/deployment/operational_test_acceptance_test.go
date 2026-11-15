@@ -30,7 +30,7 @@ func TestFunctionTestCheckRequiresEverySavedAcceptanceWithoutResending(t *testin
 			before := objects.version
 			for i := 0; i < 2; i++ {
 				got := invokeOperational(t, h, invocation(s))
-				if (got.Status == "operational-verified") != tc.accepted || got.Diagnostic == nil || got.Diagnostic.Dispatched || got.Diagnostic.ObservedStatus != 0 || got.ScanCompleted {
+				if (got.Status == "operational-verified") != tc.accepted || got.Diagnostic == nil || got.Diagnostic.Dispatched || got.Diagnostic.ObservedStatus != 0 || got.ScanCompleted || receiptVerified(t, got.Diagnostic) || receiptVerified(t, got.Operator) {
 					t.Fatalf("incorrect retained TEST result: %+v", got)
 				}
 				if tc.diagnostic != 202 && got.Operator != nil {

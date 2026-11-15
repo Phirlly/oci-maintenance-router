@@ -7,6 +7,9 @@ import (
 )
 
 func (ops operations) test(ctx context.Context, lease *reconciliation.Lease, result *OperationalResult) error {
+	if ops.diagnosticReceipt != nil {
+		return ops.confirmReceipts(ctx, lease, result)
+	}
 	diagnostic, err := ops.diagnostic(ctx, lease)
 	saved := diagnostic.Record().Snapshot()
 	result.Diagnostic = &TestOutcome{State: string(saved.State), Dispatched: diagnostic.Dispatched(), ObservedStatus: diagnostic.ObservedStatus()}

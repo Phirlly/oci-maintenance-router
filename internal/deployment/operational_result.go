@@ -23,10 +23,11 @@ type OperationalResult struct {
 }
 
 type TestOutcome struct {
-	State          string `json:"state"`
-	Dispatched     bool   `json:"dispatched"`
-	ObservedStatus int    `json:"observedStatus,omitempty"`
-	Code           string `json:"code,omitempty"`
+	State           string `json:"state"`
+	Dispatched      bool   `json:"dispatched"`
+	ObservedStatus  int    `json:"observedStatus,omitempty"`
+	Code            string `json:"code,omitempty"`
+	ReceiptVerified bool   `json:"receiptVerified,omitempty"`
 }
 
 type ProcessingOutcome struct {

@@ -39,7 +39,7 @@ func TestOperationalCompositionRequiresManagedBindings(t *testing.T) {
 				s.ReleaseSHA256 = "not-a-release-digest"
 			}
 			ops, err := composeOperations(s, store, p, "deployment-check")
-			if err == nil || ops.initialize != nil || ops.prepare != nil || ops.diagnostic != nil || ops.operator != nil || ops.selectLive != nil || ops.process != nil || principal.reads != 0 {
+			if err == nil || ops.initialize != nil || ops.prepare != nil || ops.diagnostic != nil || ops.operator != nil || ops.diagnosticReceipt != nil || ops.operatorReceipt != nil || ops.selectLive != nil || ops.process != nil || principal.reads != 0 {
 				t.Fatalf("invalid binding produced operational authority: %+v err=%v credential reads=%d", ops, err, principal.reads)
 			}
 		})
