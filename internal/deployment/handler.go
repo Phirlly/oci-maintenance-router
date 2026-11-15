@@ -48,9 +48,12 @@ func (h *Handler) run(ctx context.Context, in io.Reader) (result response) {
 	original := ctx
 	ctx, cancel := context.WithDeadline(ctx, started.Add(20*time.Second))
 	defer cancel()
-	request, err := readCommand(in, fdk.GetContext(ctx).Header())
-	if err != nil {
-		return rejected("request_invalid")
+	fnctx := fdk.GetContext(ctx)
+	request, inputFailure := readCommand(in, fnctx.Header())
+	if inputFailure != "" {
+		result = rejected("request_invalid")
+		result.inputRejection = describeInputRejection(fnctx, inputFailure)
+		return result
 	}
 	if ctx.Err() != nil {
 		return rejected("deadline")

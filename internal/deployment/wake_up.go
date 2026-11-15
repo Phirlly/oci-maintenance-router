@@ -11,23 +11,33 @@ import (
 
 // ONS input is a wake-up, never a source of business data or operator commands.
 // Header metadata selects a parser; IAM and pinned configuration own authority.
-func readCommand(in io.Reader, headers http.Header) (command, error) {
+func readCommand(in io.Reader, headers http.Header) (command, inputFailure) {
 	topic, notification, err := notificationTopic(headers)
 	if err != nil {
-		return command{}, err
+		return command{}, "metadata_invalid"
 	}
 	if notification {
 		n, err := io.Copy(io.Discard, io.LimitReader(in, 65537))
-		if err != nil || n > 65536 {
-			return command{}, errors.New("invalid notification body")
+		if err != nil {
+			return command{}, "notification_body_read"
 		}
-		return command{operation: "reconcile", automatic: true, intakeTopic: topic}, nil
+		if n > 65536 {
+			return command{}, "notification_body_size"
+		}
+		return command{operation: "reconcile", automatic: true, intakeTopic: topic}, ""
 	}
 	body, err := io.ReadAll(io.LimitReader(in, 8193))
 	if err != nil {
-		return command{}, err
+		return command{}, "command_body_read"
 	}
-	return parseCommand(body)
+	if len(body) > 8192 {
+		return command{}, "command_body_size"
+	}
+	request, err := parseCommand(body)
+	if err != nil {
+		return command{}, "command_invalid"
+	}
+	return request, ""
 }
 
 func notificationTopic(headers http.Header) (string, bool, error) {

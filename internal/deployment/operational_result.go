@@ -72,8 +72,9 @@ type RecoveryOutcome struct {
 }
 
 type response struct {
-	legacy      Result
-	operational *OperationalResult
+	legacy         Result
+	operational    *OperationalResult
+	inputRejection *inputRejection // Logging only; output never serializes this wrapper.
 }
 
 func rejected(code string) response { return response{legacy: failed(code)} }
