@@ -31,15 +31,16 @@ resource "oci_resource_scheduler_schedule" "reconcile" {
   recurrence_type    = "CRON"
   recurrence_details = "0 * * * *"
   local_time_zone    = "UTC"
-  state              = var.mode == "LIVE" ? "ACTIVE" : "INACTIVE"
+  # Runtime mode controls processing; keep the trigger and its IAM identity stable.
+  state = "ACTIVE"
   resources {
     id = oci_functions_function.router.id
     parameters {
       parameter_type = "BODY"
-      value          = [jsonencode({ operation = "wake-up" })]
+      # The provider decodes one JSON layer; OCI stores the body as JSON text.
+      value = [jsonencode(jsonencode({ operation = "wake-up" }))]
     }
   }
-  # The provider creates ACTIVE before stopping INACTIVE. This is not the sending
-  # fence. Exact schedule-ID IAM follows creation during nonsending setup.
+  # Exact schedule-ID IAM follows creation during nonsending setup.
   depends_on = [oci_functions_invoke_function.deployment_check]
 }

@@ -46,7 +46,7 @@ variables:
     enum: [PREVIEW, PAUSED, TEST, LIVE]
     default: PREVIEW
     title: Mode
-    description: PREVIEW prepares history. TEST sends or confirms nonproduction tests. LIVE requires prepared history and both received test proofs; keep test settings unchanged. Apply PAUSED before changing routing or scope. PAUSED also permits confirmed closure below.
+    description: PREVIEW prepares history. TEST sends or confirms nonproduction tests. LIVE requires prepared history and both received test proofs; keep test settings unchanged. Apply PAUSED before changing routing or scope. PAUSED stops processing and permits confirmed closure; hourly checks continue without sending.
     required: true
   test_secret_compartment_ocid:
     type: oci:identity:compartment:id

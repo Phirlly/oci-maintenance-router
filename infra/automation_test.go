@@ -3,7 +3,6 @@ package infra_test
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -27,21 +26,34 @@ func TestAutomaticScheduleUsesFixedBoundedWakeUp(t *testing.T) {
 	output, err := terraform(t, t.TempDir(), "jsonencode("+value[1]+")\n", "console", "-no-color")
 	var encoded string
 	var payloads []string
-	if err != nil || json.Unmarshal(output, &encoded) != nil || json.Unmarshal([]byte(encoded), &payloads) != nil || !reflect.DeepEqual(payloads, []string{`{"operation":"wake-up"}`}) {
+	if err != nil || json.Unmarshal(output, &encoded) != nil || json.Unmarshal([]byte(encoded), &payloads) != nil || len(payloads) != 1 {
 		t.Fatalf("wrong provider BODY encoding %s: %v", output, err)
 	}
+	// OCI returns the BODY value as JSON text. The pinned provider decodes one
+	// JSON layer on write, then encodes that API value again when reading it.
+	var apiValue any
+	if err := json.Unmarshal([]byte(payloads[0]), &apiValue); err != nil {
+		t.Fatal("invalid provider BODY JSON", err)
+	}
+	if body, ok := apiValue.(string); !ok || body != `{"operation":"wake-up"}` {
+		t.Fatalf("BODY must preserve the API's strict wake-up JSON text: %#v", apiValue)
+	}
+	roundTrip, err := json.Marshal(apiValue)
+	if err != nil || string(roundTrip) != payloads[0] {
+		t.Fatalf("BODY changes during the provider read/write round trip: %s (%v)", roundTrip, err)
+	}
+}
+
+func TestAutomaticScheduleRemainsActiveAcrossModes(t *testing.T) {
+	block := checksumBlock(readChecksumSource(t, "automation.tf"), `resource "oci_resource_scheduler_schedule" "reconcile"`)
 	state := regexp.MustCompile(`(?m)^\s*state\s*=\s*(.+)$`).FindStringSubmatch(block)
 	if len(state) != 2 {
-		t.Fatal("missing schedule mode guard")
+		t.Fatal("missing explicit schedule state")
 	}
 	for _, mode := range []string{"PREVIEW", "TEST", "LIVE", "PAUSED"} {
 		out, err := terraform(t, t.TempDir(), strings.ReplaceAll(state[1], "var.mode", fmt.Sprintf("%q", mode))+"\n", "console", "-no-color")
-		want := `"INACTIVE"`
-		if mode == "LIVE" {
-			want = `"ACTIVE"`
-		}
-		if err != nil || strings.TrimSpace(string(out)) != want {
-			t.Fatal("wrong schedule state", mode, string(out), err)
+		if err != nil || strings.TrimSpace(string(out)) != `"ACTIVE"` {
+			t.Error("schedule must stay active; runtime mode controls processing", mode, string(out), err)
 		}
 	}
 }
