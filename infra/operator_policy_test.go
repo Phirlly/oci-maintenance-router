@@ -23,16 +23,13 @@ func TestOperatorPolicyLimitsOperationsRegionAndRecord(t *testing.T) {
 			t.Fatalf("incorrect conditional policy boundary: %s", pattern)
 		}
 	}
-	match := regexp.MustCompile(`(?s)statements\s*=\s*(\[.*?\])\s*\n`).FindStringSubmatch(block)
-	if len(match) != 2 {
-		t.Fatal("operator statements missing")
-	}
+	statements := policyStatements(t, block)
 	for _, region := range []string{"iad", "phx"} {
 		group, compartment, bucket := "ocid1.dynamicgroup.oc1.."+region, "ocid1.compartment.oc1.."+region, "router-"+region
 		installation, request := "b1-"+strings.Repeat("a", 64), "o1-"+strings.Repeat("b", 64)
 		dir := t.TempDir()
 		writeJSON(t, filepath.Join(dir, "main.tf.json"), map[string]any{"locals": map[string]any{"group": group, "compartment": compartment, "bucket": bucket, "installation_id": installation, "region_key": region, "configuration": `{"operatorTest":{"requestId":"` + request + `"}}`}})
-		expression := strings.NewReplacer("oci_identity_dynamic_group.router.id", "local.group", "var.compartment_ocid", "local.compartment", "oci_objectstorage_bucket.state.name", "local.bucket", "local.catalog.regions[var.region]", "local.region_key", "module.configuration.configuration_json", "local.configuration", "\n", " ").Replace(match[1])
+		expression := strings.NewReplacer("local.receipt_confirmation", "false", "oci_identity_dynamic_group.router.id", "local.group", "var.compartment_ocid", "local.compartment", "oci_objectstorage_bucket.state.name", "local.bucket", "local.catalog.regions[var.region]", "local.region_key", "module.configuration.configuration_json", "local.configuration", "\n", " ").Replace(statements)
 		output, err := terraform(t, dir, "jsonencode("+expression+")\n", "console", "-no-color")
 		var encoded string
 		var got []string

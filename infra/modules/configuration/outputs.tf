@@ -2,6 +2,20 @@ output "configuration_json" {
   description = "Validated PREVIEW, PAUSED or nonproduction TEST configuration; no secret contents."
   value       = local.configuration_json
   precondition {
+    condition = local.s.mode != "TEST" || (
+      can(regex("^(OMR-[0-9a-f]{32})?$", local.s.test_receipt_code)) &&
+      can(regex("^(OMR-OP-[0-9a-f]{32})?$", local.s.operator_receipt_code))
+    )
+    error_message = "Receipt confirmation codes must match the received messages exactly: OMR- plus 32 lowercase hexadecimal characters for PagerDuty, OMR-OP- plus 32 for operator email. Leave empty to send a test."
+  }
+  precondition {
+    condition = !local.receipt_confirmation || (
+      local.s.test_receipt_code != "" &&
+      (local.operator_test_enabled ? local.s.operator_receipt_code != "" : local.s.operator_receipt_code == "")
+    )
+    error_message = "Receipt confirmation requires the PagerDuty code and, when operator email is configured, its code too. Keep test run numbers unchanged. Clear the operator code if operator email was removed."
+  }
+  precondition {
     condition = local.s.operator_email == "" || (
       can(regex("^[^@\\s\\p{Z}\\p{Cc}]+@[^@\\s\\p{Z}\\p{Cc}]+$", local.s.operator_email)) &&
       length(regexall(".", local.s.operator_email)) <= 512
@@ -84,4 +98,8 @@ output "configuration_json" {
 output "catalog_json" {
   description = "Independent trusted catalog, not derived from selected routing scope."
   value       = local.catalog_json
+}
+output "receipt_confirmation" {
+  description = "TEST confirmation intent from raw inputs; invalid pairs are rejected by configuration validation."
+  value       = local.receipt_confirmation
 }

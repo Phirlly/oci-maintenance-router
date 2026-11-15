@@ -83,6 +83,7 @@ func renderWithInstallation(t *testing.T, settings map[string]any, installation 
 		"output": map[string]any{
 			"configuration": map[string]string{"value": "${module.configuration.configuration_json}"},
 			"catalog":       map[string]string{"value": "${module.configuration.catalog_json}"},
+			"confirmation":  map[string]string{"value": "${jsonencode(module.configuration.receipt_confirmation)}"},
 		},
 	})
 	writeJSON(t, filepath.Join(dir, "terraform.tfvars.json"), map[string]any{"settings": settings})

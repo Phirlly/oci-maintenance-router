@@ -23,10 +23,7 @@ func TestDiagnosticIAMGrantsOnlyConfiguredTestAuthority(t *testing.T) {
 			t.Fatalf("diagnostic policy must be TEST-only and tenancy/home placed: %s", pattern)
 		}
 	}
-	match := regexp.MustCompile(`(?s)statements\s*=\s*(\[.*?\])`).FindStringSubmatch(block)
-	if len(match) != 2 {
-		t.Fatal("missing diagnostic statements")
-	}
+	statements := policyStatements(t, block)
 	for _, name := range []string{"alpha", "beta"} {
 		settings := diagnosticSettings()
 		settings["test_run"] = 2
@@ -42,9 +39,9 @@ func TestDiagnosticIAMGrantsOnlyConfiguredTestAuthority(t *testing.T) {
 			"group": group, "compartment": compartment, "bucket": bucket, "secret": config.Diagnostic.SecretID,
 			"installation_id": config.InstallationID, "configuration": values["configuration"],
 		}})
-		expression := strings.NewReplacer("oci_identity_dynamic_group.router.id", "local.group", "var.compartment_ocid", "local.compartment",
+		expression := strings.NewReplacer("local.receipt_confirmation", "false", "oci_identity_dynamic_group.router.id", "local.group", "var.compartment_ocid", "local.compartment",
 			"oci_objectstorage_bucket.state.name", "local.bucket", "var.test_secret_ocid", "local.secret",
-			"module.configuration.configuration_json", "local.configuration", "\n", " ").Replace(match[1])
+			"module.configuration.configuration_json", "local.configuration", "\n", " ").Replace(statements)
 		output, err := terraform(t, dir, "jsonencode("+expression+")\n", "console", "-no-color")
 		var encoded string
 		var got []string

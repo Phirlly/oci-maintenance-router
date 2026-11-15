@@ -33,22 +33,38 @@ resource "oci_functions_invoke_function" "deployment_check" {
         (var.mode == "TEST" ? (
           jsondecode(self.content).diagnostic.state == "API_ACCEPTED" &&
           try(jsondecode(self.content).diagnostic.code, "") == "" &&
-          ((jsondecode(self.content).diagnostic.dispatched == true && try(jsondecode(self.content).diagnostic.observedStatus, 0) == 202) ||
-          (jsondecode(self.content).diagnostic.dispatched == false && try(jsondecode(self.content).diagnostic.observedStatus, 0) == 0))
+          (local.receipt_confirmation ? (
+            jsondecode(self.content).diagnostic.receiptVerified == true &&
+            jsondecode(self.content).diagnostic.dispatched == false &&
+            !contains(keys(jsondecode(self.content).diagnostic), "observedStatus") &&
+            !contains(keys(jsondecode(self.content).diagnostic), "code")
+            ) : (
+            !contains(keys(jsondecode(self.content).diagnostic), "receiptVerified") &&
+            ((jsondecode(self.content).diagnostic.dispatched == true && try(jsondecode(self.content).diagnostic.observedStatus, 0) == 202) ||
+            (jsondecode(self.content).diagnostic.dispatched == false && try(jsondecode(self.content).diagnostic.observedStatus, 0) == 0))
+          ))
           ) : (
           contains(["PREVIEW", "PAUSED"], var.mode) && try(jsondecode(self.content).diagnostic, null) == null
         )) &&
         (local.operator_test_enabled ? (
           jsondecode(self.content).operator.state == "API_ACCEPTED" &&
           try(jsondecode(self.content).operator.code, "") == "" &&
-          ((jsondecode(self.content).operator.dispatched == true && (try(jsondecode(self.content).operator.observedStatus, 0) == 200 || try(jsondecode(self.content).operator.observedStatus, 0) == 202)) ||
-          (jsondecode(self.content).operator.dispatched == false && try(jsondecode(self.content).operator.observedStatus, null) == null))
+          (local.receipt_confirmation ? (
+            jsondecode(self.content).operator.receiptVerified == true &&
+            jsondecode(self.content).operator.dispatched == false &&
+            !contains(keys(jsondecode(self.content).operator), "observedStatus") &&
+            !contains(keys(jsondecode(self.content).operator), "code")
+            ) : (
+            !contains(keys(jsondecode(self.content).operator), "receiptVerified") &&
+            ((jsondecode(self.content).operator.dispatched == true && (try(jsondecode(self.content).operator.observedStatus, 0) == 200 || try(jsondecode(self.content).operator.observedStatus, 0) == 202)) ||
+            (jsondecode(self.content).operator.dispatched == false && try(jsondecode(self.content).operator.observedStatus, null) == null))
+          ))
         ) : try(jsondecode(self.content).operator, null) == null) &&
         try(jsondecode(self.content).processing, null) == null &&
         try(jsondecode(self.content).recovery, null) == null,
         false
       )
-      error_message = "Deployment check failed. Review the safe check result and IAM/network access. Confirm OCI's operator subscription email before TEST. Keep test run numbers unchanged when retrying; identity_conflict requires an intentional new number. Saved progress is retained. API acceptance does not confirm receipt; maintenance delivery remains disabled."
+      error_message = "Deployment check failed. Review the safe result and IAM/network access. Confirm OCI's subscription email before TEST. Keep test numbers unchanged when retrying or confirming receipt; check all received codes. For an intentional new test, clear both codes and use new test numbers. Saved progress is retained; maintenance delivery remains disabled."
     }
   }
 }

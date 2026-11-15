@@ -19,6 +19,8 @@ type formVariable struct {
 	Default     any
 	Minimum     int
 	Maximum     int
+	Pattern     string
+	MaxLength   int
 }
 type stackForm struct {
 	SchemaVersion  string

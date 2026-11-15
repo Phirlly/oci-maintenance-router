@@ -78,7 +78,7 @@ func TestActualInvocationPredicateRejectsStaleOrMalformedResults(t *testing.T) {
 				}
 				return string(b)
 			}
-			expression := strings.NewReplacer(
+			expression := strings.NewReplacer("local.receipt_confirmation", "false",
 				"var.mode", `"PREVIEW"`, "local.operator_test_enabled", "false",
 				"self.content", quote(string(encoded)),
 				"local.check_attempt_id", quote(attempt),

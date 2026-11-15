@@ -57,7 +57,7 @@ func TestOperatorInvocationRequiresMatchingAcceptedOutcome(t *testing.T) {
 				}
 				body, _ := json.Marshal(result)
 				quoted, _ := json.Marshal(string(body))
-				expression := strings.NewReplacer("self.content", string(quoted), "var.mode", `"TEST"`, "local.operator_test_enabled", strconv.FormatBool(configured),
+				expression := strings.NewReplacer("local.receipt_confirmation", "false", "self.content", string(quoted), "var.mode", `"TEST"`, "local.operator_test_enabled", strconv.FormatBool(configured),
 					"local.check_attempt_id", `"attempt"`, "sha256(module.configuration.configuration_json)", `"`+strings.Repeat("a", 64)+`"`, "local.release_sha256", `"`+strings.Repeat("b", 64)+`"`, "\n", " ").Replace(string(match[1]))
 				output, err := terraform(t, t.TempDir(), expression+"\n", "console", "-no-color")
 				want := configured && (kind == "accepted" || kind == "accepted202" || kind == "reused") || !configured && kind == "missing"

@@ -26,3 +26,42 @@ output "test_submission_status" {
   description = "Saved test outcome. API_ACCEPTED confirms PagerDuty API acceptance, not human receipt."
   value       = try(jsondecode(oci_functions_invoke_function.deployment_check.content).diagnostic.state, "not-requested")
 }
+
+locals {
+  # Never promote a partial proof preserved in a failed or stale Apply result.
+  receipt_check_verified = try(
+    local.receipt_confirmation && var.mode == "TEST" &&
+    jsondecode(oci_functions_invoke_function.deployment_check.content).responseVersion == 2 &&
+    jsondecode(oci_functions_invoke_function.deployment_check.content).status == "operational-verified" &&
+    jsondecode(oci_functions_invoke_function.deployment_check.content).operation == "deployment-check" &&
+    jsondecode(oci_functions_invoke_function.deployment_check.content).mode == var.mode &&
+    jsondecode(oci_functions_invoke_function.deployment_check.content).checkAttemptId == local.check_attempt_id &&
+    jsondecode(oci_functions_invoke_function.deployment_check.content).configurationSha256 == sha256(module.configuration.configuration_json) &&
+    jsondecode(oci_functions_invoke_function.deployment_check.content).releaseSha256 == local.release_sha256 &&
+    can(regex("^[a-f0-9]{64}$", jsondecode(oci_functions_invoke_function.deployment_check.content).routingGeneration)) &&
+    jsondecode(oci_functions_invoke_function.deployment_check.content).baselinePrepared == false &&
+    jsondecode(oci_functions_invoke_function.deployment_check.content).baselineSelected == false &&
+    jsondecode(oci_functions_invoke_function.deployment_check.content).scanCompleted == false &&
+    try(jsondecode(oci_functions_invoke_function.deployment_check.content).code, "") == "" &&
+    try(jsondecode(oci_functions_invoke_function.deployment_check.content).cleanupCode, "") == "" &&
+    try(jsondecode(oci_functions_invoke_function.deployment_check.content).processing, null) == null &&
+    try(jsondecode(oci_functions_invoke_function.deployment_check.content).recovery, null) == null &&
+    (local.operator_test_enabled || try(jsondecode(oci_functions_invoke_function.deployment_check.content).operator, null) == null) &&
+    alltrue([for channel in concat(["diagnostic"], local.operator_test_enabled ? ["operator"] : []) :
+      jsondecode(oci_functions_invoke_function.deployment_check.content)[channel].state == "API_ACCEPTED" &&
+      jsondecode(oci_functions_invoke_function.deployment_check.content)[channel].receiptVerified == true &&
+      jsondecode(oci_functions_invoke_function.deployment_check.content)[channel].dispatched == false &&
+      !contains(keys(jsondecode(oci_functions_invoke_function.deployment_check.content)[channel]), "observedStatus") &&
+      !contains(keys(jsondecode(oci_functions_invoke_function.deployment_check.content)[channel]), "code")
+    ]),
+    false
+  )
+}
+output "test_receipt_confirmed" {
+  description = "Receipt code verified by the last completed TEST confirmation check. Not current health or maintenance activation."
+  value       = local.receipt_check_verified
+}
+output "operator_receipt_confirmed" {
+  description = "Operator email code verified by the last completed TEST confirmation check. Not current health or maintenance activation."
+  value       = local.operator_test_enabled && local.receipt_check_verified
+}

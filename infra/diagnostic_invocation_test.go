@@ -67,7 +67,7 @@ func TestActualInvocationAcceptsOnlyCompletedConfiguredMode(t *testing.T) {
 				}
 				body, _ := json.Marshal(result)
 				quoted, _ := json.Marshal(string(body))
-				expression := strings.NewReplacer("self.content", string(quoted), "var.mode", `"`+mode+`"`, "local.operator_test_enabled", "false", "local.check_attempt_id", `"attempt"`,
+				expression := strings.NewReplacer("local.receipt_confirmation", "false", "self.content", string(quoted), "var.mode", `"`+mode+`"`, "local.operator_test_enabled", "false", "local.check_attempt_id", `"attempt"`,
 					"sha256(module.configuration.configuration_json)", `"`+strings.Repeat("a", 64)+`"`, "local.release_sha256", `"`+strings.Repeat("b", 64)+`"`, "\n", " ").Replace(string(match[1]))
 				output, err := terraform(t, t.TempDir(), expression+"\n", "console", "-no-color")
 				want := "false"

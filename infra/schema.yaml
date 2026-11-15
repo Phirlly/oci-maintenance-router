@@ -1,16 +1,16 @@
 schemaVersion: "1.1.0"
 title: OCI Maintenance Router — Preview and Test
-description: Prepare maintenance history or send one explicit nonproduction test alert.
-informationalText: PREVIEW prepares maintenance history. TEST sends a test alert to your selected nonproduction service. Maintenance notification delivery remains disabled.
+description: Prepare maintenance history or send and confirm a nonproduction test alert.
+informationalText: PREVIEW prepares maintenance history. TEST sends or confirms a test alert to your selected nonproduction service. Maintenance notification delivery remains disabled.
 variableGroups:
   - title: Placement
     variables: ["${environment_name}", "${compartment_ocid}"]
   - title: Operation
     variables: ["${mode}"]
   - title: PagerDuty test
-    variables: ["${test_secret_compartment_ocid}", "${test_secret_ocid}", "${test_nonproduction}", "${test_run}"]
+    variables: ["${test_secret_compartment_ocid}", "${test_secret_ocid}", "${test_nonproduction}", "${test_run}", "${test_receipt_code}"]
   - title: Operator email
-    variables: ["${operator_email}", "${operator_test_run}"]
+    variables: ["${operator_email}", "${operator_test_run}", "${operator_receipt_code}"]
   - title: MySQL scope
     variables: ["${mysql_regions}", "${mysql_compartments}"]
   - title: Ownership tag
@@ -42,7 +42,7 @@ variables:
     enum: [PREVIEW, PAUSED, TEST]
     default: PREVIEW
     title: Mode
-    description: PREVIEW prepares history without alerts. PAUSED stops new work. TEST sends one nonproduction test; it does not enable maintenance delivery.
+    description: PREVIEW prepares history without alerts. PAUSED stops new work. TEST sends or confirms a nonproduction test; it does not enable maintenance delivery.
     required: true
   test_secret_compartment_ocid:
     type: oci:identity:compartment:id
@@ -72,10 +72,20 @@ variables:
   test_run:
     type: integer
     title: Test run number
-    description: Enter 1 for your first test. Keep unchanged to reuse its result; increase by 1 for another test. After changing the test service, PagerDuty region or package, use a new number.
+    description: Enter 1 for your first test. Keep unchanged to retry or confirm receipt. For another test, including after a service, PagerDuty region or package change, clear both confirmation codes and increase the number.
     minimum: 1
     maximum: 2147483647
     required: true
+    visible:
+      eq: ["${mode}", TEST]
+  test_receipt_code:
+    type: string
+    title: PagerDuty confirmation code (optional)
+    description: Paste confirmation_code from the received PagerDuty test. Keep test numbers unchanged. If operator email is configured, enter its code too; confirmation sends nothing.
+    default: ""
+    pattern: "^(OMR-[0-9a-f]{32})?$"
+    maxLength: 36
+    required: false
     visible:
       eq: ["${mode}", TEST]
   operator_email:
@@ -87,7 +97,7 @@ variables:
   operator_test_run:
     type: integer
     title: Operator test run number
-    description: Enter 1 for the first test. Keep unchanged when retrying; use a new number for another test or a changed email/subscription. API acceptance does not confirm receipt.
+    description: Enter 1 for the first test. Keep unchanged to retry or confirm receipt. For another test or a changed email/subscription, clear both confirmation codes and use a new number.
     minimum: 1
     maximum: 2147483647
     required: true
@@ -96,6 +106,22 @@ variables:
         - eq: ["${mode}", TEST]
         - not:
             - eq: ["${operator_email}", ""]
+  operator_receipt_code:
+    type: string
+    title: Operator email confirmation code (optional)
+    description: Paste the confirmation code from the received operator test email, together with the PagerDuty code. Keep test numbers unchanged. Clear this code if removing operator email.
+    default: ""
+    pattern: "^(OMR-OP-[0-9a-f]{32})?$"
+    maxLength: 39
+    required: false
+    visible:
+      and:
+        - eq: ["${mode}", TEST]
+        - or:
+            - not:
+                - eq: ["${operator_email}", ""]
+            - not:
+                - eq: ["${operator_receipt_code}", ""]
   mysql_regions:
     type: list
     valueType: mysql_region
@@ -223,6 +249,12 @@ variables:
       hidePublicSubnet: true
       hideAdSubnet: true
 outputs:
+  test_receipt_confirmed:
+    type: boolean
+    title: PagerDuty receipt confirmed by last check
+  operator_receipt_confirmed:
+    type: boolean
+    title: Operator email receipt confirmed by last check
   operator_subscription_status:
     type: string
     title: Operator subscription (confirm OCI's email if PENDING)

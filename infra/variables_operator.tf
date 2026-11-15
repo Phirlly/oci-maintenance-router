@@ -16,3 +16,9 @@ variable "operator_test_run" {
   default     = null
   description = "Explicit operator test number in TEST with an email; unchanged reuses its saved result."
 }
+variable "operator_receipt_code" {
+  type        = string
+  nullable    = false
+  default     = ""
+  description = "Optional confirmation code from the received operator email. Keep test numbers unchanged and also supply the PagerDuty confirmation code."
+}
