@@ -56,6 +56,7 @@ func (h *Handler) runOperational(original context.Context, started time.Time, s 
 		if lease.Release(cleanup) != nil {
 			result.Status, result.CleanupCode, result.ScanCompleted = "not-ready", "release_failed", false
 			result.Review = nil
+			result.SavedNotices = nil
 		}
 	}()
 	if err := verifyCurrent(ctx, lease, store, s); err != nil {
@@ -74,6 +75,7 @@ func (h *Handler) runOperational(original context.Context, started time.Time, s 
 	if err := verifyCurrent(ctx, lease, store, s); err != nil {
 		result.Status, result.Code, result.ScanCompleted = "not-ready", err.Error(), false
 		result.Review = nil
+		result.SavedNotices = nil
 	}
 	return result
 }

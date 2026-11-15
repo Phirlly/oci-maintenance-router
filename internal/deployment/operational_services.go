@@ -23,6 +23,7 @@ type operations struct {
 	selectLive        func(context.Context, *reconciliation.Lease) (reconciliation.Baseline, error)
 	process           func(context.Context, *reconciliation.Lease) (reconciliation.ProcessingSnapshot, error)
 	review            func(context.Context, command) (*SavedReviewPage, error)
+	list              func(context.Context, command) (*SavedNoticePage, error)
 }
 
 func composeOperations(s Settings, store Store, p pinnedInputs, operation string) (operations, error) {
@@ -33,6 +34,9 @@ func composeOperations(s Settings, store Store, p pinnedInputs, operation string
 	}
 	if operation == "review-notice" {
 		return composeSavedReview(s, objects, p)
+	}
+	if operation == "list-notices" {
+		return composeSavedList(s, objects, p)
 	}
 	location := configuration.LedgerLocation{Namespace: s.Namespace, Bucket: s.Bucket}
 	mode := p.config.Mode

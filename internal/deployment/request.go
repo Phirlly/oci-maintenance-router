@@ -66,6 +66,15 @@ func parseCommand(body []byte) (command, error) {
 		if len(fields) != 1 {
 			return command{}, invalid
 		}
+	case "list-notices":
+		for name := range fields {
+			if name != "operation" && name != "cursor" {
+				return command{}, invalid
+			}
+		}
+		if _, err := parseListingCursor(c.cursor); err != nil {
+			return command{}, invalid
+		}
 	case "review-notice":
 		for name := range fields {
 			if name != "operation" && name != "noticeId" && name != "cursor" {
