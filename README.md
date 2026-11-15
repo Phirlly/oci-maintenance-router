@@ -3,9 +3,9 @@
 Route OCI MySQL maintenance notices to the owning PagerDuty service using
 resource ownership tags, with configuration through OCI Resource Manager.
 
-**Under development:** Prepare maintenance history in PREVIEW, pause new work,
-or request nonproduction PagerDuty and optional operator email tests. Maintenance
-delivery is not enabled.
+**Under development:** PREVIEW preparation, nonproduction tests and guarded LIVE
+activation are implemented. Automatic runs, operator monitoring and end-to-end
+validation remain unfinished. Not ready for production use.
 
 **Deploy to OCI — coming soon.** The button will be available once the deployment
 package is validated and published.

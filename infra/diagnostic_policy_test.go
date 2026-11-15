@@ -18,9 +18,9 @@ func TestDiagnosticIAMGrantsOnlyConfiguredTestAuthority(t *testing.T) {
 		t.Fatal(err)
 	}
 	block := checksumBlock(string(data), `resource "oci_identity_policy" "diagnostic"`)
-	for _, pattern := range []string{`count\s*=\s*var.mode == "TEST" \? 1 : 0`, `provider\s*=\s*oci.home`, `compartment_id\s*=\s*var.tenancy_ocid`} {
+	for _, pattern := range []string{`provider\s*=\s*oci.home`, `compartment_id\s*=\s*var.tenancy_ocid`} {
 		if !regexp.MustCompile(pattern).MatchString(block) {
-			t.Fatalf("diagnostic policy must be TEST-only and tenancy/home placed: %s", pattern)
+			t.Fatalf("diagnostic policy must be tenancy/home placed: %s", pattern)
 		}
 	}
 	statements := policyStatements(t, block)
@@ -39,7 +39,7 @@ func TestDiagnosticIAMGrantsOnlyConfiguredTestAuthority(t *testing.T) {
 			"group": group, "compartment": compartment, "bucket": bucket, "secret": config.Diagnostic.SecretID,
 			"installation_id": config.InstallationID, "configuration": values["configuration"],
 		}})
-		expression := strings.NewReplacer("local.receipt_confirmation", "false", "oci_identity_dynamic_group.router.id", "local.group", "var.compartment_ocid", "local.compartment",
+		expression := strings.NewReplacer("var.mode", `"TEST"`, "local.receipt_confirmation", "false", "oci_identity_dynamic_group.router.id", "local.group", "var.compartment_ocid", "local.compartment",
 			"oci_objectstorage_bucket.state.name", "local.bucket", "var.test_secret_ocid", "local.secret",
 			"module.configuration.configuration_json", "local.configuration", "\n", " ").Replace(statements)
 		output, err := terraform(t, dir, "jsonencode("+expression+")\n", "console", "-no-color")

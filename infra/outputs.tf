@@ -3,11 +3,11 @@ output "installation_status" {
   value       = try(jsondecode(oci_functions_invoke_function.deployment_check.content).status, "not-ready")
 }
 output "sending_enabled" {
-  description = "Maintenance delivery remains disabled. TEST can send one explicitly requested nonproduction alert."
-  value       = false
+  description = "LIVE activation verified by this Apply. Not current health, automatic invocation or observed maintenance delivery."
+  value       = local.live_check_verified
 }
 output "function_id" {
-  description = "Function preparing history or executing the selected nonproduction test."
+  description = "Function for maintenance preparation, explicit tests and guarded LIVE processing."
   value       = oci_functions_function.router.id
 }
 output "state_bucket" {

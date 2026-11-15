@@ -2,7 +2,7 @@ variable "mode" {
   type        = string
   nullable    = false
   default     = "PREVIEW"
-  description = "PREVIEW prepares history; PAUSED stops automatic work and permits explicitly confirmed closure; TEST sends or confirms a nonproduction test."
+  description = "PREVIEW prepares history; PAUSED stops automatic work and permits confirmed closure; TEST sends or confirms nonproduction tests; LIVE requires both saved proofs and prepared history."
 }
 variable "test_secret_compartment_ocid" {
   type        = string
@@ -25,11 +25,11 @@ variable "test_nonproduction" {
 variable "test_run" {
   type        = number
   default     = null
-  description = "Explicit positive test number; unchanged reuses the saved result, increase for another test. No fallback in TEST."
+  description = "Explicit positive test number in TEST and LIVE; unchanged reuses the saved result, increase for another test in TEST."
 }
 variable "test_receipt_code" {
   type        = string
   nullable    = false
   default     = ""
-  description = "Optional confirmation code from the received PagerDuty test. Keep test numbers unchanged; supply every configured receipt code together."
+  description = "Confirmation code from the received PagerDuty test, required in LIVE. Keep test numbers unchanged; supply every configured receipt code together."
 }

@@ -18,7 +18,7 @@ func TestOperatorPolicyLimitsOperationsRegionAndRecord(t *testing.T) {
 		t.Fatal(err)
 	}
 	block := checksumBlock(string(data), `resource "oci_identity_policy" "operator"`)
-	for _, pattern := range []string{`count\s*=\s*local.operator_test_enabled \? 1 : 0`, `provider\s*=\s*oci.home`, `compartment_id\s*=\s*var.compartment_ocid`} {
+	for _, pattern := range []string{`provider\s*=\s*oci.home`, `compartment_id\s*=\s*var.compartment_ocid`} {
 		if !regexp.MustCompile(pattern).MatchString(block) {
 			t.Fatalf("incorrect conditional policy boundary: %s", pattern)
 		}
@@ -29,7 +29,7 @@ func TestOperatorPolicyLimitsOperationsRegionAndRecord(t *testing.T) {
 		installation, request := "b1-"+strings.Repeat("a", 64), "o1-"+strings.Repeat("b", 64)
 		dir := t.TempDir()
 		writeJSON(t, filepath.Join(dir, "main.tf.json"), map[string]any{"locals": map[string]any{"group": group, "compartment": compartment, "bucket": bucket, "installation_id": installation, "region_key": region, "configuration": `{"operatorTest":{"requestId":"` + request + `"}}`}})
-		expression := strings.NewReplacer("local.receipt_confirmation", "false", "oci_identity_dynamic_group.router.id", "local.group", "var.compartment_ocid", "local.compartment", "oci_objectstorage_bucket.state.name", "local.bucket", "local.catalog.regions[var.region]", "local.region_key", "module.configuration.configuration_json", "local.configuration", "\n", " ").Replace(statements)
+		expression := strings.NewReplacer("var.mode", `"TEST"`, "local.receipt_confirmation", "false", "oci_identity_dynamic_group.router.id", "local.group", "var.compartment_ocid", "local.compartment", "oci_objectstorage_bucket.state.name", "local.bucket", "local.catalog.regions[var.region]", "local.region_key", "module.configuration.configuration_json", "local.configuration", "\n", " ").Replace(statements)
 		output, err := terraform(t, dir, "jsonencode("+expression+")\n", "console", "-no-color")
 		var encoded string
 		var got []string
@@ -68,7 +68,7 @@ func TestOperatorSubscriptionIsOwnedAndIndependentOfMode(t *testing.T) {
 	if !regexp.MustCompile(`operator_subscription_id\s*=\s*try\(oci_ons_subscription.operator\[0\].id, ""\)`).MatchString(configuration) {
 		t.Fatal("configuration must use deployment-owned subscription")
 	}
-	for _, mode := range []string{"PREVIEW", "PAUSED", "TEST"} {
+	for _, mode := range []string{"PREVIEW", "PAUSED", "TEST", "LIVE"} {
 		for _, email := range []string{"", "ops@example.invalid"} {
 			match := regexp.MustCompile(`(?m)^\s*operator_test_enabled\s*=\s*(.*)$`).FindStringSubmatch(source)
 			if len(match) != 2 {

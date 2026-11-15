@@ -13,7 +13,7 @@ resource "oci_functions_invoke_function" "deployment_check" {
     configurationSha256 = sha256(module.configuration.configuration_json)
     releaseSha256       = local.release_sha256
   })
-  depends_on = [oci_identity_policy.router, oci_identity_policy.announcements, oci_identity_policy.diagnostic, oci_identity_policy.operator, data.oci_functions_function.archive]
+  depends_on = [oci_identity_policy.router, oci_identity_policy.announcements, oci_identity_policy.diagnostic, oci_identity_policy.operator, oci_identity_policy.live, data.oci_functions_function.archive]
   lifecycle {
     postcondition {
       condition = try(
@@ -26,7 +26,7 @@ resource "oci_functions_invoke_function" "deployment_check" {
         jsondecode(self.content).releaseSha256 == local.release_sha256 &&
         can(regex("^[a-f0-9]{64}$", jsondecode(self.content).routingGeneration)) &&
         jsondecode(self.content).baselinePrepared == (var.mode == "PREVIEW") &&
-        jsondecode(self.content).baselineSelected == false &&
+        jsondecode(self.content).baselineSelected == (var.mode == "LIVE") &&
         jsondecode(self.content).scanCompleted == false &&
         try(jsondecode(self.content).code, "") == "" &&
         try(jsondecode(self.content).cleanupCode, "") == "" &&
@@ -44,7 +44,7 @@ resource "oci_functions_invoke_function" "deployment_check" {
             (jsondecode(self.content).diagnostic.dispatched == false && try(jsondecode(self.content).diagnostic.observedStatus, 0) == 0))
           ))
           ) : (
-          contains(["PREVIEW", "PAUSED"], var.mode) && try(jsondecode(self.content).diagnostic, null) == null
+          contains(["PREVIEW", "PAUSED", "LIVE"], var.mode) && try(jsondecode(self.content).diagnostic, null) == null
         )) &&
         (local.operator_test_enabled ? (
           jsondecode(self.content).operator.state == "API_ACCEPTED" &&
@@ -64,7 +64,7 @@ resource "oci_functions_invoke_function" "deployment_check" {
         try(jsondecode(self.content).recovery, null) == null,
         false
       )
-      error_message = "Deployment check failed. Review the safe result and IAM/network access. Confirm OCI's subscription email before TEST. Keep test numbers unchanged when retrying or confirming receipt; check all received codes. For an intentional new test, clear both codes and use new test numbers. Saved progress is retained; maintenance delivery remains disabled."
+      error_message = "Deployment check failed. Review the safe result and IAM/network access. Confirm OCI's email before TEST. Keep test settings and numbers unchanged when confirming or activating LIVE; check both received codes and completed PREVIEW preparation. For an intentional new test, clear both codes and use new test numbers in TEST. Saved progress is retained; a failed Apply does not prove activation or current health."
     }
   }
 }

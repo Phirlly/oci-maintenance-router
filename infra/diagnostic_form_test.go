@@ -9,8 +9,8 @@ import (
 func TestNativeTestControlsRetainExplicitScopedIntent(t *testing.T) {
 	form := readForm(t)
 	mode := form.Variables["mode"]
-	if mode.Type != "enum" || mode.Default != "PREVIEW" || !reflect.DeepEqual(mode.Enum, []string{"PREVIEW", "PAUSED", "TEST"}) {
-		t.Fatal("mode must default to PREVIEW and exclude LIVE")
+	if mode.Type != "enum" || mode.Default != "PREVIEW" || !reflect.DeepEqual(mode.Enum, []string{"PREVIEW", "PAUSED", "TEST", "LIVE"}) {
+		t.Fatal("mode must default to PREVIEW with explicit LIVE activation")
 	}
 	for _, name := range []string{"test_secret_compartment_ocid", "test_secret_ocid", "test_nonproduction", "test_run"} {
 		v := form.Variables[name]
@@ -27,8 +27,8 @@ func TestNativeTestControlsRetainExplicitScopedIntent(t *testing.T) {
 			}
 		}
 	}
-	if !strings.Contains(mode.Description, "only in TEST") {
-		t.Fatal("mode hint must explain when saved test settings are used")
+	if !strings.Contains(mode.Description, "LIVE") || !strings.Contains(mode.Description, "proof") {
+		t.Fatal("mode hint must explain LIVE proof requirements")
 	}
 	secret := form.Variables["test_secret_ocid"]
 	if secret.Type != "oci:kms:secret:id" || secret.DependsOn["compartmentId"] != "${test_secret_compartment_ocid}" {

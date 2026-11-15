@@ -1,7 +1,7 @@
 schemaVersion: "1.1.0"
-title: OCI Maintenance Router — Preview and Test
-description: Prepare maintenance history or send and confirm a nonproduction test alert.
-informationalText: PREVIEW prepares maintenance history. TEST sends or confirms a test alert to your selected nonproduction service. Maintenance notification delivery remains disabled.
+title: OCI Maintenance Router
+description: Prepare, test and activate tag-based MySQL maintenance routing.
+informationalText: Development package. LIVE activation is implemented; automatic runs, operator monitoring and end-to-end validation remain unfinished. Do not use for production.
 variableGroups:
   - title: Placement
     variables: ["${environment_name}", "${compartment_ocid}"]
@@ -41,10 +41,10 @@ variables:
     required: true
   mode:
     type: enum
-    enum: [PREVIEW, PAUSED, TEST]
+    enum: [PREVIEW, PAUSED, TEST, LIVE]
     default: PREVIEW
     title: Mode
-    description: PREVIEW prepares history without alerts. PAUSED stops automatic work but permits confirmed closure below. Saved test settings are used only in TEST, which sends or confirms a nonproduction test.
+    description: PREVIEW prepares history. TEST sends or confirms nonproduction tests. LIVE requires prepared history and both received test proofs; keep test settings unchanged. Apply PAUSED before changing routing or scope. PAUSED also permits confirmed closure below.
     required: true
   test_secret_compartment_ocid:
     type: oci:identity:compartment:id
@@ -55,7 +55,7 @@ variables:
   test_secret_ocid:
     type: oci:kms:secret:id
     title: Nonproduction PagerDuty secret
-    description: Required in TEST. Select a Vault secret containing your nonproduction Events API V2 key. Never paste the key here. Reselect if blank when editing.
+    description: Required in TEST; retain for LIVE proof verification. Select a Vault secret containing your nonproduction Events API V2 key. Never paste the key here. Reselect if blank when editing.
     required: false
     visible: true
     dependsOn:
@@ -63,39 +63,39 @@ variables:
   test_nonproduction:
     type: boolean
     title: This service may receive a nonproduction test alert
-    description: Required in TEST. Confirm this test will not page production responders.
+    description: Required in TEST; retain for LIVE proof verification. Confirm this test will not page production responders.
     default: false
     required: false
     visible: true
   test_run:
     type: integer
     title: Test run number
-    description: Required in TEST. Enter 1 for your first test. Keep unchanged to retry or confirm receipt. For another test, including after a service, PagerDuty region or package change, clear both confirmation codes and increase the number.
+    description: Required in TEST and LIVE. Enter 1 for your first test. Keep unchanged to retry, confirm or activate. For another test, including after a service, PagerDuty region or package change, clear both confirmation codes and increase the number in TEST.
     required: false
     visible: true
   test_receipt_code:
     type: string
     title: PagerDuty confirmation code (optional)
-    description: In TEST, paste confirmation_code from the received PagerDuty test. Keep test numbers unchanged. If operator email is configured, enter its code too; confirmation sends nothing.
+    description: Paste confirmation_code from the received PagerDuty test. Required for LIVE. In TEST, enter the operator code too when email is configured; confirmation sends nothing. Keep test numbers unchanged.
     default: ""
     required: false
     visible: true
   operator_email:
     type: string
-    title: Operator email (optional)
-    description: Apply in PREVIEW or PAUSED, then confirm OCI's email before TEST. Changing the address requires confirmation again. Clear to remove this subscription.
+    title: Operator email
+    description: Required for LIVE. Apply in PREVIEW or PAUSED, then confirm OCI's email before TEST. Changing the address requires confirmation again. Clear in PREVIEW or PAUSED to remove this subscription.
     default: ""
     required: false
   operator_test_run:
     type: integer
     title: Operator test run number
-    description: Required in TEST with an operator email. Enter 1 for the first test. Keep unchanged to retry or confirm receipt. For another test or a changed email/subscription, clear both confirmation codes and use a new number.
+    description: Required in TEST with an operator email and in LIVE. Enter 1 for the first test. Keep unchanged to retry, confirm or activate. For another test or changed email/subscription, clear both confirmation codes and use a new number in TEST.
     required: false
     visible: true
   operator_receipt_code:
     type: string
     title: Operator email confirmation code (optional)
-    description: In TEST, paste the code from the received operator test email, together with the PagerDuty code. Keep test numbers unchanged. Clear this code if removing operator email.
+    description: In TEST, paste the code from the received operator test email, together with the PagerDuty code. Retain both for LIVE. Keep test numbers unchanged. Clear this code if removing operator email.
     default: ""
     required: false
     visible: true
@@ -177,7 +177,7 @@ variables:
   secret_compartment_ocid:
     type: oci:identity:compartment:id
     title: Vault secret compartment
-    description: "Choose the compartment containing your secrets in the stack region. Reuse an existing secret or <a href='https://docs.oracle.com/en-us/iaas/Content/secret-management/Tasks/create-secret.htm'>create one in Vault</a>. These routing secrets are not read yet; PREVIEW can use harmless dummy content. TEST uses its separate secret above."
+    description: "Choose the compartment containing your secrets in the stack region. Reuse an existing secret or <a href='https://docs.oracle.com/en-us/iaas/Content/secret-management/Tasks/create-secret.htm'>create one in Vault</a>. LIVE uses these destination keys. PREVIEW can use harmless dummy content; TEST uses its separate secret above."
     default: ${compartment_ocid}
     required: true
   destinations:
@@ -237,7 +237,7 @@ variables:
   existing_subnet_ocid:
     type: oci:core:subnet:id
     title: Existing private regional subnet
-    description: Must permit DNS and HTTPS to regional Announcements, Object Storage and Vault; TEST also needs events.pagerduty.com (US) or events.eu.pagerduty.com (EU) and, with operator email, Notifications control and topic data endpoints. Shared routes and security rules are not changed.
+    description: Must permit DNS and HTTPS to Announcements, Object Storage, Vault and selected regional MySQL control APIs. TEST and LIVE need events.pagerduty.com (US) or events.eu.pagerduty.com (EU) and Notifications control and topic data endpoints. Shared routes and security rules are not changed.
     required: true
     visible:
       not: ["${create_network}"]
@@ -276,7 +276,7 @@ outputs:
     title: Last deployment check
   sending_enabled:
     type: boolean
-    title: Maintenance delivery enabled
+    title: LIVE activation verified by last Apply
   function_id:
     type: string
     title: Function

@@ -2,7 +2,7 @@ variable "operator_email" {
   type        = string
   nullable    = false
   default     = ""
-  description = "Optional operator email. Apply in PREVIEW or PAUSED, confirm OCI's email, then select TEST. Clearing it removes this stack's subscription."
+  description = "Operator email, required in LIVE. Apply in PREVIEW or PAUSED, confirm OCI's email, then select TEST. Clearing it removes this stack's subscription."
   validation {
     condition = var.operator_email == "" || (
       can(regex("^[^@\\s\\p{Z}\\p{Cc}]+@[^@\\s\\p{Z}\\p{Cc}]+$", var.operator_email)) &&
@@ -14,11 +14,11 @@ variable "operator_email" {
 variable "operator_test_run" {
   type        = number
   default     = null
-  description = "Explicit operator test number in TEST with an email; unchanged reuses its saved result."
+  description = "Explicit operator test number in TEST with an email and in LIVE; unchanged reuses its saved result."
 }
 variable "operator_receipt_code" {
   type        = string
   nullable    = false
   default     = ""
-  description = "Optional confirmation code from the received operator email. Keep test numbers unchanged and also supply the PagerDuty confirmation code."
+  description = "Confirmation code from the received operator email, required in LIVE. Keep test numbers unchanged and also supply the PagerDuty confirmation code."
 }

@@ -1,5 +1,5 @@
 {
-  "purpose": "preview-and-nonproduction-test",
+  "purpose": "guarded-maintenance-activation",
   "runtime": {
     "name": "ol9",
     "version": "0.1.20",

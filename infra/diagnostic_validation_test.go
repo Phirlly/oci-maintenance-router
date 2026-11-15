@@ -25,7 +25,7 @@ func TestTestModeRejectsIncompleteOrInvalidIntent(t *testing.T) {
 		{"missing-attestation", "test_nonproduction", nil, true, "nonproduction"},
 		{"null-attestation", "test_nonproduction", nil, false, "nonproduction"},
 		{"false-attestation", "test_nonproduction", false, false, "nonproduction"},
-		{"live", "mode", "LIVE", false, "Mode"},
+		{"live-without-proofs", "mode", "LIVE", false, "LIVE"},
 		{"unknown-mode", "mode", "test", false, "Mode"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
