@@ -61,7 +61,7 @@ func render(t *testing.T, settings map[string]any) (map[string]string, string, e
 	return renderWithInstallation(t, settings, "b1-"+strings.Repeat("a", 64))
 }
 
-func renderWithInstallation(t *testing.T, settings map[string]any, installation string) (map[string]string, string, error) {
+func renderWithInstallation(t *testing.T, settings map[string]any, installation string, subscription ...string) (map[string]string, string, error) {
 	t.Helper()
 	requireTerraform(t)
 	dir := t.TempDir()
@@ -69,12 +69,16 @@ func renderWithInstallation(t *testing.T, settings map[string]any, installation 
 	if err != nil {
 		t.Fatal(err)
 	}
+	module := map[string]any{
+		"source": source, "settings": "${var.settings}", "catalog": catalogFixture(),
+		"installation_id": installation,
+		"topics":          map[string]string{"intake": "ocid1.onstopic.oc1.iad.intake", "operator": "ocid1.onstopic.oc1.iad.operator"},
+	}
+	if len(subscription) > 0 {
+		module["operator_subscription_id"] = subscription[0]
+	}
 	writeJSON(t, filepath.Join(dir, "main.tf.json"), map[string]any{
-		"module": map[string]any{"configuration": map[string]any{
-			"source": source, "settings": "${var.settings}", "catalog": catalogFixture(),
-			"installation_id": installation,
-			"topics":          map[string]string{"intake": "ocid1.onstopic.oc1.iad.intake", "operator": "ocid1.onstopic.oc1.iad.operator"},
-		}},
+		"module":   map[string]any{"configuration": module},
 		"variable": map[string]any{"settings": map[string]string{"type": "any"}},
 		"output": map[string]any{
 			"configuration": map[string]string{"value": "${module.configuration.configuration_json}"},

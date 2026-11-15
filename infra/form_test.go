@@ -9,15 +9,16 @@ import (
 )
 
 type formVariable struct {
-	Type      string
-	ValueType string
-	Visible   any
-	DependsOn map[string]any
-	Required  bool
-	Enum      []string
-	Default   any
-	Minimum   int
-	Maximum   int
+	Description string
+	Type        string
+	ValueType   string
+	Visible     any
+	DependsOn   map[string]any
+	Required    bool
+	Enum        []string
+	Default     any
+	Minimum     int
+	Maximum     int
 }
 type stackForm struct {
 	SchemaVersion  string

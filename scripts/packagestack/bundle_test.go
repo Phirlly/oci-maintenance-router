@@ -78,7 +78,7 @@ func TestBundleContainsOnlyDeploymentInputs(t *testing.T) {
 			t.Fatalf("private/development content %s", f.Name)
 		}
 	}
-	for _, name := range []string{"schema.yaml", "versions.tf", ".terraform.lock.hcl", "modules/configuration/render.tf", "function.zip", "function-manifest.json", "release.json", "variables_operation.tf", "identity_diagnostic.tf"} {
+	for _, name := range []string{"schema.yaml", "versions.tf", ".terraform.lock.hcl", "modules/configuration/render.tf", "function.zip", "function-manifest.json", "release.json", "variables_operation.tf", "identity_diagnostic.tf", "operator.tf", "variables_operator.tf", "identity_operator.tf"} {
 		if !names[name] {
 			t.Errorf("missing %s", name)
 		}

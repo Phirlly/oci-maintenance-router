@@ -15,9 +15,17 @@ variable "settings" {
     test_secret_ocid    = optional(string, "")
     test_nonproduction  = optional(bool, false)
     test_run            = optional(number)
+    operator_email      = optional(string, "")
+    operator_test_run   = optional(number)
   })
   nullable    = false
   description = "Routing and explicit nonproduction test choices; no secret contents or maintenance-delivery authority."
+}
+variable "operator_subscription_id" {
+  type        = string
+  nullable    = false
+  default     = ""
+  description = "Deployment-owned EMAIL subscription; omitted when operator setup is not requested."
 }
 variable "catalog" {
   type        = object({ regions = map(string), mysqlServices = list(string) })

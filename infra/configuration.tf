@@ -3,9 +3,10 @@ locals {
   installation_id = "b1-${sha256(oci_objectstorage_bucket.state.bucket_id)}"
 }
 module "configuration" {
-  source          = "./modules/configuration"
-  catalog         = local.catalog
-  installation_id = local.installation_id
+  source                   = "./modules/configuration"
+  catalog                  = local.catalog
+  installation_id          = local.installation_id
+  operator_subscription_id = try(oci_ons_subscription.operator[0].id, "")
   settings = {
     environment_name    = var.environment_name
     tenancy_ocid        = var.tenancy_ocid
@@ -22,13 +23,15 @@ module "configuration" {
     test_secret_ocid    = var.test_secret_ocid
     test_nonproduction  = var.test_nonproduction
     test_run            = var.test_run
+    operator_email      = var.operator_email
+    operator_test_run   = var.operator_test_run
   }
   topics = {
     intake   = oci_ons_notification_topic.intake.id
     operator = oci_ons_notification_topic.operator.id
   }
 }
-# Phase1 topics are inert: no subscriptions, announcement filters or publish IAM.
+# Intake remains inert. The optional operator subscription has separate TEST IAM.
 resource "oci_ons_notification_topic" "intake" {
   compartment_id = var.compartment_ocid
   name           = "${local.name}-intake"
@@ -37,5 +40,5 @@ resource "oci_ons_notification_topic" "intake" {
 resource "oci_ons_notification_topic" "operator" {
   compartment_id = var.compartment_ocid
   name           = "${local.name}-operator"
-  description    = "Reserved operator notifications; PREVIEW installer cannot publish."
+  description    = "Dedicated operator notifications; only explicit TEST may publish in this release."
 }

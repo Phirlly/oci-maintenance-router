@@ -13,7 +13,7 @@ resource "oci_functions_invoke_function" "deployment_check" {
     configurationSha256 = sha256(module.configuration.configuration_json)
     releaseSha256       = local.release_sha256
   })
-  depends_on = [oci_identity_policy.router, oci_identity_policy.announcements, oci_identity_policy.diagnostic, data.oci_functions_function.archive]
+  depends_on = [oci_identity_policy.router, oci_identity_policy.announcements, oci_identity_policy.diagnostic, oci_identity_policy.operator, data.oci_functions_function.archive]
   lifecycle {
     postcondition {
       condition = try(
@@ -38,12 +38,17 @@ resource "oci_functions_invoke_function" "deployment_check" {
           ) : (
           contains(["PREVIEW", "PAUSED"], var.mode) && try(jsondecode(self.content).diagnostic, null) == null
         )) &&
-        try(jsondecode(self.content).operator, null) == null &&
+        (local.operator_test_enabled ? (
+          jsondecode(self.content).operator.state == "API_ACCEPTED" &&
+          try(jsondecode(self.content).operator.code, "") == "" &&
+          ((jsondecode(self.content).operator.dispatched == true && try(jsondecode(self.content).operator.observedStatus, 0) == 200) ||
+          (jsondecode(self.content).operator.dispatched == false && try(jsondecode(self.content).operator.observedStatus, null) == null))
+        ) : try(jsondecode(self.content).operator, null) == null) &&
         try(jsondecode(self.content).processing, null) == null &&
         try(jsondecode(self.content).recovery, null) == null,
         false
       )
-      error_message = "Deployment check failed. Review the safe check result and IAM/network access. Keep the test run number unchanged when retrying; identity_conflict requires an intentional new test number. Saved progress is retained. API acceptance does not confirm receipt; maintenance delivery remains disabled."
+      error_message = "Deployment check failed. Review the safe check result and IAM/network access. Confirm OCI's operator subscription email before TEST. Keep test run numbers unchanged when retrying; identity_conflict requires an intentional new number. Saved progress is retained. API acceptance does not confirm receipt; maintenance delivery remains disabled."
     }
   }
 }

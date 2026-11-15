@@ -2,6 +2,8 @@ locals {
   s = var.settings
   # Missing run is never defaulted into authority to send another test.
   diagnostic_request_id = local.s.test_run == null ? null : "d1-${sha256(jsonencode(["diagnostic-request-v1", var.installation_id, local.s.test_run]))}"
+  operator_test_enabled = local.s.mode == "TEST" && local.s.operator_email != ""
+  operator_request_id   = local.s.operator_test_run == null ? null : "o1-${sha256(jsonencode(["operator-request-v1", var.installation_id, local.s.operator_test_run]))}"
   configuration_json = jsonencode(merge({
     schemaVersion    = 7
     installationId   = var.installation_id
@@ -27,6 +29,12 @@ locals {
       requestId     = local.diagnostic_request_id
       secretId      = local.s.test_secret_ocid
       nonProduction = local.s.test_nonproduction
+    }
+    } : {}, local.operator_test_enabled ? {
+    operatorTest = {
+      requestId      = local.operator_request_id
+      subscriptionId = var.operator_subscription_id
+      endpoint       = local.s.operator_email
     }
   } : {}))
   catalog_json = jsonencode(var.catalog)

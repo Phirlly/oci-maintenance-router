@@ -2,6 +2,21 @@ output "configuration_json" {
   description = "Validated PREVIEW, PAUSED or nonproduction TEST configuration; no secret contents."
   value       = local.configuration_json
   precondition {
+    condition = local.s.operator_email == "" || (
+      can(regex("^[^@\\s\\p{Z}\\p{Cc}]+@[^@\\s\\p{Z}\\p{Cc}]+$", local.s.operator_email)) &&
+      length(regexall(".", local.s.operator_email)) <= 512
+    )
+    error_message = "Operator email must be one address without whitespace or control characters, at most 512 Unicode characters; leave empty to omit operator setup."
+  }
+  precondition {
+    condition     = !local.operator_test_enabled || try(local.s.operator_test_run >= 1 && local.s.operator_test_run <= 2147483647 && floor(local.s.operator_test_run) == local.s.operator_test_run, false)
+    error_message = "Operator test run number is required in TEST with an email: enter an integer from 1 to 2147483647. Keep unchanged when retrying; use a new number for another test or changed email/subscription."
+  }
+  precondition {
+    condition     = !local.operator_test_enabled || (length(var.operator_subscription_id) <= 4096 && can(regex("^ocid1\\.onssubscription\\.oc1\\.${local.regional_suffix}", var.operator_subscription_id)))
+    error_message = "Operator subscription must be created by this stack in the deployment region. Apply email setup in PREVIEW or PAUSED and confirm OCI's email before TEST."
+  }
+  precondition {
     condition     = contains(["PREVIEW", "PAUSED", "TEST"], local.s.mode)
     error_message = "Mode must be PREVIEW, PAUSED or TEST. Maintenance delivery is not enabled by this release."
   }

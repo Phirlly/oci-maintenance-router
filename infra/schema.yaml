@@ -9,6 +9,8 @@ variableGroups:
     variables: ["${mode}"]
   - title: PagerDuty test
     variables: ["${test_secret_compartment_ocid}", "${test_secret_ocid}", "${test_nonproduction}", "${test_run}"]
+  - title: Operator email
+    variables: ["${operator_email}", "${operator_test_run}"]
   - title: MySQL scope
     variables: ["${mysql_regions}", "${mysql_compartments}"]
   - title: Ownership tag
@@ -76,6 +78,24 @@ variables:
     required: true
     visible:
       eq: ["${mode}", TEST]
+  operator_email:
+    type: string
+    title: Operator email (optional)
+    description: Apply in PREVIEW or PAUSED, then confirm OCI's email before TEST. Changing the address requires confirmation again. Clear to remove this subscription.
+    default: ""
+    required: false
+  operator_test_run:
+    type: integer
+    title: Operator test run number
+    description: Enter 1 for the first test. Keep unchanged when retrying; use a new number for another test or a changed email/subscription. API acceptance does not confirm receipt.
+    minimum: 1
+    maximum: 2147483647
+    required: true
+    visible:
+      and:
+        - eq: ["${mode}", TEST]
+        - not:
+            - eq: ["${operator_email}", ""]
   mysql_regions:
     type: list
     valueType: mysql_region
@@ -193,7 +213,7 @@ variables:
   existing_subnet_ocid:
     type: oci:core:subnet:id
     title: Existing private regional subnet
-    description: Must already permit DNS and HTTPS to regional Announcements, Object Storage and Vault, plus events.pagerduty.com (US) or events.eu.pagerduty.com (EU) for TEST. Shared routes and security rules are not changed.
+    description: Must permit DNS and HTTPS to regional Announcements, Object Storage and Vault; TEST also needs events.pagerduty.com (US) or events.eu.pagerduty.com (EU) and, with operator email, Notifications control and topic data endpoints. Shared routes and security rules are not changed.
     required: true
     visible:
       not: ["${create_network}"]
@@ -203,6 +223,12 @@ variables:
       hidePublicSubnet: true
       hideAdSubnet: true
 outputs:
+  operator_subscription_status:
+    type: string
+    title: Operator subscription (confirm OCI's email if PENDING)
+  operator_test_status:
+    type: string
+    title: Last operator test (API acceptance only)
   configured_mode:
     type: string
     title: Configured mode
