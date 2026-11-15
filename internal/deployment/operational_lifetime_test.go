@@ -86,7 +86,7 @@ func TestCancellationReleasesOwnershipWithoutRevivingWork(t *testing.T) {
 					return errors.New("private failure")
 				}}, nil
 			}
-			response := h.run(ctx, strings.NewReader(invocation(s)))
+			response := h.run(withInvocationHeaders(ctx, nil), strings.NewReader(invocation(s)))
 			got := response.operational
 			want := "operation_failed"
 			if cancelWork {

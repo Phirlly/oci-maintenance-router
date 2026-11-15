@@ -69,7 +69,7 @@ func testContext(t *testing.T) context.Context {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	t.Cleanup(cancel)
-	return ctx
+	return withInvocationHeaders(ctx, nil)
 }
 
 func TestCheckIsNonsendingAndIdempotent(t *testing.T) {

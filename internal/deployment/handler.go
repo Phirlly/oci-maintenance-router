@@ -48,16 +48,12 @@ func (h *Handler) run(ctx context.Context, in io.Reader) (result response) {
 	original := ctx
 	ctx, cancel := context.WithDeadline(ctx, started.Add(20*time.Second))
 	defer cancel()
-	body, err := io.ReadAll(io.LimitReader(in, 8193))
-	if err != nil || len(body) > 8192 {
+	request, err := readCommand(in, fdk.GetContext(ctx).Header())
+	if err != nil {
 		return rejected("request_invalid")
 	}
 	if ctx.Err() != nil {
 		return rejected("deadline")
-	}
-	request, err := parseCommand(body)
-	if err != nil {
-		return rejected("request_invalid")
 	}
 	// Correlate every later outcome without reflecting malformed request data.
 	defer func() { result.legacy.CheckAttemptID = request.attemptID }()
@@ -76,10 +72,20 @@ func (h *Handler) run(ctx context.Context, in io.Reader) (result response) {
 	if failure.Status != "" {
 		return response{legacy: failure}
 	}
+	if request.intakeTopic != "" && request.intakeTopic != p.config.IntakeTopicID {
+		return rejected("intake_mismatch")
+	}
 	if request.operation == "close-work" && !matchesClosure(p.config, request) {
 		return rejected("closure_intent_mismatch")
 	}
 	if p.config.SchemaVersion == 7 {
+		// Delayed automatic requests must not prepare a baseline, execute saved
+		// recovery or run tests while the installation is not LIVE.
+		if request.automatic && p.config.Mode != "LIVE" {
+			idle := initialOperationalResult(settings, p, request)
+			idle.Status = "idle"
+			return response{operational: &idle}
+		}
 		var publisher metricPublisher
 		if p.config.Mode == "LIVE" && (request.operation == "reconcile" || request.operation == "deployment-check") {
 			publisher, err = h.metrics(settings, store, p.config.InstallationID)

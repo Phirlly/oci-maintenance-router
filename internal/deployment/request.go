@@ -13,6 +13,8 @@ type command struct {
 	operation, configurationSHA256, releaseSHA256, attemptID string
 	noticeID, cursor                                         string
 	kind, targetID, recoveryRequestID                        string
+	automatic                                                bool
+	intakeTopic                                              string
 }
 
 var reviewNoticeID = regexp.MustCompile(`^ocid1\.announcement\.oc1\.\.([A-Za-z0-9_-]*\.)?[A-Za-z0-9_-]+$`)
@@ -68,9 +70,12 @@ func parseCommand(body []byte) (command, error) {
 		if len(fields) != 5 || !attemptPattern.MatchString(c.attemptID) || !hashPattern.MatchString(c.configurationSHA256) || !hashPattern.MatchString(c.releaseSHA256) || !closureRequestIDPattern.MatchString(c.recoveryRequestID) {
 			return command{}, invalid
 		}
-	case "reconcile":
+	case "reconcile", "wake-up":
 		if len(fields) != 1 {
 			return command{}, invalid
+		}
+		if c.operation == "wake-up" {
+			c.operation, c.automatic = "reconcile", true
 		}
 	case "list-notices":
 		for name := range fields {

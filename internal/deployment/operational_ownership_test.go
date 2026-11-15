@@ -49,7 +49,7 @@ func operationalContext(t *testing.T) context.Context {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	t.Cleanup(cancel)
-	return ctx
+	return withInvocationHeaders(ctx, nil)
 }
 
 func TestOperationalInvocationCoalescesWithoutClaimingVerification(t *testing.T) {

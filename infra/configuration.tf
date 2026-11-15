@@ -37,14 +37,14 @@ module "configuration" {
     operator = oci_ons_notification_topic.operator.id
   }
 }
-# Intake remains inert. The optional operator subscription has separate TEST IAM.
+# Intake wakes reconciliation; operator messages never feed back into the router.
 resource "oci_ons_notification_topic" "intake" {
   compartment_id = var.compartment_ocid
   name           = "${local.name}-intake"
-  description    = "Reserved maintenance intake; PREVIEW installer creates no subscriptions."
+  description    = "MySQL maintenance wake-ups; automatic processing runs only in LIVE."
 }
 resource "oci_ons_notification_topic" "operator" {
   compartment_id = var.compartment_ocid
   name           = "${local.name}-operator"
-  description    = "Dedicated operator notifications; only explicit TEST may publish in this release."
+  description    = "Dedicated router issues, alarms and platform failures, with an explicit setup test."
 }

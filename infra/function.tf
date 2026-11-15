@@ -37,11 +37,20 @@ resource "oci_functions_application" "router" {
   }
 }
 resource "oci_functions_function" "router" {
-  application_id     = oci_functions_application.router.id
-  display_name       = "maintenance-router"
-  memory_in_mbs      = "256"
-  timeout_in_seconds = 300
-  config             = { ROUTER_BOOTSTRAP = local.bootstrap }
+  application_id                   = oci_functions_application.router.id
+  display_name                     = "maintenance-router"
+  memory_in_mbs                    = "256"
+  timeout_in_seconds               = 300
+  detached_mode_timeout_in_seconds = 300
+  failure_destination {
+    kind     = var.mode == "LIVE" ? "NOTIFICATION" : "NONE"
+    topic_id = var.mode == "LIVE" ? oci_ons_notification_topic.operator.id : null
+  }
+  success_destination {
+    kind = "NONE"
+  }
+  depends_on = [oci_identity_policy.detached_failure]
+  config     = { ROUTER_BOOTSTRAP = local.bootstrap }
   source_details {
     source_type = "ARCHIVE"
     archive_source_details {

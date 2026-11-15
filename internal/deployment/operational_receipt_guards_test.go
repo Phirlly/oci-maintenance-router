@@ -47,7 +47,7 @@ func TestReceiptConfirmationStillRequiresFinalGuardsAndCleanup(t *testing.T) {
 				}
 				return ops, err
 			}
-			got := h.run(ctx, strings.NewReader(invocation(s))).operational
+			got := h.run(withInvocationHeaders(ctx, nil), strings.NewReader(invocation(s))).operational
 			want := map[string]string{"current": "configuration_changed", "ownership": "ownership_failed", "cleanup": "", "canceled": "canceled"}[kind]
 			if got == nil || got.Status != "not-ready" || got.Code != want || got.Diagnostic == nil || receiptVerified(t, got.Diagnostic) != (kind != "canceled") || got.Diagnostic.Dispatched || got.ScanCompleted || principal.reads != 0 {
 				t.Fatalf("receipt bypassed final guards: %+v", got)
