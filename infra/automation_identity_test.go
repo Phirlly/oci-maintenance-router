@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -24,15 +25,18 @@ func TestAutomationPoliciesRestrictExactPrincipalsAndOperations(t *testing.T) {
 		output, err := terraform(t, t.TempDir(), "jsonencode("+expression+")\n", "console", "-no-color")
 		var encoded string
 		var statements []string
-		if err != nil || json.Unmarshal(output, &encoded) != nil || json.Unmarshal([]byte(encoded), &statements) != nil || len(statements) != 1 {
+		if err != nil || json.Unmarshal(output, &encoded) != nil || json.Unmarshal([]byte(encoded), &statements) != nil {
 			t.Fatal("invalid policy", name, string(output), err)
 		}
-		want := "Allow dynamic-group id group to use fn-invocation in compartment id compartment where all {target.function.id = 'function', request.region = 'iad', request.operation = 'InvokeFunction', request.permission = 'FN_INVOCATION'}"
-		if name == "detached_failure" {
-			want = "Allow any-user to use ons-topics in compartment id compartment where all {request.principal.type = 'fnapp', request.principal.id = 'application', request.principal.compartment.id = 'compartment', request.region = 'iad', request.operation = 'PublishMessage', request.permission = 'ONS_TOPIC_PUBLISH'}"
+		want := []string{
+			"Allow dynamic-group id group to use fn-invocation in compartment id compartment where all {target.function.id = 'function', request.region = 'iad', request.operation = 'InvokeFunction', request.permission = 'FN_INVOCATION'}",
+			"Allow dynamic-group id group to read fn-function in compartment id compartment where all {target.function.id = 'function', request.region = 'iad', request.operation = 'GetFunction', request.permission = 'FN_FUNCTION_READ'}",
 		}
-		if statements[0] != want {
-			t.Fatalf("policy widened or changed:\n%s\nwant %s", statements[0], want)
+		if name == "detached_failure" {
+			want = []string{"Allow any-user to use ons-topics in compartment id compartment where all {request.principal.type = 'fnapp', request.principal.id = 'application', request.principal.compartment.id = 'compartment', request.region = 'iad', request.operation = 'PublishMessage', request.permission = 'ONS_TOPIC_PUBLISH'}"}
+		}
+		if !slices.Equal(statements, want) {
+			t.Fatalf("policy widened or changed:\n%v\nwant %v", statements, want)
 		}
 		if name == "schedule" && strings.Contains(block, "var.mode") {
 			t.Fatal("schedule invocation IAM must exist before later activation")

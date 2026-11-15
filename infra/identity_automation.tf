@@ -9,9 +9,10 @@ resource "oci_identity_policy" "schedule" {
   provider       = oci.home
   compartment_id = var.compartment_ocid
   name           = "${local.name}-schedule"
-  description    = "The exact schedule may invoke only this router Function."
+  description    = "The exact schedule may read and invoke only this router Function."
   statements = [
     "Allow dynamic-group id ${oci_identity_dynamic_group.schedule.id} to use fn-invocation in compartment id ${var.compartment_ocid} where all {target.function.id = '${oci_functions_function.router.id}', request.region = '${local.catalog.regions[var.region]}', request.operation = 'InvokeFunction', request.permission = 'FN_INVOCATION'}",
+    "Allow dynamic-group id ${oci_identity_dynamic_group.schedule.id} to read fn-function in compartment id ${var.compartment_ocid} where all {target.function.id = '${oci_functions_function.router.id}', request.region = '${local.catalog.regions[var.region]}', request.operation = 'GetFunction', request.permission = 'FN_FUNCTION_READ'}",
   ]
 }
 resource "oci_identity_policy" "detached_failure" {
