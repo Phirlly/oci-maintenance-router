@@ -64,13 +64,13 @@ func TestAutomaticOverlapKeepsOwnerAndDoesNotPublishCompletion(t *testing.T) {
 	}
 }
 
-func TestNotificationRequiredMetadataBounds(t *testing.T) {
+func TestNotificationSuppliedMetadataBounds(t *testing.T) {
 	for _, key := range []string{"X-OCI-NS-TopicOcid", "X-OCI-NS-MessageId", "X-OCI-NS-MessageType"} {
 		for _, kind := range []string{"multiple", "nil", "oversized", "space"} {
-			headers := intakeHeaders()
+			headers := functionNotificationHeaders()
 			switch kind {
 			case "multiple":
-				headers.Add(key, "second")
+				headers[http.CanonicalHeaderKey(key)] = []string{"first", "second"}
 			case "nil":
 				headers[http.CanonicalHeaderKey(key)] = nil
 			case "oversized":

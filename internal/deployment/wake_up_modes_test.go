@@ -11,8 +11,8 @@ import (
 
 func TestAutomaticWakeUpDoesNothingOutsideLive(t *testing.T) {
 	for _, mode := range []string{"PREVIEW", "TEST", "PAUSED"} {
-		for _, notification := range []bool{false, true} {
-			t.Run(mode+"/"+map[bool]string{true: "notification", false: "schedule"}[notification], func(t *testing.T) {
+		for _, trigger := range []string{"schedule", "notification", "function-notification"} {
+			t.Run(mode+"/"+trigger, func(t *testing.T) {
 				h, s, objects, environment, principal := retainedTestFixture(t, true)
 				s = configureOperational(t, h, s, objects, func(v map[string]any) { v["mode"] = mode })
 				s, _, _ = configureRecovery(t, h, s, objects, environment, noticeledger.CloseRevision)
@@ -26,8 +26,10 @@ func TestAutomaticWakeUpDoesNothingOutsideLive(t *testing.T) {
 					return nil, nil
 				}
 				headers, body := intakeHeaders(), invocation(s)
-				if !notification {
+				if trigger == "schedule" {
 					headers, body = nil, `{"operation":"wake-up"}`
+				} else if trigger == "function-notification" {
+					headers = functionNotificationHeaders()
 				}
 				got := automaticResponse(t, h, operationalContext(t), headers, strings.NewReader(body))
 				if got.ResponseVersion != 2 || got.Status != "idle" || got.Operation != "reconcile" || got.Mode != mode || got.Code != "" || got.ScanCompleted || got.BaselinePrepared || got.BaselineSelected || got.Diagnostic != nil || got.Operator != nil || got.Recovery != nil || got.Processing != nil || got.Reporting != nil || got.Telemetry != nil || objects.version != before || principal.reads != 0 {
@@ -39,7 +41,7 @@ func TestAutomaticWakeUpDoesNothingOutsideLive(t *testing.T) {
 }
 
 func TestAutomaticLiveWakeUpUsesExistingFinalizedProcessing(t *testing.T) {
-	for _, notification := range []bool{false, true} {
+	for _, trigger := range []string{"schedule", "notification", "function-notification"} {
 		h, _, objects, _ := liveOperationFixture(t)
 		bindMetricRun(t, h)
 		before, calls := objects.version, 0
@@ -53,8 +55,10 @@ func TestAutomaticLiveWakeUpUsesExistingFinalizedProcessing(t *testing.T) {
 			}}, nil
 		}
 		headers, body := intakeHeaders(), `{"operation":"close-work","private":"ignored"}`
-		if !notification {
+		if trigger == "schedule" {
 			headers, body = nil, `{"operation":"wake-up"}`
+		} else if trigger == "function-notification" {
+			headers = functionNotificationHeaders()
 		}
 		got := automaticResponse(t, h, operationalContext(t), headers, strings.NewReader(body))
 		if got.Status != "reconciled" || got.Operation != "reconcile" || !got.ScanCompleted || got.Processing == nil || got.Processing.Accepted != 2 || got.Telemetry == nil || !got.Telemetry.Accepted || calls != 1 {

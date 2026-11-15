@@ -32,6 +32,10 @@ func intakeHeaders() http.Header {
 	return h
 }
 
+func functionNotificationHeaders() http.Header {
+	return http.Header{"X-OCI-NS-MessageId": {"synthetic-message"}}
+}
+
 func automaticResponse(t *testing.T, h *Handler, ctx context.Context, headers http.Header, body io.Reader) OperationalResult {
 	t.Helper()
 	out := httptest.NewRecorder()

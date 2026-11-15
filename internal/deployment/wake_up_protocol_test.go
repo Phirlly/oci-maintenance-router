@@ -17,7 +17,7 @@ func TestFDKNotificationHeadersSelectWakeUpInsteadOfBodyCommand(t *testing.T) {
 	var logs bytes.Buffer
 	h.logger = log.New(&logs, "", 0)
 	client := protocolClient(t, h)
-	for _, kind := range []string{"ordinary", "http-trigger", "duplicate", "wrong-topic"} {
+	for _, kind := range []string{"ordinary", "http-trigger", "function-notification", "http-function-notification", "duplicate", "wrong-topic"} {
 		t.Run(kind, func(t *testing.T) {
 			req, err := http.NewRequest(http.MethodPost, "http://socket/call", strings.NewReader(invocation(s)))
 			if err != nil {
@@ -25,11 +25,15 @@ func TestFDKNotificationHeadersSelectWakeUpInsteadOfBodyCommand(t *testing.T) {
 			}
 			req.Header.Set("Fn-Deadline", time.Now().Add(time.Minute).UTC().Format(time.RFC3339Nano))
 			prefix := ""
-			if kind == "http-trigger" {
+			if kind == "http-trigger" || kind == "http-function-notification" {
 				prefix = "Fn-Http-H-"
 				req.Header.Set("Fn-Intent", "httprequest")
 			}
-			for key, values := range intakeHeaders() {
+			headers := intakeHeaders()
+			if kind == "function-notification" || kind == "http-function-notification" {
+				headers = functionNotificationHeaders()
+			}
+			for key, values := range headers {
 				req.Header[prefix+key] = values
 			}
 			if kind == "duplicate" {

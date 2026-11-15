@@ -67,7 +67,9 @@ func notificationTopic(headers http.Header) (string, bool, error) {
 		}
 		values[name] = value
 	}
-	if present && len(values) != 3 {
+	// Function notifications can carry only MessageId. Optional metadata is
+	// validated above; the handler still checks any supplied topic against config.
+	if present && values["x-oci-ns-messageid"] == "" {
 		return "", true, invalid
 	}
 	return values["x-oci-ns-topicocid"], present, nil

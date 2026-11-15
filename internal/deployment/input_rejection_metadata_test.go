@@ -45,7 +45,16 @@ func TestRejectedInputLogUsesOnlyFixedMetadataShapes(t *testing.T) {
 					case "utf8":
 						headers.Set(key, "private\xff")
 					}
-					got := rejectedInputLog(t, headers, strings.NewReader(`{"operation":"reconcile"}`))
+					// A valid MessageId alone selects notifications. Reject its body
+					// independently so this test still observes the metadata shape.
+					body := `{"operation":"reconcile"}`
+					if prefix == "" && tc.header == "MessageId" && kind == "valid" {
+						body = strings.Repeat("x", 65537)
+					}
+					got := rejectedInputLog(t, headers, strings.NewReader(body))
+					if prefix == "" && tc.header == "MessageId" && kind == "valid" && got["category"] != "notification_body_size" {
+						t.Fatal("valid MessageId rejected before the bounded body", got)
+					}
 					group, other := "direct", "prefixed"
 					if prefix != "" {
 						group, other = other, group
