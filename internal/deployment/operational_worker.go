@@ -55,6 +55,7 @@ func (h *Handler) runOperational(original context.Context, started time.Time, s 
 		defer done()
 		if lease.Release(cleanup) != nil {
 			result.Status, result.CleanupCode, result.ScanCompleted = "not-ready", "release_failed", false
+			result.Review = nil
 		}
 	}()
 	if err := verifyCurrent(ctx, lease, store, s); err != nil {
@@ -66,12 +67,13 @@ func (h *Handler) runOperational(original context.Context, started time.Time, s 
 		result.Code = "operation_configuration"
 		return result
 	}
-	if err := ops.execute(ctx, lease, p.config, request.operation, &result); err != nil {
+	if err := ops.execute(ctx, lease, p.config, request, &result); err != nil {
 		result.Status, result.Code, result.ScanCompleted = "not-ready", operationCode(ctx, err), false
 		return result
 	}
 	if err := verifyCurrent(ctx, lease, store, s); err != nil {
 		result.Status, result.Code, result.ScanCompleted = "not-ready", err.Error(), false
+		result.Review = nil
 	}
 	return result
 }

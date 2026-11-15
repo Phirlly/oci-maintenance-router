@@ -1,6 +1,7 @@
 package deployment
 
-// OperationalResult reports bounded confirmed work, never receipt codes or state.
+// OperationalResult reports bounded work and whitelisted saved-review evidence,
+// never receipt codes, credentials or complete business records.
 // Version 2 is separate from the legacy nonsending installation-check contract.
 type OperationalResult struct {
 	ResponseVersion     int                `json:"responseVersion"`
@@ -20,6 +21,7 @@ type OperationalResult struct {
 	Operator            *TestOutcome       `json:"operator,omitempty"`
 	Processing          *ProcessingOutcome `json:"processing,omitempty"`
 	Recovery            *RecoveryOutcome   `json:"recovery,omitempty"`
+	Review              *SavedReviewPage   `json:"review,omitempty"`
 }
 
 type TestOutcome struct {
@@ -59,7 +61,7 @@ func (r response) output() (any, bool) {
 		return r.legacy, r.legacy.Status == "deployment-verified"
 	}
 	switch r.operational.Status {
-	case "operational-verified", "reconciled", "prepared", "idle", "recovery-recorded":
+	case "operational-verified", "reconciled", "prepared", "idle", "recovery-recorded", "reviewed":
 		return r.operational, true
 	default:
 		return r.operational, false

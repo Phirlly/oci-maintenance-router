@@ -43,8 +43,8 @@ func (h *Handler) run(ctx context.Context, in io.Reader) (result response) {
 	original := ctx
 	ctx, cancel := context.WithDeadline(ctx, started.Add(20*time.Second))
 	defer cancel()
-	body, err := io.ReadAll(io.LimitReader(in, 1025))
-	if err != nil || len(body) > 1024 {
+	body, err := io.ReadAll(io.LimitReader(in, 8193))
+	if err != nil || len(body) > 8192 {
 		return rejected("request_invalid")
 	}
 	if ctx.Err() != nil {

@@ -22,6 +22,7 @@ type operations struct {
 	operatorReceipt   func(context.Context, *reconciliation.Lease) (reconciliation.OperatorReceipt, error)
 	selectLive        func(context.Context, *reconciliation.Lease) (reconciliation.Baseline, error)
 	process           func(context.Context, *reconciliation.Lease) (reconciliation.ProcessingSnapshot, error)
+	review            func(context.Context, command) (*SavedReviewPage, error)
 }
 
 func composeOperations(s Settings, store Store, p pinnedInputs, operation string) (operations, error) {
@@ -29,6 +30,9 @@ func composeOperations(s Settings, store Store, p pinnedInputs, operation string
 	objects, ok := store.(operationalObjects)
 	if !ok {
 		return result, errors.New("invalid storage binding")
+	}
+	if operation == "review-notice" {
+		return composeSavedReview(s, objects, p)
 	}
 	location := configuration.LedgerLocation{Namespace: s.Namespace, Bucket: s.Bucket}
 	mode := p.config.Mode

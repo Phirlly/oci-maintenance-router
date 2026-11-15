@@ -7,7 +7,16 @@ import (
 	"oci-maintenance-router/internal/reconciliation"
 )
 
-func (ops operations) execute(ctx context.Context, lease *reconciliation.Lease, c configuration.Config, operation string, result *OperationalResult) error {
+func (ops operations) execute(ctx context.Context, lease *reconciliation.Lease, c configuration.Config, request command, result *OperationalResult) error {
+	operation := request.operation
+	if operation == "review-notice" {
+		page, err := ops.review(ctx, request)
+		if err != nil {
+			return err
+		}
+		result.Review, result.Status = page, "reviewed"
+		return nil
+	}
 	if operation == "reconcile" && c.Mode != "LIVE" && c.Recovery != nil {
 		if err := ops.processWork(ctx, lease, false, result); err != nil {
 			return err
