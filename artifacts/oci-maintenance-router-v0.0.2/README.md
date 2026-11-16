@@ -4,6 +4,6 @@
 
 Includes Terraform and the prebuilt Function. Supports HeatWave MySQL maintenance routing by ownership tags. **Development version; not ready for production use.**
 
-Choose your environment settings in Resource Manager. Existing installations must repeat the PagerDuty test for this package before LIVE activation; its archive identity changed. The runtime executable and Terraform configuration are unchanged from v0.0.1.
+Choose your environment settings in Resource Manager. Existing installations must repeat the PagerDuty test for this package before LIVE activation; its archive identity changed. The runtime executable and Terraform configuration are unchanged from [v0.0.1](../oci-maintenance-router-v0.0.1/README.md).
 
 Archive size: 4,538,760 bytes. Retain this version unchanged; later packages use new versioned filenames.
