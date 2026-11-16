@@ -18,6 +18,8 @@ OCI services over time.
   <a href="artifacts/oci-maintenance-router-v0.0.3/README.md">v0.0.3 package and checksum</a>
 </p>
 
+[Step-by-step deployment walkthrough](docs/deployment-walkthrough.md) — deploy in TEST and see the PagerDuty alert.
+
 ![Target architecture: OCI MySQL maintenance notices routed to PagerDuty using resource ownership tags (work in progress)](assets/oci-maintenance-router.gif)
 
 [MIT License](LICENSE). An independent community solution integrating OCI and

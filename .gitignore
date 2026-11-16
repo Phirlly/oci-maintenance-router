@@ -5,9 +5,10 @@ AGENTS.override.md
 .clinerules
 .clinerules/
 
-# Local project goal, workflow docs, reference caches, and internal approval
-# evidence stay untracked unless explicitly approved for tracking.
-/docs/
+# Keep legacy private guidance ignored; expose only the approved public guide.
+# New private plans, workflows, references and evidence belong under .local/.
+/docs/*
+!/docs/deployment-walkthrough.md
 
 # Secrets and local environment.
 .env
