@@ -1,11 +1,16 @@
 # OCI Maintenance Router
 
-Route OCI MySQL maintenance notices to the owning PagerDuty service using
-resource ownership tags, with configuration through OCI Resource Manager.
+Route OCI maintenance announcements to the right PagerDuty team, with deployment
+and configuration through OCI Resource Manager. Support will expand to additional
+OCI services over time.
 
-**Under development:** PREVIEW preparation, nonproduction tests and guarded LIVE
-activation are implemented. Automatic runs, operator monitoring and end-to-end
-validation remain unfinished. Not ready for production use.
+- **Supported today:** HeatWave MySQL scheduled maintenance, routed using defined
+  or freeform resource ownership tags.
+- **In progress:** Deployment usability improvements and remaining end-to-end
+  validation.
+- **Planned:** Resource-name matching and additional OCI services.
+
+**Under development — not ready for production use.**
 
 [Download v0.0.1 demo RM ZIP](artifacts/oci-maintenance-router-v0.0.1/oci-maintenance-router-v0.0.1.zip) · [Package details and checksum](artifacts/oci-maintenance-router-v0.0.1/README.md)
 
