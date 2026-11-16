@@ -22,7 +22,7 @@ func loadPinned(ctx context.Context, s Settings, store Store) (pinnedInputs, Res
 	var err error
 	p.catalogBytes, err = readPinned(ctx, store, "configuration/catalog.json", s.CatalogVersion, s.CatalogSHA256)
 	if err != nil {
-		return pinnedInputs{}, failed("catalog_read")
+		return pinnedInputs{}, failedPinnedRead("catalog_read", err)
 	}
 	p.catalog, err = configuration.DecodeCatalog(p.catalogBytes)
 	if err != nil {
@@ -30,7 +30,7 @@ func loadPinned(ctx context.Context, s Settings, store Store) (pinnedInputs, Res
 	}
 	p.configBytes, err = readPinned(ctx, store, "configuration/router.json", s.ConfigurationVersion, s.ConfigurationSHA256)
 	if err != nil {
-		return pinnedInputs{}, failed("configuration_read")
+		return pinnedInputs{}, failedPinnedRead("configuration_read", err)
 	}
 	p.config, err = configuration.Decode(p.configBytes, p.catalog)
 	if err != nil {

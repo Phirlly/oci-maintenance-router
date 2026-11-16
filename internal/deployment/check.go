@@ -20,14 +20,15 @@ type Store interface {
 }
 
 type Result struct {
-	Status              string `json:"status"`
-	Code                string `json:"code,omitempty"`
-	Field               string `json:"field,omitempty"`
-	SendingEnabled      bool   `json:"sendingEnabled"`
-	CheckAttemptID      string `json:"checkAttemptId,omitempty"`
-	ConfigurationSHA256 string `json:"configurationSha256,omitempty"`
-	ReleaseSHA256       string `json:"releaseSha256,omitempty"`
-	RoutingGeneration   string `json:"routingGeneration,omitempty"`
+	Status              string                `json:"status"`
+	Code                string                `json:"code,omitempty"`
+	Field               string                `json:"field,omitempty"`
+	SendingEnabled      bool                  `json:"sendingEnabled"`
+	CheckAttemptID      string                `json:"checkAttemptId,omitempty"`
+	ConfigurationSHA256 string                `json:"configurationSha256,omitempty"`
+	ReleaseSHA256       string                `json:"releaseSha256,omitempty"`
+	RoutingGeneration   string                `json:"routingGeneration,omitempty"`
+	pinnedRead          *pinnedReadDiagnostic // Logging only; never part of the response JSON.
 }
 
 func failed(code string) Result { return Result{Status: "not-ready", Code: code} }
@@ -83,8 +84,11 @@ func readPinned(ctx context.Context, store Store, name, version, expected string
 	if err != nil {
 		return nil, err
 	}
-	if len(obj.Body) > 1<<20 || digest(obj.Body) != expected {
-		return nil, errors.New("pinned content mismatch")
+	if len(obj.Body) > 1<<20 {
+		return nil, &ocistorage.Error{Code: ocistorage.TooLarge}
+	}
+	if digest(obj.Body) != expected {
+		return nil, errPinnedContentMismatch
 	}
 	return obj.Body, nil
 }
