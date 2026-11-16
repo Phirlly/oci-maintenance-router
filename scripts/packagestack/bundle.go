@@ -19,7 +19,7 @@ const bundleLimit = 11_000_000
 var stackFiles = []string{
 	".terraform.lock.hcl", "configuration.tf", "deployment_check.tf", "function.tf",
 	"identity.tf", "identity_diagnostic.tf", "network.tf", "outputs.tf", "providers.tf", "release.json", "schema.yaml",
-	"storage.tf", "variables_network.tf", "variables_operation.tf", "variables_placement.tf", "variables_routing.tf", "versions.tf",
+	"storage.tf", "startup_wait.tf", "variables_network.tf", "variables_operation.tf", "variables_placement.tf", "variables_routing.tf", "versions.tf",
 	"modules/configuration/variables.tf", "modules/configuration/render.tf", "modules/configuration/outputs.tf",
 	"operator.tf", "variables_operator.tf", "identity_operator.tf",
 	"closure.tf", "variables_closure.tf", "modules/configuration/closure.tf",

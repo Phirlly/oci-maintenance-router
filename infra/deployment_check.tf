@@ -13,7 +13,7 @@ resource "oci_functions_invoke_function" "deployment_check" {
     configurationSha256 = sha256(module.configuration.configuration_json)
     releaseSha256       = local.release_sha256
   })
-  depends_on = [oci_identity_policy.router, oci_identity_policy.announcements, oci_identity_policy.diagnostic, oci_identity_policy.operator, oci_identity_policy.live, oci_logging_log.router, oci_monitoring_alarm.router, data.oci_functions_function.archive]
+  depends_on = [oci_identity_policy.router, oci_identity_policy.announcements, oci_identity_policy.diagnostic, oci_identity_policy.operator, oci_identity_policy.live, time_sleep.iam_propagation, oci_logging_log.router, oci_monitoring_alarm.router, data.oci_functions_function.archive]
   lifecycle {
     postcondition {
       condition = try(

@@ -1,7 +1,7 @@
 schemaVersion: "1.1.0"
 title: OCI Maintenance Router
 description: Prepare, test and activate tag-based MySQL maintenance routing.
-informationalText: Development package. LIVE activation is implemented; automatic runs, operator monitoring and end-to-end validation remain unfinished. Do not use for production.
+informationalText: Development package. LIVE activation is implemented; automatic runs, operator monitoring and end-to-end validation remain unfinished. Do not use for production. Apply waits 5 minutes after IAM changes, then checks deployment.
 variableGroups:
   - title: Placement
     variables: ["${environment_name}", "${compartment_ocid}"]
