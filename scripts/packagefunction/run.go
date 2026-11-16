@@ -66,6 +66,7 @@ func outputDirectory(requested string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	local, _ := os.Lstat(".local")
 	// Resolve symlinks, then compare directory identities to catch case aliases too.
 	parent, err := filepath.EvalSymlinks(filepath.Dir(requested))
 	if err != nil {
@@ -76,8 +77,11 @@ func outputDirectory(requested string) (string, error) {
 		if err != nil {
 			return "", err
 		}
+		if local != nil && local.IsDir() && os.SameFile(local, info) {
+			break
+		}
 		if os.SameFile(root, info) {
-			return "", fmt.Errorf("output must be outside the repository")
+			return "", fmt.Errorf("output must be outside the repository or beneath its real .local directory")
 		}
 		if filepath.Dir(ancestor) == ancestor {
 			break

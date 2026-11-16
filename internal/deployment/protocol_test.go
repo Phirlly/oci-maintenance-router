@@ -23,7 +23,7 @@ func protocolClient(t *testing.T, h *Handler) *http.Client {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = os.RemoveAll(dir) })
-	socket := filepath.Join(dir, "function.sock")
+	socket := filepath.Join(dir, "s")
 	t.Setenv("FN_FORMAT", "http-stream")
 	t.Setenv("FN_LISTENER", "unix:"+socket)
 	t.Setenv("OCI_TRACING_ENABLED", "0")

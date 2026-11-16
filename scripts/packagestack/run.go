@@ -23,7 +23,7 @@ func run(args []string, out io.Writer) int {
 		fmt.Fprintln(out, "package: run from the oci-maintenance-router repository root")
 		return 1
 	}
-	output, err := outsideCheckout(root, args[1])
+	output, err := outputPath(root, args[1])
 	if err != nil {
 		fmt.Fprintln(out, "package:", err)
 		return 1
@@ -51,11 +51,12 @@ func run(args []string, out io.Writer) int {
 	return 0
 }
 
-func outsideCheckout(root, requested string) (string, error) {
+func outputPath(root, requested string) (string, error) {
 	info, err := os.Stat(root)
 	if err != nil {
 		return "", err
 	}
+	local, _ := os.Lstat(filepath.Join(root, ".local"))
 	parent, err := filepath.EvalSymlinks(filepath.Dir(requested))
 	if err != nil {
 		return "", err
@@ -65,8 +66,11 @@ func outsideCheckout(root, requested string) (string, error) {
 		if err != nil {
 			return "", err
 		}
+		if local != nil && local.IsDir() && os.SameFile(local, other) {
+			break
+		}
 		if os.SameFile(info, other) {
-			return "", fmt.Errorf("output must be outside the checkout")
+			return "", fmt.Errorf("output must be outside the checkout or beneath its real .local directory")
 		}
 		if current == filepath.Dir(current) {
 			break

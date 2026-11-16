@@ -27,6 +27,7 @@ id_ed25519
 
 # OCI credentials and private local working data.
 .oci/
+/.local/
 /local/
 /runtime/
 

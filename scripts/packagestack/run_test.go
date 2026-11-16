@@ -81,10 +81,10 @@ func TestOutputDirectoryRejectsCheckoutAliases(t *testing.T) {
 	if err := os.Symlink(root, alias); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := outsideCheckout(root, filepath.Join(alias, "bad.zip")); err == nil {
+	if _, err := outputPath(root, filepath.Join(alias, "bad.zip")); err == nil {
 		t.Fatal("accepted checkout symlink")
 	}
-	if _, err := outsideCheckout(filepath.Join(t.TempDir(), "missing"), filepath.Join(t.TempDir(), "x")); err == nil {
+	if _, err := outputPath(filepath.Join(t.TempDir(), "missing"), filepath.Join(t.TempDir(), "x")); err == nil {
 		t.Fatal("accepted missing root")
 	}
 }
