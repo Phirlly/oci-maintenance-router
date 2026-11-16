@@ -12,9 +12,13 @@ OCI services over time.
 
 **Under development — not ready for production use.**
 
-[Download v0.0.1 demo RM ZIP](artifacts/oci-maintenance-router-v0.0.1/oci-maintenance-router-v0.0.1.zip) · [Package details and checksum](artifacts/oci-maintenance-router-v0.0.1/README.md)
-
-**Deploy to OCI — coming soon.** The button will be available once the deployment
-package is validated and published.
+<p align="center">
+  <a href="https://cloud.oracle.com/resourcemanager/stacks/create?zipUrl=https%3A%2F%2Fgithub.com%2FPhirlly%2Foci-maintenance-router%2Freleases%2Fdownload%2Fv0.0.2%2Foci-maintenance-router-v0.0.2.zip"><img src="https://oci-resourcemanager-plugin.plugins.oci.oraclecloud.com/latest/deploy-to-oracle-cloud.svg" alt="Deploy to Oracle Cloud"></a>
+  <br>
+  <a href="artifacts/oci-maintenance-router-v0.0.2/README.md">v0.0.2 package and checksum</a>
+</p>
 
 ![Target architecture: OCI MySQL maintenance notices routed to PagerDuty using resource ownership tags (work in progress)](assets/oci-maintenance-router.gif)
+
+[MIT License](LICENSE). An independent community solution integrating OCI and
+PagerDuty. It is not developed, maintained, sponsored, or supported by Oracle.

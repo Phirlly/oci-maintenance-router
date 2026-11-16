@@ -25,7 +25,7 @@ type functionManifest struct {
 	}
 }
 
-func verifyFunction(archive, manifest []byte) error {
+func verifyFunction(archive, manifest []byte, projectNotices map[string][]byte) error {
 	var report functionManifest
 	hash := sha256.Sum256(archive)
 	if json.Unmarshal(manifest, &report) != nil || report.SchemaVersion != 1 || report.Purpose != "maintenance-router-runtime" ||
@@ -76,9 +76,18 @@ func verifyFunction(archive, manifest []byte) error {
 		if f.Name == "func" && (f.Mode().Perm() != 0755 || digest(data) != report.BinarySHA256) {
 			return fmt.Errorf("Function executable mismatch")
 		}
+		name := strings.TrimPrefix(f.Name, "resources/notices/oci-maintenance-router/")
+		if expected, ok := projectNotices[name]; ok && !bytes.Equal(data, expected) {
+			return fmt.Errorf("Function project notice mismatch: %s", name)
+		}
 	}
 	if !seen["func"] {
 		return fmt.Errorf("Function executable missing")
+	}
+	for name := range projectNotices {
+		if !seen["resources/notices/oci-maintenance-router/"+name] {
+			return fmt.Errorf("Function project notice missing: %s", name)
+		}
 	}
 	return nil
 }

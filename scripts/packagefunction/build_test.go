@@ -63,7 +63,7 @@ func TestBuildActualFunctionAndInspectCorruption(t *testing.T) {
 	if err != nil {
 		t.Fatalf("actual build: %v", err)
 	}
-	if len(entries) != 12 || entries[0].name != "func" {
+	if len(entries) != 14 || entries[0].name != "func" {
 		t.Fatalf("unexpected archive entries: %d", len(entries))
 	}
 	binaryData := entries[0].data

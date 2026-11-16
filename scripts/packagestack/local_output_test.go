@@ -87,6 +87,15 @@ func localStackFixture(t *testing.T) (string, string) {
 	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module oci-maintenance-router\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
+	for _, name := range []string{"LICENSE", "NOTICE"} {
+		data, err := os.ReadFile(filepath.Join(source, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(root, name), data, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
 	for _, name := range stackFiles {
 		data, err := os.ReadFile(filepath.Join(source, "infra", filepath.FromSlash(name)))
 		if err != nil {

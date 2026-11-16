@@ -56,6 +56,15 @@ func readInput(path string, limit int64) ([]byte, error) {
 
 func bundle(root, functionDirectory string) ([]byte, error) {
 	entries := map[string][]byte{}
+	projectNotices := map[string][]byte{}
+	for _, name := range []string{"LICENSE", "NOTICE"} {
+		data, err := readInput(filepath.Join(root, name), 1<<20)
+		if err != nil || len(data) == 0 {
+			return nil, fmt.Errorf("missing, empty or invalid project notice: %s", name)
+		}
+		entries[name] = data
+		projectNotices[name] = data
+	}
 	for _, name := range stackFiles {
 		data, err := readInput(filepath.Join(root, "infra", filepath.FromSlash(name)), 1<<20)
 		if err != nil {
@@ -74,7 +83,7 @@ func bundle(root, functionDirectory string) ([]byte, error) {
 		}
 		entries[name] = data
 	}
-	if err := verifyFunction(entries["function.zip"], entries["function-manifest.json"]); err != nil {
+	if err := verifyFunction(entries["function.zip"], entries["function-manifest.json"], projectNotices); err != nil {
 		return nil, err
 	}
 	return pack(entries)

@@ -22,12 +22,34 @@ func inputFixture(t *testing.T) (string, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	legal := map[string][]byte{}
+	for _, name := range []string{"LICENSE", "NOTICE"} {
+		data, err := os.ReadFile(filepath.Join(root, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		legal[name] = data
+	}
+	return root, functionInputFixture(t, legal)
+}
+
+func functionInputFixture(t *testing.T, legal map[string][]byte) string {
+	t.Helper()
 	dir := t.TempDir()
 	var data bytes.Buffer
 	w := zip.NewWriter(&data)
 	entries := []map[string]any{}
-	for _, name := range []string{"func", "resources/notices/LICENSE"} {
+	names := []string{"func", "resources/notices/LICENSE"}
+	for _, name := range []string{"LICENSE", "NOTICE"} {
+		if _, ok := legal[name]; ok {
+			names = append(names, "resources/notices/oci-maintenance-router/"+name)
+		}
+	}
+	for _, name := range names {
 		content := []byte("synthetic " + name)
+		if project, ok := legal[strings.TrimPrefix(name, "resources/notices/oci-maintenance-router/")]; ok {
+			content = project
+		}
 		h := &zip.FileHeader{Name: name, Method: zip.Deflate}
 		h.SetMode(0644)
 		if name == "func" {
@@ -58,7 +80,7 @@ func inputFixture(t *testing.T) (string, string) {
 			t.Fatal(err)
 		}
 	}
-	return root, dir
+	return dir
 }
 
 func TestBundleContainsOnlyDeploymentInputs(t *testing.T) {

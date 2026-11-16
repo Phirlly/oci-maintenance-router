@@ -10,6 +10,13 @@ import (
 
 func noticeFixture(t *testing.T) environment {
 	t.Helper()
+	root := t.TempDir()
+	t.Chdir(root)
+	for _, name := range []string{"LICENSE", "NOTICE"} {
+		if err := os.WriteFile(name, []byte("project "+name), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
 	env := environment{GOROOT: t.TempDir(), GOMODCACHE: t.TempDir(), GOVERSION: "go1.27.4"}
 	paths := map[string][]string{
 		"github.com/fnproject/fdk-go@v0.1.26":                         {"LICENSE", "NOTICE.txt", "THIRD_PARTY_LICENSES.txt"},
@@ -43,7 +50,7 @@ func TestNoticesUseOnlyProductionAllowlist(t *testing.T) {
 		t.Fatal(err)
 	}
 	got, err := collectNotices(env)
-	if err != nil || len(got) != 11 {
+	if err != nil || len(got) != 13 {
 		t.Fatalf("notices %d: %v", len(got), err)
 	}
 	seen := map[string]bool{}
@@ -56,6 +63,9 @@ func TestNoticesUseOnlyProductionAllowlist(t *testing.T) {
 		source := filepath.Join(env.GOMODCACHE, strings.TrimPrefix(e.name, "resources/notices/"))
 		if strings.HasPrefix(e.name, "resources/notices/go1.27.4/") {
 			source = filepath.Join(env.GOROOT, "LICENSE")
+		}
+		if strings.HasPrefix(e.name, "resources/notices/oci-maintenance-router/") {
+			source = filepath.Base(e.name)
 		}
 		original, err := os.ReadFile(source)
 		if err != nil || !bytes.Equal(e.data, original) {

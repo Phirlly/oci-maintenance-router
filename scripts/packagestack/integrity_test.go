@@ -7,6 +7,7 @@ import (
 	"math/rand/v2"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -50,7 +51,7 @@ func TestFunctionInventoryRejectsMismatch(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if err := verifyFunction(archive, data); err == nil {
+			if err := verifyFunction(archive, data, nil); err == nil {
 				t.Fatal("accepted invalid inventory")
 			}
 		})
@@ -70,9 +71,16 @@ func TestCompleteBundleLimitCountsCompressedZIP(t *testing.T) {
 }
 
 func TestBundleRequiresEveryAllowlistedFile(t *testing.T) {
-	_, dir := inputFixture(t)
-	if _, err := bundle(t.TempDir(), dir); err == nil {
-		t.Fatal("missing infrastructure accepted")
+	for _, name := range stackFiles {
+		t.Run(name, func(t *testing.T) {
+			root, dir := localStackFixture(t)
+			if err := os.Remove(filepath.Join(root, "infra", filepath.FromSlash(name))); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := bundle(root, dir); err == nil || !strings.Contains(err.Error(), "stack input "+name+":") {
+				t.Fatalf("missing infrastructure was not identified: %v", err)
+			}
+		})
 	}
 }
 
@@ -95,7 +103,7 @@ func TestFunctionManifestRejectsAffectedCompilerPatch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if verifyFunction(archive, data) == nil {
+	if verifyFunction(archive, data, nil) == nil {
 		t.Fatal("accepted an archive from the compiler patch affected by GO-2026-6859")
 	}
 }

@@ -31,6 +31,13 @@ func reviewedDependencies() []noticePolicy {
 
 func collectNotices(env environment) ([]entry, error) {
 	var entries []entry
+	for _, name := range []string{"LICENSE", "NOTICE"} {
+		data, err := os.ReadFile(name)
+		if err != nil || len(data) == 0 {
+			return nil, fmt.Errorf("missing or empty project notice: %s", name)
+		}
+		entries = append(entries, entry{"resources/notices/oci-maintenance-router/" + name, data})
+	}
 	for _, module := range reviewedDependencies() {
 		directory := module.Path + "@" + module.Version
 		for _, name := range module.files {
