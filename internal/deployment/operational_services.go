@@ -19,7 +19,7 @@ type operations struct {
 	diagnostic        func(context.Context, *reconciliation.Lease) (reconciliation.DiagnosticResult, error)
 	operator          func(context.Context, *reconciliation.Lease) (reconciliation.OperatorResult, error)
 	diagnosticReceipt func(context.Context, *reconciliation.Lease) (reconciliation.DiagnosticReceipt, error)
-	operatorReceipt   func(context.Context, *reconciliation.Lease) (reconciliation.OperatorReceipt, error)
+	pairedReceipts    func(context.Context, *reconciliation.Lease) (reconciliation.SetupConfirmationResult, error)
 	selectLive        func(context.Context, *reconciliation.Lease) (reconciliation.Baseline, error)
 	process           func(context.Context, *reconciliation.Lease) (reconciliation.ProcessingSnapshot, error)
 	reportRetry       func(context.Context, *reconciliation.Lease) (reconciliation.ReportingResult, error)

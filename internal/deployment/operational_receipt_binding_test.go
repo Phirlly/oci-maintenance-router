@@ -28,7 +28,7 @@ func TestReceiptCompositionReturnsVerifiersOnlyAndNoPartialAuthority(t *testing.
 			}
 			ops, err := composeOperations(s, &managedStore{objects, principal}, p, "deployment-check")
 			valid := kind == "diagnostic" || kind == "both"
-			if (err == nil) != valid || (ops.diagnosticReceipt != nil) != valid || (ops.operatorReceipt != nil) != (kind == "both") || ops.diagnostic != nil || ops.operator != nil || ops.initialize != nil || ops.prepare != nil || ops.selectLive != nil || ops.process != nil || principal.reads != 0 || objects.version != 0 {
+			if (err == nil) != valid || (ops.diagnosticReceipt != nil) != (kind == "diagnostic") || (ops.pairedReceipts != nil) != (kind == "both") || ops.diagnostic != nil || ops.operator != nil || ops.initialize != nil || ops.prepare != nil || ops.selectLive != nil || ops.process != nil || principal.reads != 0 || objects.version != 0 {
 				t.Fatal("receipt composition returned send or partial authority")
 			}
 		})

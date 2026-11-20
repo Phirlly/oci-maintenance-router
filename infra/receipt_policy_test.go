@@ -21,7 +21,7 @@ func policyStatements(t *testing.T, source string) string {
 	return match[1]
 }
 
-func TestConfirmationPoliciesGrantOnlyExactTestReads(t *testing.T) {
+func TestConfirmationPoliciesKeepTestReadsAndScopePairedWrites(t *testing.T) {
 	for _, kind := range []string{"diagnostic", "operator"} {
 		for _, mode := range []string{"TEST", "LIVE"} {
 			for _, region := range []string{"iad", "phx"} {
@@ -51,8 +51,11 @@ func TestConfirmationPoliciesGrantOnlyExactTestReads(t *testing.T) {
 						want = append(want, prefix+"request.operation = 'GetTopic', request.permission = 'ONS_TOPIC_READ'}", prefix+"request.operation = 'GetSubscription', request.permission = 'ONS_TOPIC_SUBSCRIBE'}")
 					}
 					want = append(want, fmt.Sprintf("Allow dynamic-group id %s to read objects in compartment id %s where all {target.bucket.name = '%s', target.object.name = 'control/%s/%s/%s.json', request.permission = 'OBJECT_READ'}", group, compartment, bucket, folder, installation, request))
+					if kind == "operator" && mode == "TEST" {
+						want = append(want, fmt.Sprintf("Allow dynamic-group id %s to manage objects in compartment id %s where all {target.bucket.name = '%s', target.object.name = 'control/setup-confirmations/%s/*', any {request.permission = 'OBJECT_READ', request.permission = 'OBJECT_CREATE'}}", group, compartment, bucket, installation))
+					}
 					if !reflect.DeepEqual(got, want) {
-						t.Fatalf("confirmation grants more than exact receipt reads: %q", got)
+						t.Fatalf("confirmation permission contract differs: %q", got)
 					}
 				})
 			}
