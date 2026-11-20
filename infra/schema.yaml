@@ -1,28 +1,22 @@
 schemaVersion: "1.1.0"
 title: OCI Maintenance Router
-description: Prepare, test and activate tag-based MySQL maintenance routing.
-informationalText: Development package. LIVE activation is implemented; automatic runs, operator monitoring and end-to-end validation remain unfinished. Do not use for production. Apply waits 5 minutes after IAM changes, then checks deployment.
+description: Route HeatWave MySQL maintenance notices by ownership tag.
+informationalText: Development package; production acceptance remains incomplete. Do not use for production. Apply waits 5 minutes after IAM changes, then checks deployment.
 variableGroups:
-  - title: Placement
-    variables: ["${environment_name}", "${compartment_ocid}"]
-  - title: Operation
-    variables: ["${mode}"]
-  - title: PagerDuty test
-    variables: ["${test_secret_compartment_ocid}", "${test_secret_ocid}", "${test_nonproduction}", "${test_run}", "${test_receipt_code}"]
-  - title: Operator email
-    variables: ["${operator_email}", "${operator_test_run}", "${operator_receipt_code}"]
-  - title: Saved-work closure
-    variables: ["${closure_review_code}", "${closure_request_number}", "${closure_confirm}"]
-  - title: Sending recovery (optional)
-    variables: ["${recovery_review_code}", "${recovery_request_number}", "${recovery_confirm}"]
-  - title: MySQL scope
+  - title: Deployment
+    variables: ["${environment_name}", "${compartment_ocid}", "${create_network}", "${network_cidr}", "${network_compartment_ocid}", "${existing_vcn_ocid}", "${existing_subnet_ocid}"]
+  - title: Resources to monitor (MySQL)
     variables: ["${mysql_regions}", "${mysql_compartments}"]
-  - title: Ownership tag
-    variables: ["${ownership_kind}", "${ownership_namespace}", "${ownership_key}"]
-  - title: PagerDuty destinations
-    variables: ["${pagerduty_region}", "${secret_compartment_ocid}", "${destinations}", "${routes}"]
-  - title: Network
-    variables: ["${create_network}", "${network_cidr}", "${network_compartment_ocid}", "${existing_vcn_ocid}", "${existing_subnet_ocid}"]
+  - title: Tags and PagerDuty
+    variables: ["${ownership_kind}", "${ownership_namespace}", "${ownership_key}", "${pagerduty_region}", "${secret_compartment_ocid}", "${destinations}", "${routes}"]
+  - title: Router notifications
+    variables: ["${operator_email}"]
+  - title: Test and activation
+    variables: ["${mode}", "${test_secret_compartment_ocid}", "${test_secret_ocid}", "${test_nonproduction}", "${test_run}", "${test_receipt_code}", "${operator_test_run}", "${operator_receipt_code}"]
+  - title: "Advanced: sending recovery"
+    variables: ["${recovery_review_code}", "${recovery_request_number}", "${recovery_confirm}"]
+  - title: "Advanced: close saved work"
+    variables: ["${closure_review_code}", "${closure_request_number}", "${closure_confirm}"]
 variables:
   tenancy_ocid:
     type: string
@@ -32,7 +26,7 @@ variables:
     visible: false
   environment_name:
     type: string
-    title: Environment name
+    title: Deployment name
     description: Unique, stable name for this deployment. Use lowercase letters, digits and hyphens. Changing it requires replacing protected storage.
     required: true
     pattern: "^[a-z0-9][a-z0-9-]{0,31}$"
@@ -45,7 +39,7 @@ variables:
     type: enum
     enum: [PREVIEW, PAUSED, TEST, LIVE]
     default: PREVIEW
-    title: Mode
+    title: Operating mode
     description: PREVIEW prepares history. TEST sends or confirms nonproduction tests. LIVE requires prepared history and both received test proofs; keep test settings unchanged. Apply PAUSED before changing routing or scope. PAUSED stops processing and permits confirmed closure; hourly checks continue without sending.
     required: true
   test_secret_compartment_ocid:
@@ -77,15 +71,15 @@ variables:
     visible: true
   test_receipt_code:
     type: string
-    title: PagerDuty confirmation code (optional)
+    title: PagerDuty confirmation code
     description: Paste confirmation_code from the received PagerDuty test. Required for LIVE. In TEST, enter the operator code too when email is configured; confirmation sends nothing. Keep test numbers unchanged.
     default: ""
     required: false
     visible: true
   operator_email:
     type: string
-    title: Operator email
-    description: Required for LIVE. Apply in PREVIEW or PAUSED, then confirm OCI's email before TEST. Changing the address requires confirmation again. Clear in PREVIEW or PAUSED to remove this subscription.
+    title: Router operator email
+    description: Receives router problems and notices needing review, separate from PagerDuty maintenance alerts. Required for LIVE. Apply in PREVIEW or PAUSED, then confirm OCI's email before TEST. Changing the address requires confirmation again. Clear in PREVIEW or PAUSED to remove this subscription.
     default: ""
     required: false
   operator_test_run:
@@ -96,7 +90,7 @@ variables:
     visible: true
   operator_receipt_code:
     type: string
-    title: Operator email confirmation code (optional)
+    title: Operator email confirmation code
     description: In TEST, paste the code from the received operator test email, together with the PagerDuty code. Retain both for LIVE. Keep test numbers unchanged. Clear this code if removing operator email.
     default: ""
     required: false
@@ -200,7 +194,7 @@ variables:
   secret_compartment_ocid:
     type: oci:identity:compartment:id
     title: Vault secret compartment
-    description: "Choose the compartment containing your secrets in the stack region. Reuse an existing secret or <a href='https://docs.oracle.com/en-us/iaas/Content/secret-management/Tasks/create-secret.htm'>create one in Vault</a>. LIVE uses these destination keys. PREVIEW can use harmless dummy content; TEST uses its separate secret above."
+    description: "Choose the compartment containing your secrets in the stack region. Reuse an existing secret or <a href='https://docs.oracle.com/en-us/iaas/Content/secret-management/Tasks/create-secret.htm'>create one in Vault</a>. LIVE uses these destination keys. PREVIEW can use harmless dummy content; TEST uses the separate test secret."
     default: ${compartment_ocid}
     required: true
   destinations:
