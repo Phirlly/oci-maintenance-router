@@ -74,7 +74,7 @@ func TestMonitoringIsStableAndEnabledOnlyInLiveMode(t *testing.T) {
 		t.Fatal("missing mode guard")
 	}
 	for _, mode := range []string{"PREVIEW", "PAUSED", "TEST", "LIVE"} {
-		output, err := terraform(t, t.TempDir(), strings.ReplaceAll(enabled[1], "var.mode", fmt.Sprintf("%q", mode))+"\n", "console", "-no-color")
+		output, err := terraform(t, t.TempDir(), strings.ReplaceAll(enabled[1], "local.mode", fmt.Sprintf("%q", mode))+"\n", "console", "-no-color")
 		if err != nil || strings.TrimSpace(string(output)) != fmt.Sprint(mode == "LIVE") {
 			t.Fatal("alarm mode guard failed", mode)
 		}

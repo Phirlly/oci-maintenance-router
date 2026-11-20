@@ -13,7 +13,7 @@ func startupIAMFixture() map[string]any {
 	iam := map[string]any{
 		"group": map[string]any{"id": "group-a", "matching_rule": "function-a", "description": "display only"},
 	}
-	for _, name := range []string{"router", "announcements", "diagnostic", "operator", "live"} {
+	for _, name := range []string{"router", "announcements", "diagnostic", "operator", "setup", "live"} {
 		policy := map[string]any{"id": name + "-a", "statements": []string{"grant " + name}, "description": "display only"}
 		if name == "router" || name == "announcements" {
 			iam[name] = policy
@@ -35,7 +35,7 @@ func startupGeneration(t *testing.T, iam map[string]any) string {
 		t.Fatal("cannot isolate the actual IAM generation expression")
 	}
 	replacements := []string{"oci_identity_dynamic_group.router", "var.iam.group"}
-	for _, name := range []string{"router", "announcements", "diagnostic", "operator", "live"} {
+	for _, name := range []string{"router", "announcements", "diagnostic", "operator", "setup", "live"} {
 		replacements = append(replacements, "oci_identity_policy."+name, "var.iam."+name)
 	}
 	dir := t.TempDir()
@@ -64,7 +64,7 @@ func TestStartupGenerationTracksEveryEffectivePermissionChange(t *testing.T) {
 			}
 		})
 	}
-	for _, name := range []string{"router", "announcements", "diagnostic", "operator", "live"} {
+	for _, name := range []string{"router", "announcements", "diagnostic", "operator", "setup", "live"} {
 		for _, field := range []string{"id", "statements"} {
 			t.Run(name+"/"+field, func(t *testing.T) {
 				iam := startupIAMFixture()
@@ -85,7 +85,7 @@ func TestStartupGenerationTracksEveryEffectivePermissionChange(t *testing.T) {
 			})
 		}
 	}
-	for _, name := range []string{"diagnostic", "operator", "live"} {
+	for _, name := range []string{"diagnostic", "operator", "setup", "live"} {
 		t.Run(name+"/remove-and-restore", func(t *testing.T) {
 			iam := startupIAMFixture()
 			original := iam[name]
@@ -110,7 +110,7 @@ func TestStartupGenerationIgnoresDisplayMetadataAndSupportsEmptyPolicies(t *test
 	if startupGeneration(t, iam) != baseline || startupGeneration(t, iam) != baseline {
 		t.Fatal("unchanged authority caused wait churn")
 	}
-	for _, name := range []string{"diagnostic", "operator", "live"} {
+	for _, name := range []string{"diagnostic", "operator", "setup", "live"} {
 		iam[name] = []any{}
 	}
 	if startupGeneration(t, iam) == baseline {

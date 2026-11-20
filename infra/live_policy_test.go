@@ -46,7 +46,7 @@ func TestLivePolicyGrantsOnlySelectedResourcesAndState(t *testing.T) {
 }
 
 func TestLiveAndProofPolicyCountsFollowExplicitMode(t *testing.T) {
-	for _, policy := range []string{"live", "diagnostic", "operator"} {
+	for _, policy := range []string{"live", "diagnostic", "operator", "setup"} {
 		source := readChecksumSource(t, "identity_"+policy+".tf")
 		count := regexp.MustCompile(`(?m)^\s*count\s*=\s*(.*)$`).FindStringSubmatch(source)
 		if len(count) != 2 {
@@ -54,10 +54,10 @@ func TestLiveAndProofPolicyCountsFollowExplicitMode(t *testing.T) {
 		}
 		for _, mode := range []string{"PREVIEW", "PAUSED", "TEST", "LIVE"} {
 			for _, email := range []bool{false, true} {
-				expression := strings.NewReplacer("var.mode", fmt.Sprintf("%q", mode), "local.operator_test_enabled", fmt.Sprint(mode == "TEST" && email)).Replace(count[1])
+				expression := strings.NewReplacer("local.mode", fmt.Sprintf("%q", mode), "local.setup_paired", fmt.Sprint(mode == "TEST" && email), "local.operator_test_enabled", fmt.Sprint(mode == "TEST" && email)).Replace(count[1])
 				got, err := terraform(t, t.TempDir(), expression+"\n", "console", "-no-color")
 				want := "0"
-				if mode == "LIVE" || mode == "TEST" && (policy == "diagnostic" || policy == "operator" && email) {
+				if mode == "LIVE" || mode == "TEST" && (policy == "diagnostic" || (policy == "operator" || policy == "setup") && email) {
 					want = "1"
 				}
 				if err != nil || strings.TrimSpace(string(got)) != want {

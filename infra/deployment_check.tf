@@ -13,24 +13,24 @@ resource "oci_functions_invoke_function" "deployment_check" {
     configurationSha256 = sha256(module.configuration.configuration_json)
     releaseSha256       = local.release_sha256
   })
-  depends_on = [oci_identity_policy.router, oci_identity_policy.announcements, oci_identity_policy.diagnostic, oci_identity_policy.operator, oci_identity_policy.live, time_sleep.iam_propagation, oci_logging_log.router, oci_monitoring_alarm.router, data.oci_functions_function.archive]
+  depends_on = [oci_identity_policy.router, oci_identity_policy.announcements, oci_identity_policy.diagnostic, oci_identity_policy.operator, oci_identity_policy.setup, oci_identity_policy.live, time_sleep.iam_propagation, oci_logging_log.router, oci_monitoring_alarm.router, data.oci_functions_function.archive]
   lifecycle {
     postcondition {
       condition = try(
         jsondecode(self.content).responseVersion == 2 &&
         jsondecode(self.content).status == "operational-verified" &&
         jsondecode(self.content).operation == "deployment-check" &&
-        jsondecode(self.content).mode == var.mode &&
+        jsondecode(self.content).mode == local.mode &&
         jsondecode(self.content).checkAttemptId == local.check_attempt_id &&
         jsondecode(self.content).configurationSha256 == sha256(module.configuration.configuration_json) &&
         jsondecode(self.content).releaseSha256 == local.release_sha256 &&
         can(regex("^[a-f0-9]{64}$", jsondecode(self.content).routingGeneration)) &&
-        jsondecode(self.content).baselinePrepared == (var.mode == "PREVIEW") &&
-        jsondecode(self.content).baselineSelected == (var.mode == "LIVE") &&
+        jsondecode(self.content).baselinePrepared == (local.mode == "PREVIEW") &&
+        jsondecode(self.content).baselineSelected == (local.mode == "LIVE") &&
         jsondecode(self.content).scanCompleted == false &&
         try(jsondecode(self.content).code, "") == "" &&
         try(jsondecode(self.content).cleanupCode, "") == "" &&
-        (var.mode == "TEST" ? (
+        (local.mode == "TEST" ? (
           jsondecode(self.content).diagnostic.state == "API_ACCEPTED" &&
           try(jsondecode(self.content).diagnostic.code, "") == "" &&
           (local.receipt_confirmation ? (
@@ -44,7 +44,7 @@ resource "oci_functions_invoke_function" "deployment_check" {
             (jsondecode(self.content).diagnostic.dispatched == false && try(jsondecode(self.content).diagnostic.observedStatus, 0) == 0))
           ))
           ) : (
-          contains(["PREVIEW", "PAUSED", "LIVE"], var.mode) && try(jsondecode(self.content).diagnostic, null) == null
+          contains(["PREVIEW", "PAUSED", "LIVE"], local.mode) && try(jsondecode(self.content).diagnostic, null) == null
         )) &&
         (local.operator_test_enabled ? (
           jsondecode(self.content).operator.state == "API_ACCEPTED" &&
@@ -67,7 +67,7 @@ resource "oci_functions_invoke_function" "deployment_check" {
         try(jsondecode(self.content).recovery, null) == null,
         false
       )
-      error_message = "Deployment check failed. Review the safe result and IAM/network access. Confirm OCI's email before TEST. Keep test settings and numbers unchanged when confirming or activating LIVE; check both received codes and completed PREVIEW preparation. For an intentional new test, clear both codes and use new test numbers in TEST. Saved progress is retained; a failed Apply does not prove activation or current health."
+      error_message = "Deployment check failed. Review its result and IAM/network access. Confirm OCI's subscription email before sending tests. Retry or confirm with the same test number. To enable routing, first Apply Paused with no setup action to prepare history, then complete and confirm both tests. Saved progress is retained; a failed Apply does not prove activation or current health."
     }
   }
 }

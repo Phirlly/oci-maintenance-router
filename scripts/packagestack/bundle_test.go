@@ -100,7 +100,7 @@ func TestBundleContainsOnlyDeploymentInputs(t *testing.T) {
 			t.Fatalf("private/development content %s", f.Name)
 		}
 	}
-	for _, name := range []string{"automation.tf", "identity_automation.tf", "startup_wait.tf"} {
+	for _, name := range []string{"automation.tf", "identity_automation.tf", "startup_wait.tf", "setup.tf", "identity_setup.tf", "modules/configuration/setup.tf"} {
 		if !names[name] {
 			t.Errorf("missing automatic deployment input %s", name)
 		}

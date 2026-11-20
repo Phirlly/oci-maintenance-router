@@ -20,7 +20,7 @@ func TestRootOperatorInputsCannotCreateMalformedSubscription(t *testing.T) {
 			t.Fatal(err)
 		}
 		writeJSON(t, filepath.Join(dir, "terraform.tfvars.json"), map[string]any{"operator_email": email})
-		writeJSON(t, filepath.Join(dir, "outputs.tf.json"), map[string]any{"output": map[string]any{"operator": map[string]any{"value": map[string]string{"email": "${var.operator_email}", "run": "${var.operator_test_run}"}}}})
+		writeJSON(t, filepath.Join(dir, "outputs.tf.json"), map[string]any{"output": map[string]any{"operator": map[string]any{"value": map[string]string{"email": "${var.operator_email}"}}}})
 		if output, err := terraform(t, dir, "", "init", "-backend=false", "-input=false", "-no-color"); err != nil {
 			t.Fatalf("init: %s (%v)", output, err)
 		}
@@ -49,7 +49,7 @@ func TestRootOperatorInputsCannotCreateMalformedSubscription(t *testing.T) {
 		if want == nil {
 			want = ""
 		}
-		if values["email"] != want || values["run"] != nil {
+		if values["email"] != want {
 			t.Fatalf("root changed intent: %#v", values)
 		}
 	}

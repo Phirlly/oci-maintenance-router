@@ -43,8 +43,8 @@ resource "oci_functions_function" "router" {
   timeout_in_seconds               = 300
   detached_mode_timeout_in_seconds = 300
   failure_destination {
-    kind     = var.mode == "LIVE" ? "NOTIFICATION" : "NONE"
-    topic_id = var.mode == "LIVE" ? oci_ons_notification_topic.operator.id : null
+    kind     = local.mode == "LIVE" ? "NOTIFICATION" : "NONE"
+    topic_id = local.mode == "LIVE" ? oci_ons_notification_topic.operator.id : null
   }
   success_destination {
     kind = "NONE"

@@ -11,8 +11,8 @@ variableGroups:
     variables: ["${ownership_kind}", "${ownership_namespace}", "${ownership_key}", "${pagerduty_region}", "${secret_compartment_ocid}", "${destinations}", "${routes}"]
   - title: Router notifications
     variables: ["${operator_email}"]
-  - title: Test and activation
-    variables: ["${mode}", "${test_secret_compartment_ocid}", "${test_secret_ocid}", "${test_nonproduction}", "${test_run}", "${test_receipt_code}", "${operator_test_run}", "${operator_receipt_code}"]
+  - title: Routing and setup
+    variables: ["${routing_state}", "${setup_action}", "${setup_attempt}", "${test_secret_compartment_ocid}", "${test_secret_ocid}", "${test_nonproduction}", "${test_receipt_code}", "${operator_receipt_code}"]
   - title: "Advanced: sending recovery"
     variables: ["${recovery_review_code}", "${recovery_request_number}", "${recovery_confirm}"]
   - title: "Advanced: close saved work"
@@ -35,66 +35,89 @@ variables:
     title: Router compartment
     description: Create the router here. Select existing MySQL locations below, in this same tenancy. No database is created.
     required: true
-  mode:
+  routing_state:
     type: enum
-    enum: [PREVIEW, PAUSED, TEST, LIVE]
-    default: PREVIEW
-    title: Operating mode
-    description: PREVIEW prepares history. TEST sends or confirms nonproduction tests. LIVE requires prepared history and both received test proofs; keep test settings unchanged. Apply PAUSED before changing routing or scope. PAUSED stops processing and permits confirmed closure; hourly checks continue without sending.
+    enum: [Paused, Enabled]
+    default: Paused
+    title: Maintenance routing
+    description: Start Paused to prepare history and set up notifications. Enable after confirming both tests. Pause before changing routing or scope; scheduled checks continue without sending.
     required: true
+  setup_action:
+    type: enum
+    enum: [None, Send test, Confirm received tests]
+    default: None
+    title: Setup action
+    description: Choose an action while routing is Paused. Confirm received tests sends nothing. Choose None for normal use.
+    required: true
+  setup_attempt:
+    type: integer
+    title: Test number
+    description: Enter 1 for your first test. Keep the same number to retry or confirm. Increase it for another test or after changing the test service, email, PagerDuty region or package.
+    required: false
+    visible:
+      not:
+        - eq: ["${setup_action}", None]
   test_secret_compartment_ocid:
     type: oci:identity:compartment:id
     title: Test secret compartment
-    description: For TEST, select the compartment containing your test secret in the stack region.
+    description: Select the compartment containing your test secret in the stack region.
     required: false
-    visible: true
+    visible:
+      or:
+        - eq: ["${setup_action}", Send test]
+        - and:
+            - eq: ["${setup_action}", Confirm received tests]
+            - eq: ["${operator_email}", ""]
   test_secret_ocid:
     type: oci:kms:secret:id
     title: Nonproduction PagerDuty secret
-    description: Required in TEST; retain for LIVE proof verification. Select a Vault secret containing your nonproduction Events API V2 key. Never paste the key here. Reselect if blank when editing.
+    description: Select the Vault secret for your test service. Never paste its key here. For PagerDuty-only confirmation, select the same secret used for that test. Reselect if blank when editing.
     required: false
-    visible: true
+    visible:
+      or:
+        - eq: ["${setup_action}", Send test]
+        - and:
+            - eq: ["${setup_action}", Confirm received tests]
+            - eq: ["${operator_email}", ""]
     dependsOn:
       compartmentId: ${test_secret_compartment_ocid}
   test_nonproduction:
     type: boolean
     title: This service may receive a nonproduction test alert
-    description: Required in TEST; retain for LIVE proof verification. Confirm this test will not page production responders.
+    description: Confirm this test will not page production responders.
     default: false
     required: false
-    visible: true
-  test_run:
-    type: integer
-    title: Test run number
-    description: Required in TEST and LIVE. Enter 1 for your first test. Keep unchanged to retry, confirm or activate. For another test, including after a service, PagerDuty region or package change, clear both confirmation codes and increase the number in TEST.
-    required: false
-    visible: true
+    visible:
+      or:
+        - eq: ["${setup_action}", Send test]
+        - and:
+            - eq: ["${setup_action}", Confirm received tests]
+            - eq: ["${operator_email}", ""]
   test_receipt_code:
     type: string
     title: PagerDuty confirmation code
-    description: Paste confirmation_code from the received PagerDuty test. Required for LIVE. In TEST, enter the operator code too when email is configured; confirmation sends nothing. Keep test numbers unchanged.
+    description: Paste confirmation_code from the received PagerDuty test. Use the same test number. With an operator email configured, enter its code too.
     default: ""
     required: false
-    visible: true
+    visible:
+      eq: ["${setup_action}", Confirm received tests]
   operator_email:
     type: string
     title: Router operator email
-    description: Receives router problems and notices needing review, separate from PagerDuty maintenance alerts. Required for LIVE. Apply in PREVIEW or PAUSED, then confirm OCI's email before TEST. Changing the address requires confirmation again. Clear in PREVIEW or PAUSED to remove this subscription.
+    description: Receives router problems separately from maintenance alerts. Required to enable routing. Apply while Paused with Setup action None, then confirm OCI's subscription email before sending tests. Without an email, testing checks PagerDuty only and cannot enable routing.
     default: ""
     required: false
-  operator_test_run:
-    type: integer
-    title: Operator test run number
-    description: Required in TEST with an operator email and in LIVE. Enter 1 for the first test. Keep unchanged to retry, confirm or activate. For another test or changed email/subscription, clear both confirmation codes and use a new number in TEST.
-    required: false
-    visible: true
   operator_receipt_code:
     type: string
     title: Operator email confirmation code
-    description: In TEST, paste the code from the received operator test email, together with the PagerDuty code. Retain both for LIVE. Keep test numbers unchanged. Clear this code if removing operator email.
+    description: Paste the code from the received operator test email. Confirm it together with the PagerDuty code using the same test number.
     default: ""
     required: false
-    visible: true
+    visible:
+      and:
+        - eq: ["${setup_action}", Confirm received tests]
+        - not:
+            - eq: ["${operator_email}", ""]
   closure_review_code:
     type: string
     title: Closure review code
@@ -112,7 +135,7 @@ variables:
   closure_confirm:
     type: boolean
     title: Close this saved work without sending
-    description: Requires PAUSED. Closure preserves history and cannot be undone. Clear this checkbox and Apply to remove the request; PAUSED alone does not cancel it.
+    description: Requires Paused routing and Setup action None. Closure preserves history and cannot be undone. Clear this checkbox and Apply to remove the request; pausing alone does not cancel it.
     default: false
     required: false
     visible: true
@@ -133,7 +156,7 @@ variables:
   recovery_confirm:
     type: boolean
     title: Authorize this reviewed sending recovery
-    description: Requires LIVE and may send alerts. Approval authorizes recorded work; it does not prove delivery. Clear and Apply to remove the request. Already approved batches remain authorized.
+    description: Requires Enabled routing and may send alerts. Approval authorizes recorded work; it does not prove delivery. Clear and Apply to remove the request. Already approved batches remain authorized.
     default: false
     required: false
     visible: true
@@ -194,7 +217,7 @@ variables:
   secret_compartment_ocid:
     type: oci:identity:compartment:id
     title: Vault secret compartment
-    description: "Choose the compartment containing your secrets in the stack region. Reuse an existing secret or <a href='https://docs.oracle.com/en-us/iaas/Content/secret-management/Tasks/create-secret.htm'>create one in Vault</a>. LIVE uses these destination keys. PREVIEW can use harmless dummy content; TEST uses the separate test secret."
+    description: "Choose the compartment containing your secrets in the stack region. Reuse an existing secret or <a href='https://docs.oracle.com/en-us/iaas/Content/secret-management/Tasks/create-secret.htm'>create one in Vault</a>. Enabled routing uses these destination keys. Paused routing does not read their contents; setup tests use the separate test secret."
     default: ${compartment_ocid}
     required: true
   destinations:
@@ -254,7 +277,7 @@ variables:
   existing_subnet_ocid:
     type: oci:core:subnet:id
     title: Existing private regional subnet
-    description: Must permit DNS and HTTPS to Announcements, Object Storage, Vault and selected regional MySQL control APIs. TEST and LIVE need events.pagerduty.com (US) or events.eu.pagerduty.com (EU) and Notifications control and topic data endpoints. Shared routes and security rules are not changed.
+    description: Must permit DNS and HTTPS to Announcements, Object Storage, Vault and selected regional MySQL control APIs. Tests and Enabled routing need events.pagerduty.com (US) or events.eu.pagerduty.com (EU) and Notifications control and topic data endpoints. Shared routes and security rules are not changed.
     required: true
     visible:
       not: ["${create_network}"]
@@ -288,9 +311,12 @@ outputs:
   operator_test_status:
     type: string
     title: Last operator test (API acceptance only)
+  routing_state:
+    type: string
+    title: Configured maintenance routing
   configured_mode:
     type: string
-    title: Configured mode
+    visible: false
   test_submission_status:
     type: string
     title: Last test submission (API acceptance only)
@@ -299,7 +325,7 @@ outputs:
     title: Last deployment check
   sending_enabled:
     type: boolean
-    title: LIVE activation verified by last Apply
+    title: Routing activation verified by last Apply
   function_id:
     type: string
     title: Function

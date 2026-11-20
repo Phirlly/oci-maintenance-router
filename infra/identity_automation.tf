@@ -16,7 +16,7 @@ resource "oci_identity_policy" "schedule" {
   ]
 }
 resource "oci_identity_policy" "detached_failure" {
-  count          = var.mode == "LIVE" ? 1 : 0
+  count          = local.mode == "LIVE" ? 1 : 0
   provider       = oci.home
   compartment_id = var.compartment_ocid
   name           = "${local.name}-detached-failure"

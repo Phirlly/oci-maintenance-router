@@ -51,7 +51,7 @@ locals {
   closure_result = try(jsondecode(oci_functions_invoke_function.closure[0].content), null)
   # Failed/stale Apply state must not become a closure-completed output.
   closure_verified = try(
-    var.closure_confirm && var.mode == "PAUSED" &&
+    var.closure_confirm && local.mode == "PAUSED" &&
     local.closure_result.responseVersion == 2 &&
     local.closure_result.status == "closure-completed" &&
     local.closure_result.operation == "close-work" &&

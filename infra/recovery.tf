@@ -20,7 +20,7 @@ resource "oci_functions_invoke_function" "recovery" {
   lifecycle {
     postcondition {
       condition = try(
-        var.recovery_confirm && var.mode == "LIVE" &&
+        var.recovery_confirm && local.mode == "LIVE" &&
         jsondecode(self.content).responseVersion == 2 &&
         jsondecode(self.content).status == "recovery-verified" &&
         jsondecode(self.content).operation == "recover-work" &&
@@ -57,7 +57,7 @@ locals {
   recovery_result = try(jsondecode(oci_functions_invoke_function.recovery[0].content), null)
   # Retained partial results never establish successful recovery for this Apply.
   recovery_verified = try(
-    var.recovery_confirm && var.mode == "LIVE" &&
+    var.recovery_confirm && local.mode == "LIVE" &&
     local.recovery_result.responseVersion == 2 &&
     local.recovery_result.status == "recovery-verified" &&
     local.recovery_result.operation == "recover-work" &&

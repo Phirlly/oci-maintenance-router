@@ -29,7 +29,7 @@ func TestOperatorPolicyLimitsOperationsRegionAndRecord(t *testing.T) {
 		installation, request := "b1-"+strings.Repeat("a", 64), "o1-"+strings.Repeat("b", 64)
 		dir := t.TempDir()
 		writeJSON(t, filepath.Join(dir, "main.tf.json"), map[string]any{"locals": map[string]any{"group": group, "compartment": compartment, "bucket": bucket, "installation_id": installation, "region_key": region, "configuration": `{"operatorTest":{"requestId":"` + request + `"}}`}})
-		expression := strings.NewReplacer("var.mode", `"TEST"`, "local.receipt_confirmation", "false", "oci_identity_dynamic_group.router.id", "local.group", "var.compartment_ocid", "local.compartment", "oci_objectstorage_bucket.state.name", "local.bucket", "local.catalog.regions[var.region]", "local.region_key", "module.configuration.configuration_json", "local.configuration", "\n", " ").Replace(statements)
+		expression := strings.NewReplacer("local.operator_request_id", fmt.Sprintf("%q", request), "local.mode", `"TEST"`, "local.receipt_confirmation", "false", "oci_identity_dynamic_group.router.id", "local.group", "var.compartment_ocid", "local.compartment", "oci_objectstorage_bucket.state.name", "local.bucket", "local.catalog.regions[var.region]", "local.region_key", "module.configuration.configuration_json", "local.configuration", "\n", " ").Replace(statements)
 		output, err := terraform(t, dir, "jsonencode("+expression+")\n", "console", "-no-color")
 		var encoded string
 		var got []string
@@ -61,7 +61,7 @@ func TestOperatorSubscriptionIsOwnedAndIndependentOfMode(t *testing.T) {
 			t.Fatalf("subscription ownership differs: %s", pattern)
 		}
 	}
-	if strings.Contains(block, "var.mode") {
+	if strings.Contains(block, "local.mode") {
 		t.Fatal("mode change must not replace the subscription")
 	}
 	configuration := readChecksumSource(t, "configuration.tf")
@@ -74,7 +74,7 @@ func TestOperatorSubscriptionIsOwnedAndIndependentOfMode(t *testing.T) {
 			if len(match) != 2 {
 				t.Fatal("missing operator authority expression")
 			}
-			expression := strings.NewReplacer("var.mode", fmt.Sprintf("%q", mode), "var.operator_email", fmt.Sprintf("%q", email)).Replace(match[1])
+			expression := strings.NewReplacer("local.mode", fmt.Sprintf("%q", mode), "var.operator_email", fmt.Sprintf("%q", email)).Replace(match[1])
 			output, err := terraform(t, t.TempDir(), expression+"\n", "console", "-no-color")
 			if err != nil || strings.TrimSpace(string(output)) != fmt.Sprint(mode == "TEST" && email != "") {
 				t.Fatalf("operator gating: %s (%v)", output, err)

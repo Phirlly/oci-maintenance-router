@@ -12,6 +12,8 @@ variable "settings" {
     routes                  = map(string)
     pagerduty_region        = string
     mode                    = optional(string, "PREVIEW")
+    setup_action            = optional(string)
+    setup_attempt           = optional(number)
     test_secret_ocid        = optional(string, "")
     test_nonproduction      = optional(bool, false)
     test_run                = optional(number)

@@ -26,7 +26,7 @@ func receiptExpression(t *testing.T, expression string, result any, confirming, 
 		t.Fatal(err)
 	}
 	quoted, _ := json.Marshal(string(body))
-	return strings.NewReplacer("self.content", string(quoted), "var.mode", `"TEST"`, "local.operator_test_enabled", strconv.FormatBool(operator),
+	return strings.NewReplacer("self.content", string(quoted), "local.mode", `"TEST"`, "local.operator_test_enabled", strconv.FormatBool(operator),
 		"local.receipt_confirmation", strconv.FormatBool(confirming), "local.check_attempt_id", `"attempt"`,
 		"sha256(module.configuration.configuration_json)", `"`+strings.Repeat("a", 64)+`"`, "local.release_sha256", `"`+strings.Repeat("b", 64)+`"`, "\n", " ").Replace(expression)
 }

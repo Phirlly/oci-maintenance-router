@@ -2,6 +2,19 @@ output "configuration_json" {
   description = "Validated PREVIEW, PAUSED, TEST or guarded LIVE configuration; no secret contents."
   value       = local.configuration_json
   precondition {
+    condition = !local.modern_setup || (try(contains(["NONE", "SEND_TEST", "CONFIRM"], local.s.setup_action), false) &&
+    ((local.s.mode == "TEST") == (local.s.setup_action != "NONE")))
+    error_message = "Choose None for normal routing. Send test and Confirm received tests require Paused routing and cannot be combined with recovery or closure."
+  }
+  precondition {
+    condition     = !local.modern_setup || local.s.setup_action == "NONE" || try(local.s.setup_attempt >= 1 && local.s.setup_attempt <= 2147483647 && floor(local.s.setup_attempt) == local.s.setup_attempt, false)
+    error_message = "Setup attempt must be an integer from 1 to 2147483647. Keep it unchanged to retry or confirm; increase it only for another test."
+  }
+  precondition {
+    condition     = !local.schema8 || local.s.mode != "LIVE" || local.s.operator_email != ""
+    error_message = "Enabled routing requires an operator email and saved confirmation of both test notifications. Set up and confirm the tests while Paused first."
+  }
+  precondition {
     condition     = !local.s.recovery_confirm || local.s.mode == "LIVE"
     error_message = "Recovery requires LIVE. Clear recovery confirmation before selecting another mode."
   }
@@ -37,7 +50,7 @@ output "configuration_json" {
     error_message = "Receipt confirmation codes must match the received messages exactly: OMR- plus 32 lowercase hexadecimal characters for PagerDuty, OMR-OP- plus 32 for operator email. Leave empty only to send a test in TEST."
   }
   precondition {
-    condition     = local.s.mode != "LIVE" || (local.s.test_receipt_code != "" && local.s.operator_receipt_code != "" && local.s.operator_email != "")
+    condition     = local.schema8 || local.s.mode != "LIVE" || (local.s.test_receipt_code != "" && local.s.operator_receipt_code != "" && local.s.operator_email != "")
     error_message = "LIVE requires both received test confirmation codes and the tested operator email. Keep test settings and run numbers unchanged; the deployment check verifies saved proofs and prepared history."
   }
   precondition {
@@ -55,7 +68,7 @@ output "configuration_json" {
     error_message = "Operator email must be one address without whitespace or control characters, at most 512 Unicode characters; leave empty to omit operator setup."
   }
   precondition {
-    condition     = !local.operator_test_enabled || try(local.s.operator_test_run >= 1 && local.s.operator_test_run <= 2147483647 && floor(local.s.operator_test_run) == local.s.operator_test_run, false)
+    condition     = local.schema8 || !local.operator_test_enabled || try(local.s.operator_test_run >= 1 && local.s.operator_test_run <= 2147483647 && floor(local.s.operator_test_run) == local.s.operator_test_run, false)
     error_message = "Operator test run number is required in TEST with an email and in LIVE: enter an integer from 1 to 2147483647. Keep unchanged when retrying or activating; use a new number for another test or changed email/subscription."
   }
   precondition {
@@ -67,15 +80,15 @@ output "configuration_json" {
     error_message = "Mode must be PREVIEW, PAUSED, TEST or LIVE. LIVE requires verified test receipts and completed preparation."
   }
   precondition {
-    condition     = !contains(["TEST", "LIVE"], local.s.mode) || try(local.s.test_run >= 1 && local.s.test_run <= 2147483647 && floor(local.s.test_run) == local.s.test_run, false)
+    condition     = local.schema8 || !contains(["TEST", "LIVE"], local.s.mode) || try(local.s.test_run >= 1 && local.s.test_run <= 2147483647 && floor(local.s.test_run) == local.s.test_run, false)
     error_message = "Test run number is required in TEST and LIVE: enter an integer from 1 to 2147483647. Keep it unchanged to reuse the saved result; increase it to request another test in TEST."
   }
   precondition {
-    condition     = !contains(["TEST", "LIVE"], local.s.mode) || (length(local.s.test_secret_ocid) <= 4096 && can(regex("^ocid1\\.vaultsecret\\.oc1\\.${local.regional_suffix}", local.s.test_secret_ocid)))
+    condition     = !local.diagnostic_intent_required || (length(local.s.test_secret_ocid) <= 4096 && can(regex("^ocid1\\.vaultsecret\\.oc1\\.${local.regional_suffix}", local.s.test_secret_ocid)))
     error_message = "Test secret must be an existing Vault secret in the stack's OCI region. Select its reference; never paste an integration key."
   }
   precondition {
-    condition     = !contains(["TEST", "LIVE"], local.s.mode) || local.s.test_nonproduction
+    condition     = !local.diagnostic_intent_required || local.s.test_nonproduction
     error_message = "Confirm the test secret belongs to a nonproduction PagerDuty service that may receive a test alert."
   }
   precondition {

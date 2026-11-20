@@ -1,21 +1,16 @@
 package infra_test
 
 import (
-	"reflect"
 	"strings"
 	"testing"
 )
 
 func TestNativeTestControlsRetainExplicitScopedIntent(t *testing.T) {
 	form := readForm(t)
-	mode := form.Variables["mode"]
-	if mode.Type != "enum" || mode.Default != "PREVIEW" || !reflect.DeepEqual(mode.Enum, []string{"PREVIEW", "PAUSED", "TEST", "LIVE"}) {
-		t.Fatal("mode must default to PREVIEW with explicit LIVE activation")
-	}
-	for _, name := range []string{"test_secret_compartment_ocid", "test_secret_ocid", "test_nonproduction", "test_run"} {
+	for _, name := range []string{"test_secret_compartment_ocid", "test_secret_ocid", "test_nonproduction", "setup_attempt"} {
 		v := form.Variables[name]
-		if v.Required || v.Visible != true || !strings.Contains(v.Description, "TEST") {
-			t.Fatalf("%s must stay optional and visible with TEST-only guidance", name)
+		if v.Required || v.Description == "" {
+			t.Fatalf("%s needs guidance and action-dependent Terraform validation", name)
 		}
 	}
 	for _, group := range form.VariableGroups {
@@ -27,8 +22,8 @@ func TestNativeTestControlsRetainExplicitScopedIntent(t *testing.T) {
 			}
 		}
 	}
-	if !strings.Contains(mode.Description, "LIVE") || !strings.Contains(mode.Description, "proof") {
-		t.Fatal("mode hint must explain LIVE proof requirements")
+	if !strings.Contains(form.Variables["routing_state"].Description, "confirming both tests") {
+		t.Fatal("routing hint must explain activation requirements")
 	}
 	secret := form.Variables["test_secret_ocid"]
 	if secret.Type != "oci:kms:secret:id" || secret.DependsOn["compartmentId"] != "${test_secret_compartment_ocid}" {
@@ -38,7 +33,7 @@ func TestNativeTestControlsRetainExplicitScopedIntent(t *testing.T) {
 	if compartment.Type != "oci:identity:compartment:id" || compartment.Default != nil {
 		t.Fatal("optional test compartment must start unselected without a literal or expression default")
 	}
-	run := form.Variables["test_run"]
+	run := form.Variables["setup_attempt"]
 	if run.Type != "integer" || run.Minimum != 0 || run.Maximum != 0 || run.Default != nil {
 		t.Fatal("run must have no fallback or inactive range constraint; Terraform validates TEST bounds")
 	}

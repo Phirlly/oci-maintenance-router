@@ -1,8 +1,22 @@
-variable "mode" {
+variable "routing_state" {
   type        = string
   nullable    = false
-  default     = "PREVIEW"
-  description = "PREVIEW prepares history; PAUSED stops processing and permits confirmed closure, while hourly checks continue without sending; TEST sends or confirms nonproduction tests; LIVE requires both saved proofs and prepared history."
+  default     = "Paused"
+  description = "Paused prepares history without maintenance delivery. Enabled requires saved confirmation of both setup tests."
+  validation {
+    condition     = contains(["Paused", "Enabled"], var.routing_state)
+    error_message = "Routing must be Paused or Enabled."
+  }
+}
+variable "setup_action" {
+  type        = string
+  nullable    = false
+  default     = "None"
+  description = "Explicit setup action while routing is Paused. Confirmation sends no test."
+  validation {
+    condition     = contains(["None", "Send test", "Confirm received tests"], var.setup_action)
+    error_message = "Choose None, Send test or Confirm received tests."
+  }
 }
 variable "test_secret_compartment_ocid" {
   type        = string
@@ -22,14 +36,14 @@ variable "test_nonproduction" {
   default     = false
   description = "Explicit confirmation that the selected service may receive a nonproduction test alert."
 }
-variable "test_run" {
+variable "setup_attempt" {
   type        = number
   default     = null
-  description = "Explicit positive test number in TEST and LIVE; unchanged reuses the saved result, increase for another test in TEST."
+  description = "Explicit positive setup attempt. Keep unchanged to retry or confirm; increase only for another test. Unused when Setup action is None."
 }
 variable "test_receipt_code" {
   type        = string
   nullable    = false
   default     = ""
-  description = "Confirmation code from the received PagerDuty test, required in LIVE. Keep test numbers unchanged; supply every configured receipt code together."
+  description = "Code from the received PagerDuty test, used only by Confirm received tests."
 }

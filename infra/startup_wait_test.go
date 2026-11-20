@@ -37,7 +37,7 @@ func TestStartupWaitIsBoundedAndHasNoDestroyDelay(t *testing.T) {
 	if len(dependencies) != 2 {
 		t.Fatal("startup wait must follow every runtime policy transition")
 	}
-	for _, name := range []string{"router", "announcements", "diagnostic", "operator", "live"} {
+	for _, name := range []string{"router", "announcements", "diagnostic", "operator", "setup", "live"} {
 		if !strings.Contains(dependencies[1], "oci_identity_policy."+name) {
 			t.Fatalf("startup wait can precede the %s policy", name)
 		}

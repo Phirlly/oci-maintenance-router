@@ -51,7 +51,7 @@ func TestAutomaticScheduleRemainsActiveAcrossModes(t *testing.T) {
 		t.Fatal("missing explicit schedule state")
 	}
 	for _, mode := range []string{"PREVIEW", "TEST", "LIVE", "PAUSED"} {
-		out, err := terraform(t, t.TempDir(), strings.ReplaceAll(state[1], "var.mode", fmt.Sprintf("%q", mode))+"\n", "console", "-no-color")
+		out, err := terraform(t, t.TempDir(), strings.ReplaceAll(state[1], "local.mode", fmt.Sprintf("%q", mode))+"\n", "console", "-no-color")
 		if err != nil || strings.TrimSpace(string(out)) != `"ACTIVE"` {
 			t.Error("schedule must stay active; runtime mode controls processing", mode, string(out), err)
 		}
@@ -66,7 +66,7 @@ func TestAnnouncementWakeUpUsesCatalogAndSeparateIntake(t *testing.T) {
 			t.Fatal("missing announcement contract", pattern)
 		}
 	}
-	for _, forbidden := range []string{"RESOURCE_ID", "COMPARTMENT_ID", "ANNOUNCEMENT_TYPE", "var.mysql_compartments", "var.mysql_regions", "var.mode", "operator.id"} {
+	for _, forbidden := range []string{"RESOURCE_ID", "COMPARTMENT_ID", "ANNOUNCEMENT_TYPE", "var.mysql_compartments", "var.mysql_regions", "local.mode", "operator.id"} {
 		if strings.Contains(announcement, forbidden) {
 			t.Fatal("unstable/narrow announcement filter", forbidden)
 		}
@@ -77,7 +77,7 @@ func TestAnnouncementWakeUpUsesCatalogAndSeparateIntake(t *testing.T) {
 			t.Fatal("missing subscription contract", pattern)
 		}
 	}
-	if strings.Contains(subscription, "var.mode") || strings.Contains(subscription, "operator.id") {
+	if strings.Contains(subscription, "local.mode") || strings.Contains(subscription, "operator.id") {
 		t.Fatal("subscription churn or feedback loop")
 	}
 }

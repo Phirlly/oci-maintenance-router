@@ -23,7 +23,7 @@ func liveExpression(t *testing.T, expression string, result any, mode string) st
 		t.Fatal(err)
 	}
 	return strings.NewReplacer("oci_functions_invoke_function.deployment_check.content", strconv.Quote(string(body)), "self.content", strconv.Quote(string(body)),
-		"var.mode", strconv.Quote(mode), "local.operator_test_enabled", "false", "local.receipt_confirmation", "false", "local.check_attempt_id", `"attempt"`,
+		"local.mode", strconv.Quote(mode), "local.operator_test_enabled", "false", "local.receipt_confirmation", "false", "local.check_attempt_id", `"attempt"`,
 		"sha256(module.configuration.configuration_json)", strconv.Quote(strings.Repeat("a", 64)), "local.release_sha256", strconv.Quote(strings.Repeat("b", 64)), "\n", " ").Replace(expression)
 }
 

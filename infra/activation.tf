@@ -2,7 +2,7 @@ locals {
   # Historical authority established by this Apply, never current health or
   # proof of delivery. A partial or stale selection must not enable the output.
   live_check_verified = try(
-    var.mode == "LIVE" &&
+    local.mode == "LIVE" &&
     jsondecode(oci_functions_invoke_function.deployment_check.content).responseVersion == 2 &&
     jsondecode(oci_functions_invoke_function.deployment_check.content).status == "operational-verified" &&
     jsondecode(oci_functions_invoke_function.deployment_check.content).operation == "deployment-check" &&

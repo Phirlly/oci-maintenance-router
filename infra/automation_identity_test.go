@@ -38,7 +38,7 @@ func TestAutomationPoliciesRestrictExactPrincipalsAndOperations(t *testing.T) {
 		if !slices.Equal(statements, want) {
 			t.Fatalf("policy widened or changed:\n%v\nwant %v", statements, want)
 		}
-		if name == "schedule" && strings.Contains(block, "var.mode") {
+		if name == "schedule" && strings.Contains(block, "local.mode") {
 			t.Fatal("schedule invocation IAM must exist before later activation")
 		}
 	}
@@ -66,7 +66,7 @@ func TestDetachedDestinationIsExplicitAndLiveOnly(t *testing.T) {
 		t.Fatal("missing explicit failure lifecycle")
 	}
 	for _, mode := range []string{"PREVIEW", "TEST", "LIVE", "PAUSED"} {
-		replace := strings.NewReplacer("var.mode", fmt.Sprintf("%q", mode), "oci_ons_notification_topic.operator.id", `"operator"`)
+		replace := strings.NewReplacer("local.mode", fmt.Sprintf("%q", mode), "oci_ons_notification_topic.operator.id", `"operator"`)
 		out, err := terraform(t, t.TempDir(), "jsonencode(["+replace.Replace(kind[1]+","+topic[1]+","+count[1])+"])\n", "console", "-no-color")
 		var encoded string
 		if err != nil || json.Unmarshal(out, &encoded) != nil {

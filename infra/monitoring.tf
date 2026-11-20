@@ -33,7 +33,7 @@ resource "oci_monitoring_alarm" "router" {
   compartment_id                                = var.compartment_ocid
   display_name                                  = "${local.name}-${each.key}"
   destinations                                  = [oci_ons_notification_topic.operator.id]
-  is_enabled                                    = var.mode == "LIVE"
+  is_enabled                                    = local.mode == "LIVE"
   metric_compartment_id                         = var.compartment_ocid
   metric_compartment_id_in_subtree              = false
   namespace                                     = each.value.namespace

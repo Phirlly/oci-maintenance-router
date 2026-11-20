@@ -9,6 +9,7 @@ locals {
       [for policy in [oci_identity_policy.router, oci_identity_policy.announcements] : { id = policy.id, statements = policy.statements }],
       [for policy in oci_identity_policy.diagnostic : { id = policy.id, statements = policy.statements }],
       [for policy in oci_identity_policy.operator : { id = policy.id, statements = policy.statements }],
+      [for policy in oci_identity_policy.setup : { id = policy.id, statements = policy.statements }],
       [for policy in oci_identity_policy.live : { id = policy.id, statements = policy.statements }],
     )
   }))
@@ -21,5 +22,5 @@ resource "time_sleep" "iam_propagation" {
   triggers = {
     iam_generation = local.startup_iam_generation
   }
-  depends_on = [oci_identity_policy.router, oci_identity_policy.announcements, oci_identity_policy.diagnostic, oci_identity_policy.operator, oci_identity_policy.live]
+  depends_on = [oci_identity_policy.router, oci_identity_policy.announcements, oci_identity_policy.diagnostic, oci_identity_policy.operator, oci_identity_policy.setup, oci_identity_policy.live]
 }

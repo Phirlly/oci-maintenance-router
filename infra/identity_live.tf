@@ -1,5 +1,5 @@
 resource "oci_identity_policy" "live" {
-  count          = var.mode == "LIVE" ? 1 : 0
+  count          = local.mode == "LIVE" ? 1 : 0
   provider       = oci.home
   compartment_id = var.tenancy_ocid
   name           = "${local.name}-live"

@@ -108,7 +108,7 @@ func TestRecoveryInvocationRejectsStalePartialAndOtherWork(t *testing.T) {
 					confirm = "false"
 				}
 				for _, predicate := range []string{string(match[1]), strings.ReplaceAll(string(output[1]), "local.recovery_result", "jsondecode(self.content)")} {
-					expr := strings.NewReplacer("self.content", strconv.Quote(string(body)), "local.recovery_attempt_id", `"12345678-1234-1234-1234-123456789abc"`, "sha256(module.configuration.configuration_json)", strconv.Quote(strings.Repeat("a", 64)), "local.release_sha256", strconv.Quote(strings.Repeat("b", 64)), "module.configuration.recovery_request_id", `"r1-request"`, "module.configuration.recovery_kind", strconv.Quote(action), "var.recovery_confirm", confirm, "var.mode", `"LIVE"`, "\n", " ").Replace(predicate)
+					expr := strings.NewReplacer("self.content", strconv.Quote(string(body)), "local.recovery_attempt_id", `"12345678-1234-1234-1234-123456789abc"`, "sha256(module.configuration.configuration_json)", strconv.Quote(strings.Repeat("a", 64)), "local.release_sha256", strconv.Quote(strings.Repeat("b", 64)), "module.configuration.recovery_request_id", `"r1-request"`, "module.configuration.recovery_kind", strconv.Quote(action), "var.recovery_confirm", confirm, "local.mode", `"LIVE"`, "\n", " ").Replace(predicate)
 					got, err := terraform(t, t.TempDir(), expr+"\n", "console", "-no-color")
 					want := kind == "valid" || kind == "ambiguous"
 					if err != nil || strings.TrimSpace(string(got)) != strconv.FormatBool(want) {

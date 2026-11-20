@@ -1,5 +1,5 @@
 locals {
-  operator_test_enabled = var.mode == "TEST" && var.operator_email != ""
+  operator_test_enabled = local.mode == "TEST" && var.operator_email != ""
 }
 
 # The subscription survives mode changes. OCI sends its confirmation email on

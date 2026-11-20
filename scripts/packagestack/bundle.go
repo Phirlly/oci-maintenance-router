@@ -22,6 +22,7 @@ var stackFiles = []string{
 	"storage.tf", "startup_wait.tf", "variables_network.tf", "variables_operation.tf", "variables_placement.tf", "variables_routing.tf", "versions.tf",
 	"modules/configuration/variables.tf", "modules/configuration/render.tf", "modules/configuration/outputs.tf",
 	"operator.tf", "variables_operator.tf", "identity_operator.tf",
+	"setup.tf", "identity_setup.tf", "modules/configuration/setup.tf",
 	"closure.tf", "variables_closure.tf", "modules/configuration/closure.tf",
 	"recovery.tf", "variables_recovery.tf", "modules/configuration/recovery.tf",
 	"activation.tf", "identity_live.tf",

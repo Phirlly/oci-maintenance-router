@@ -20,7 +20,11 @@ output "check_result" {
 }
 output "configured_mode" {
   description = "Mode used for this deployment check."
-  value       = var.mode
+  value       = local.mode
+}
+output "routing_state" {
+  description = "Configured maintenance routing. See sending_enabled for activation verified by the last Apply."
+  value       = var.routing_state
 }
 output "test_submission_status" {
   description = "Saved test outcome. API_ACCEPTED confirms PagerDuty API acceptance, not human receipt."
@@ -30,11 +34,11 @@ output "test_submission_status" {
 locals {
   # Never promote a partial proof preserved in a failed or stale Apply result.
   receipt_check_verified = try(
-    local.receipt_confirmation && var.mode == "TEST" &&
+    local.receipt_confirmation && local.mode == "TEST" &&
     jsondecode(oci_functions_invoke_function.deployment_check.content).responseVersion == 2 &&
     jsondecode(oci_functions_invoke_function.deployment_check.content).status == "operational-verified" &&
     jsondecode(oci_functions_invoke_function.deployment_check.content).operation == "deployment-check" &&
-    jsondecode(oci_functions_invoke_function.deployment_check.content).mode == var.mode &&
+    jsondecode(oci_functions_invoke_function.deployment_check.content).mode == local.mode &&
     jsondecode(oci_functions_invoke_function.deployment_check.content).checkAttemptId == local.check_attempt_id &&
     jsondecode(oci_functions_invoke_function.deployment_check.content).configurationSha256 == sha256(module.configuration.configuration_json) &&
     jsondecode(oci_functions_invoke_function.deployment_check.content).releaseSha256 == local.release_sha256 &&

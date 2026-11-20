@@ -20,13 +20,13 @@ module "configuration" {
     destinations            = var.destinations
     routes                  = var.routes
     pagerduty_region        = var.pagerduty_region
-    mode                    = var.mode
+    mode                    = local.mode
+    setup_action            = local.setup_action
+    setup_attempt           = var.setup_attempt
     test_secret_ocid        = var.test_secret_ocid
     test_nonproduction      = var.test_nonproduction
-    test_run                = var.test_run
     test_receipt_code       = var.test_receipt_code
     operator_email          = var.operator_email
-    operator_test_run       = var.operator_test_run
     operator_receipt_code   = var.operator_receipt_code
     closure_review_code     = var.closure_review_code
     closure_request_number  = var.closure_request_number

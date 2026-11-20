@@ -90,7 +90,7 @@ func TestClosureInvocationRejectsStalePartialAndOtherWork(t *testing.T) {
 			for _, predicate := range []string{string(match[1]), strings.ReplaceAll(string(outputMatch[1]), "local.closure_result", "jsondecode(self.content)")} {
 				expression := strings.NewReplacer("self.content", strconv.Quote(string(body)), "local.closure_attempt_id", `"12345678-1234-1234-1234-123456789abc"`,
 					"sha256(module.configuration.configuration_json)", strconv.Quote(strings.Repeat("a", 64)), "local.release_sha256", strconv.Quote(strings.Repeat("b", 64)),
-					"module.configuration.closure_request_id", `"c1-request"`, "var.closure_confirm", "true", "var.mode", `"PAUSED"`, "\n", " ").Replace(predicate)
+					"module.configuration.closure_request_id", `"c1-request"`, "var.closure_confirm", "true", "local.mode", `"PAUSED"`, "\n", " ").Replace(predicate)
 				got, err := terraform(t, t.TempDir(), expression+"\n", "console", "-no-color")
 				if err != nil || strings.TrimSpace(string(got)) != strconv.FormatBool(kind == "valid") {
 					t.Fatalf("predicate %s: %s (%v)", kind, got, err)
