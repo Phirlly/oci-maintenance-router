@@ -7,6 +7,9 @@ import (
 )
 
 func (ops operations) test(ctx context.Context, lease *reconciliation.Lease, result *OperationalResult) error {
+	if ops.setup != nil {
+		return ops.setup(ctx, lease, result)
+	}
 	if ops.diagnosticReceipt != nil || ops.pairedReceipts != nil {
 		return ops.confirmReceipts(ctx, lease, result)
 	}

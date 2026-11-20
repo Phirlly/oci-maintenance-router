@@ -62,7 +62,7 @@ func NewRecoveryReviewer(data, catalogBytes []byte, location configuration.Ledge
 		return nil, invalid
 	}
 	c, err := configuration.Decode(data, catalog)
-	if err != nil || c.SchemaVersion != 7 || c.Mode != "LIVE" {
+	if err != nil || (c.SchemaVersion != 7 && c.SchemaVersion != 8) || c.Mode != "LIVE" {
 		return nil, invalid
 	}
 	collector, err := NewCollector(data, catalog, location, source, saved)

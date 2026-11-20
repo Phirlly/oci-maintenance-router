@@ -47,6 +47,13 @@ func NewOperatorCoordinator(configBytes, catalogBytes []byte, location configura
 	if err != nil {
 		return nil, err
 	}
+	return newOperatorCoordinator(c, objects, client)
+}
+
+func newOperatorCoordinator(c operatorControls, objects OperatorChallengeObjects, client *ocinotifications.Client) (*OperatorCoordinator, error) {
+	if client == nil || !validOperatorIntent(c.intent) {
+		return nil, &OperatorRunError{Code: "invalid_request"}
+	}
 	if c.mode != "TEST" {
 		return nil, &OperatorRunError{Code: "intent_required"}
 	}

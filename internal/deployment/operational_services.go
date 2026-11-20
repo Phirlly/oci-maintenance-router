@@ -20,6 +20,7 @@ type operations struct {
 	operator          func(context.Context, *reconciliation.Lease) (reconciliation.OperatorResult, error)
 	diagnosticReceipt func(context.Context, *reconciliation.Lease) (reconciliation.DiagnosticReceipt, error)
 	pairedReceipts    func(context.Context, *reconciliation.Lease) (reconciliation.SetupConfirmationResult, error)
+	setup             func(context.Context, *reconciliation.Lease, *OperationalResult) error
 	selectLive        func(context.Context, *reconciliation.Lease) (reconciliation.Baseline, error)
 	process           func(context.Context, *reconciliation.Lease) (reconciliation.ProcessingSnapshot, error)
 	reportRetry       func(context.Context, *reconciliation.Lease) (reconciliation.ReportingResult, error)
@@ -82,7 +83,7 @@ func composeOperations(s Settings, store Store, p pinnedInputs, operation string
 		return result, nil
 	}
 	var channel *ocinotifications.Client
-	if mode == "LIVE" || p.config.OperatorTest != nil {
+	if mode == "LIVE" || p.config.OperatorTest != nil || p.config.OperatorChannel != nil {
 		var err error
 		channel, err = ocinotifications.New(s.Region, key, s.TenancyID, managed.principal)
 		if err != nil {
@@ -95,6 +96,22 @@ func composeOperations(s Settings, store Store, p pinnedInputs, operation string
 			return operations{}, err
 		}
 		result.selectLive = selector.Select
+		return result, nil
+	}
+	if mode == "TEST" && p.config.SchemaVersion == 8 {
+		var vault *ocisecrets.Client
+		if p.config.Setup.Action == "SEND_TEST" {
+			var err error
+			vault, err = ocisecrets.New(s.Region, key, managed.principal)
+			if err != nil {
+				return operations{}, err
+			}
+		}
+		setup, err := reconciliation.NewSetupCoordinator(p.configBytes, p.catalogBytes, location, s.ReleaseSHA256, objects, channel, vault)
+		if err != nil {
+			return operations{}, err
+		}
+		result.setup = setupOperation(setup, p.config.Setup.Action == "CONFIRM")
 		return result, nil
 	}
 	if mode == "TEST" && (p.config.Diagnostic.ReceiptCode != "" || p.config.OperatorTest != nil && p.config.OperatorTest.ReceiptCode != "") {

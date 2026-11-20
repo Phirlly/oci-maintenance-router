@@ -12,7 +12,7 @@ var closureRequestIDPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{1,128}$`)
 
 func matchesClosure(c configuration.Config, request command) bool {
 	q := c.Recovery
-	return c.SchemaVersion == 7 && c.Mode == "PAUSED" && q != nil &&
+	return (c.SchemaVersion == 7 || c.SchemaVersion == 8) && c.Mode == "PAUSED" && q != nil &&
 		(q.Kind == "CLOSE_BATCH" || q.Kind == "CLOSE_REVISION") && q.RequestID == request.recoveryRequestID
 }
 

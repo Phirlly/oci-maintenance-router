@@ -129,7 +129,7 @@ func missingRecoveryReadiness(err error) bool {
 		return false
 	}
 	switch e.Code {
-	case "not_accepted", "receipt_mismatch", "channel_changed", "baseline_unprepared", "scope_unprepared":
+	case "not_accepted", "receipt_mismatch", "channel_changed", "baseline_unprepared", "scope_unprepared", "confirmation_required", "setup_stale", "confirmation_mismatch":
 		return true
 	}
 	return false

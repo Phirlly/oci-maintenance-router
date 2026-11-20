@@ -32,6 +32,8 @@ func configurationVersion(value any) (int, error) {
 			return 6, nil
 		case "7":
 			return 7, nil
+		case "8":
+			return 8, nil
 		}
 	}
 	return 0, &Error{"schemaVersion", "unsupported"}

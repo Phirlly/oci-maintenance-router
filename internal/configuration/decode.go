@@ -30,6 +30,10 @@ func Decode(data []byte, catalog Catalog) (Config, error) {
 	if version == 7 {
 		optional = append(optional, "recovery")
 	}
+	if version == 8 {
+		required = append(required, "mode", "installationId", "preparation", "setup")
+		optional = []string{"operatorChannel", "recovery"}
+	}
 	r := readObject(value, "configuration", &err, required, optional)
 	if err != nil {
 		return Config{}, err
@@ -83,6 +87,12 @@ func (c *Config) readRouting(r objectReader) {
 func (c *Config) readControls(r objectReader) {
 	if _, ok := r.values["mode"]; ok {
 		c.Mode = r.text("mode")
+	}
+	if c.SchemaVersion == 8 {
+		c.readPreparation(r)
+		c.readSetup(r)
+		c.readRecovery(r)
+		return
 	}
 	if c.SchemaVersion == 2 || c.SchemaVersion == 3 || c.SchemaVersion == 4 || c.SchemaVersion == 5 || c.SchemaVersion == 6 || c.SchemaVersion == 7 {
 		c.readPreparation(r)

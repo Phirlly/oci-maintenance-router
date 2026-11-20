@@ -42,6 +42,10 @@ func operationCode(ctx context.Context, err error) string {
 		if e != nil {
 			code = e.Code
 		}
+	case *reconciliation.SetupError:
+		if e != nil {
+			code = e.Code
+		}
 	case *reconciliation.LiveSelectionError:
 		if e != nil {
 			code = e.Code

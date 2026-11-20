@@ -30,7 +30,22 @@ type Config struct {
 	Diagnostic       *DiagnosticRequest
 	OperatorTest     *OperatorTestRequest
 	Recovery         *RecoveryRequest
+	Setup            *SetupRequest
+	OperatorChannel  *OperatorChannel
 }
+
+// SetupRequest is explicit setup intent, not evidence that a test was delivered.
+// NONE carries no transient test controls; saved state owns the selected attempt.
+type SetupRequest struct {
+	Action                      string
+	Attempt                     int64
+	SecretID                    string
+	NonProduction               bool
+	PagerDutyCode, OperatorCode string
+}
+
+// OperatorChannel remains configured independently of a transient setup action.
+type OperatorChannel struct{ SubscriptionID, Endpoint string }
 
 // OperatorTestRequest is desired EMAIL test intent and optional receipt input.
 // It does not prove channel association, publication permission or human receipt.

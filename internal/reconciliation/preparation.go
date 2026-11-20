@@ -33,7 +33,7 @@ func NewBaselinePreparation(configBytes, catalogBytes []byte, location configura
 		return nil, &PreparationError{Code: "invalid_request"}
 	}
 	config, err := configuration.Decode(configBytes, catalog)
-	if err != nil || (config.SchemaVersion != 2 && config.SchemaVersion != 3 && config.SchemaVersion != 4 && config.SchemaVersion != 5 && config.SchemaVersion != 6 && config.SchemaVersion != 7) {
+	if err != nil || (config.SchemaVersion != 2 && config.SchemaVersion != 3 && config.SchemaVersion != 4 && config.SchemaVersion != 5 && config.SchemaVersion != 6 && config.SchemaVersion != 7 && config.SchemaVersion != 8) {
 		return nil, &PreparationError{Code: "invalid_request"}
 	}
 	discovery, err := NewDiscovery(configBytes, catalogBytes, location, announcements, objects)

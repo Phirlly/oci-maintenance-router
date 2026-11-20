@@ -15,13 +15,13 @@ type liveSelectionRun struct {
 // fresh discovery, a completed processing pass or future permission to send.
 // The caller owns lease release and all later processing/dispatch checks.
 func (s *LiveBaselineSelector) Select(ctx context.Context, lease *Lease) (Baseline, error) {
-	if s == nil || s.diagnostic == nil || s.operator == nil || !lease.usable() {
+	if s == nil || (s.setup == nil && (s.diagnostic == nil || s.operator == nil)) || !lease.usable() {
 		return Baseline{}, &LiveSelectionError{Code: "invalid_request"}
 	}
 	if err := leaseRequest(ctx); err != nil {
 		return Baseline{}, liveSelectionError(ctx, err)
 	}
-	env := s.diagnostic.input.intent.EnvironmentID
+	env, installation, _ := s.controls()
 	if lease.manager.environmentID != env {
 		return Baseline{}, &LiveSelectionError{Code: "environment_mismatch"}
 	}
@@ -34,8 +34,8 @@ func (s *LiveBaselineSelector) Select(ctx context.Context, lease *Lease) (Baseli
 	// Constructor validation established the shared environment, installation and
 	// backend. Stores and handles belong only to this invocation.
 	r.baselines, _ = NewBaselineStore(objects, env)
-	r.history, _ = NewPreparedHistoryStore(objects, env, s.diagnostic.input.intent.InstallationID)
-	r.selected, _ = NewBaselineSelectionStore(objects, env, s.diagnostic.input.intent.InstallationID)
+	r.history, _ = NewPreparedHistoryStore(objects, env, installation)
+	r.selected, _ = NewBaselineSelectionStore(objects, env, installation)
 	b, err := r.run()
 	if err == nil {
 		err = r.guard()
@@ -54,7 +54,8 @@ func (s *LiveBaselineSelector) Select(ctx context.Context, lease *Lease) (Baseli
 
 func (r *liveSelectionRun) reserve() error { return currentReserve(r.ctx, r.lease) }
 func (r *liveSelectionRun) guard() error {
-	return r.owner.diagnostic.input.current.check(r.ctx, r.lease)
+	_, _, c := r.owner.controls()
+	return c.check(r.ctx, r.lease)
 }
 func (r *liveSelectionRun) checkTime(b Baseline) error {
 	now := r.lease.manager.now()
@@ -65,10 +66,7 @@ func (r *liveSelectionRun) checkTime(b Baseline) error {
 }
 
 func (r *liveSelectionRun) run() (Baseline, error) {
-	if _, err := r.owner.diagnostic.Verify(r.ctx, r.lease); err != nil {
-		return Baseline{}, err
-	}
-	if _, err := r.owner.operator.Verify(r.ctx, r.lease); err != nil {
+	if err := r.verifyReadiness(); err != nil {
 		return Baseline{}, err
 	}
 	if err := r.guard(); err != nil {
@@ -82,4 +80,15 @@ func (r *liveSelectionRun) run() (Baseline, error) {
 		return Baseline{}, err
 	}
 	return target, nil
+}
+
+func (r *liveSelectionRun) verifyReadiness() error {
+	if r.owner.setup != nil {
+		return r.owner.setup.verify(r.ctx, r.lease, r.owner.release)
+	}
+	if _, err := r.owner.diagnostic.Verify(r.ctx, r.lease); err != nil {
+		return err
+	}
+	_, err := r.owner.operator.Verify(r.ctx, r.lease)
+	return err
 }

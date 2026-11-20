@@ -46,6 +46,13 @@ func NewDiagnosticCoordinator(configBytes, catalogBytes []byte, location configu
 	if err != nil {
 		return nil, err
 	}
+	return newDiagnosticCoordinator(c, objects, vault)
+}
+
+func newDiagnosticCoordinator(c diagnosticControls, objects DiagnosticObjects, vault *ocisecrets.Client) (*DiagnosticCoordinator, error) {
+	if vault == nil || !validDiagnosticIntent(c.intent) {
+		return nil, &DiagnosticRunError{Code: "invalid_request"}
+	}
 	if c.mode != "TEST" {
 		return nil, &DiagnosticRunError{Code: "intent_required"}
 	}

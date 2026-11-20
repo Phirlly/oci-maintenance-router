@@ -28,24 +28,31 @@ func (c Config) validateOperatorTest(catalog Catalog) error {
 	if !baselinePattern.MatchString(o.RequestID) {
 		return &Error{"operatorTest.requestId", "invalid"}
 	}
-	_, regional := regionalOCID(o.SubscriptionID, "onssubscription", c.DeploymentRegion, catalog.Regions[c.DeploymentRegion])
-	if len(o.SubscriptionID) > 4096 || !regional {
-		return &Error{"operatorTest.subscriptionId", "invalid"}
+	if err := c.validateOperatorChannel(o.SubscriptionID, o.Endpoint, "operatorTest", catalog); err != nil {
+		return err
+	}
+	if o.ReceiptCode != "" && !operatorReceiptPattern.MatchString(o.ReceiptCode) {
+		return &Error{"operatorTest.receiptCode", "invalid"}
+	}
+	return nil
+}
+
+func (c Config) validateOperatorChannel(subscription, endpoint, field string, catalog Catalog) error {
+	_, regional := regionalOCID(subscription, "onssubscription", c.DeploymentRegion, catalog.Regions[c.DeploymentRegion])
+	if len(subscription) > 4096 || !regional {
+		return &Error{field + ".subscriptionId", "invalid"}
 	}
 	if len(c.OperatorTopicID) > 4096 {
 		return &Error{"operatorTopicId", "invalid"}
 	}
 	// strictJSON has already validated UTF8. Preserve exact contact spelling.
-	if o.Endpoint == "" || len(o.Endpoint) > 2048 || utf8.RuneCountInString(o.Endpoint) > 512 {
-		return &Error{"operatorTest.endpoint", "invalid"}
+	if endpoint == "" || len(endpoint) > 2048 || utf8.RuneCountInString(endpoint) > 512 {
+		return &Error{field + ".endpoint", "invalid"}
 	}
-	for _, r := range o.Endpoint {
+	for _, r := range endpoint {
 		if unicode.IsControl(r) || unicode.IsSpace(r) {
-			return &Error{"operatorTest.endpoint", "invalid"}
+			return &Error{field + ".endpoint", "invalid"}
 		}
-	}
-	if o.ReceiptCode != "" && !operatorReceiptPattern.MatchString(o.ReceiptCode) {
-		return &Error{"operatorTest.receiptCode", "invalid"}
 	}
 	return nil
 }

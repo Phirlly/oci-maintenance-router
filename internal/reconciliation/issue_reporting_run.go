@@ -23,7 +23,7 @@ type reportingRun struct {
 }
 
 func (d *IssueReporter) run(ctx context.Context, lease *Lease, snapshot *ProcessingSnapshot) (ReportingResult, error) {
-	if d == nil || d.objects == nil || d.proof == nil || d.read == nil || d.token == nil || !lease.usable() || leaseRequest(ctx) != nil || lease.manager.environmentID != d.environment {
+	if d == nil || d.objects == nil || (d.proof == nil && d.setupProof == nil) || d.read == nil || d.token == nil || !lease.usable() || leaseRequest(ctx) != nil || lease.manager.environmentID != d.environment {
 		return ReportingResult{}, &ReportingError{"invalid_request"}
 	}
 	deadline, _ := ctx.Deadline()

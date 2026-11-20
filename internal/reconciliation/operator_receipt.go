@@ -32,16 +32,16 @@ func NewOperatorReceiptVerifier(configBytes, catalogBytes []byte, location confi
 	if err != nil {
 		return nil, err
 	}
+	return newOperatorReceiptVerifier(c, objects, client)
+}
+
+func newOperatorReceiptVerifier(c operatorControls, objects OperatorChallengeObjects, client *ocinotifications.Client) (*OperatorReceiptVerifier, error) {
+	if client == nil {
+		return nil, &OperatorRunError{Code: "invalid_request"}
+	}
 	if c.receiptCode == "" {
 		return nil, &OperatorRunError{Code: "receipt_required"}
 	}
 	s, _ := NewOperatorChallengeStore(objects, c.intent.EnvironmentID, c.intent.InstallationID)
-	return &OperatorReceiptVerifier{c, s, func(ctx context.Context) (OperatorChannel, error) {
-		channel, err := client.GetChannel(ctx, c.desired.TopicID, c.desired.SubscriptionID)
-		if err != nil {
-			return OperatorChannel{}, err
-		}
-		s := channel.Snapshot()
-		return OperatorChannel{s.TopicID, s.SubscriptionID, s.Protocol, s.Endpoint}, nil
-	}}, nil
+	return &OperatorReceiptVerifier{c, s, operatorChannelReader(client, c.desired)}, nil
 }

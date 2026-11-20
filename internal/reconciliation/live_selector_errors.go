@@ -54,6 +54,14 @@ func liveSelectionError(ctx context.Context, err error) *LiveSelectionError {
 		if e != nil {
 			r.Code, r.HTTPStatus, r.WriteUncertain = e.Code, e.HTTPStatus, e.WriteUncertain
 		}
+	case *SetupError:
+		if e != nil {
+			r.Code, r.HTTPStatus, r.WriteUncertain = e.Code, e.HTTPStatus, e.WriteUncertain
+		}
+	case *SetupConfirmationError:
+		if e != nil {
+			r.Code, r.HTTPStatus, r.WriteUncertain = e.Code, e.HTTPStatus, e.WriteUncertain
+		}
 	}
 	if r.HTTPStatus < 100 || r.HTTPStatus > 599 {
 		r.HTTPStatus = 0

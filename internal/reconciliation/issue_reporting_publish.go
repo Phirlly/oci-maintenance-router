@@ -8,7 +8,7 @@ func (r *reportingRun) publish() error {
 	if err != nil || !claimed {
 		return err
 	}
-	if _, err = r.owner.proof.Verify(r.ctx, r.lease); err != nil {
+	if err = r.owner.verifyReceipt(r.ctx, r.lease); err != nil {
 		return &ReportingError{"receipt_unverified"}
 	}
 	if err = r.guard(); err != nil {

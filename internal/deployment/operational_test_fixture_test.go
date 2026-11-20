@@ -39,9 +39,12 @@ func retainedTestFixture(t *testing.T, operator bool) (*Handler, Settings, *oper
 	return h, s, objects, environment, principal
 }
 
-func retainDiagnostic(t *testing.T, s Settings, objects *operationalStore, environment string, status int) string {
+func retainDiagnostic(t *testing.T, s Settings, objects *operationalStore, environment string, status int, request ...string) string {
 	t.Helper()
 	intent := reconciliation.DiagnosticIntent{EnvironmentID: environment, InstallationID: "synthetic-installation", RequestID: "test-1", ReleaseSHA256: s.ReleaseSHA256, CatalogSHA256: s.CatalogSHA256, PagerDutyRegion: "US", SecretID: "ocid1.vaultsecret.oc1.iad.diagnostic", NonProduction: true}
+	if len(request) > 0 {
+		intent.RequestID = request[0]
+	}
 	now := time.Now().Add(-time.Second)
 	owner, token := strings.Repeat("a", 64), strings.Repeat("b", 64)
 	record, err := reconciliation.NewDiagnostic(intent, 7, reconciliation.DiagnosticClaim{OwnerToken: owner, ClaimToken: token, Now: now, ExpiresAt: now.Add(time.Minute)})
@@ -69,9 +72,13 @@ func retainDiagnostic(t *testing.T, s Settings, objects *operationalStore, envir
 	return saved.Record().Snapshot().ConfirmationCode
 }
 
-func retainOperator(t *testing.T, objects *operationalStore, environment string, status int) string {
+func retainOperator(t *testing.T, objects *operationalStore, environment string, status int, request ...string) string {
 	t.Helper()
-	intent, err := reconciliation.NewOperatorIntent(environment, "synthetic-installation", "operator-1", reconciliation.OperatorChannel{TopicID: "ocid1.onstopic.oc1.iad.operator", SubscriptionID: "ocid1.onssubscription.oc1.iad.operator", Protocol: "EMAIL", Endpoint: "operator@example.invalid"})
+	id := "operator-1"
+	if len(request) > 0 {
+		id = request[0]
+	}
+	intent, err := reconciliation.NewOperatorIntent(environment, "synthetic-installation", id, reconciliation.OperatorChannel{TopicID: "ocid1.onstopic.oc1.iad.operator", SubscriptionID: "ocid1.onssubscription.oc1.iad.operator", Protocol: "EMAIL", Endpoint: "operator@example.invalid"})
 	if err != nil {
 		t.Fatal(err)
 	}
