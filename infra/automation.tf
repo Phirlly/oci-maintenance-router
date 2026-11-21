@@ -14,11 +14,18 @@ resource "oci_announcements_service_announcement_subscription" "mysql" {
   ons_topic_id   = oci_ons_notification_topic.intake.id
   filter_groups {
     dynamic "filters" {
-      for_each = toset(local.catalog.mysqlServices)
+      # API filters use current names; runtime matching also accepts historical names.
+      for_each = toset(local.release.mysqlSubscriptionServices)
       content {
         type  = "SERVICE"
         value = filters.value
       }
+    }
+  }
+  lifecycle {
+    precondition {
+      condition     = length(local.release.mysqlSubscriptionServices) > 0 && length(distinct(local.release.mysqlSubscriptionServices)) == length(local.release.mysqlSubscriptionServices) && length(setsubtract(toset(local.release.mysqlSubscriptionServices), toset(local.catalog.mysqlServices))) == 0
+      error_message = "Release subscription services must be nonempty, unique and included in the runtime service catalog."
     }
   }
   depends_on = [oci_ons_subscription.intake]

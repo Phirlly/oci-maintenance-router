@@ -61,7 +61,7 @@ func TestAutomaticScheduleRemainsActiveAcrossModes(t *testing.T) {
 func TestAnnouncementWakeUpUsesCatalogAndSeparateIntake(t *testing.T) {
 	source := readChecksumSource(t, "automation.tf")
 	announcement := checksumBlock(source, `resource "oci_announcements_service_announcement_subscription" "mysql"`)
-	for _, pattern := range []string{`ons_topic_id\s*=\s*oci_ons_notification_topic.intake.id`, `for_each\s*=\s*toset\(local.catalog.mysqlServices\)`, `type\s*=\s*"SERVICE"`, `value\s*=\s*filters.value`, `depends_on\s*=\s*\[oci_ons_subscription.intake\]`} {
+	for _, pattern := range []string{`ons_topic_id\s*=\s*oci_ons_notification_topic.intake.id`, `for_each\s*=\s*toset\(local.release.mysqlSubscriptionServices\)`, `type\s*=\s*"SERVICE"`, `value\s*=\s*filters.value`, `depends_on\s*=\s*\[oci_ons_subscription.intake\]`} {
 		if !regexp.MustCompile(pattern).MatchString(announcement) {
 			t.Fatal("missing announcement contract", pattern)
 		}

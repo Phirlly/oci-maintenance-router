@@ -8,6 +8,11 @@
   },
   "mysqlServices": [
     "Oracle Cloud Infrastructure HeatWave MySQL",
+    "Oracle Cloud Infrastructure MySQL HeatWave",
+    "Oracle HeatWave MySQL"
+  ],
+  "mysqlSubscriptionServices": [
+    "Oracle Cloud Infrastructure MySQL HeatWave",
     "Oracle HeatWave MySQL"
   ]
 }

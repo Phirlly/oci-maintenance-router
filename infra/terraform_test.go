@@ -63,6 +63,11 @@ func render(t *testing.T, settings map[string]any) (map[string]string, string, e
 
 func renderWithInstallation(t *testing.T, settings map[string]any, installation string, subscription ...string) (map[string]string, string, error) {
 	t.Helper()
+	return renderWithCatalog(t, settings, installation, catalogFixture(), subscription...)
+}
+
+func renderWithCatalog(t *testing.T, settings map[string]any, installation string, catalog map[string]any, subscription ...string) (map[string]string, string, error) {
+	t.Helper()
 	requireTerraform(t)
 	dir := t.TempDir()
 	source, err := filepath.Abs("modules/configuration")
@@ -70,7 +75,7 @@ func renderWithInstallation(t *testing.T, settings map[string]any, installation 
 		t.Fatal(err)
 	}
 	module := map[string]any{
-		"source": source, "settings": "${var.settings}", "catalog": catalogFixture(),
+		"source": source, "settings": "${var.settings}", "catalog": catalog,
 		"installation_id": installation,
 		"topics":          map[string]string{"intake": "ocid1.onstopic.oc1.iad.intake", "operator": "ocid1.onstopic.oc1.iad.operator"},
 	}
