@@ -43,14 +43,14 @@ func prepareApprovedRows(d *recordData, index int, current Revision, values []de
 
 func prepareDeliveries(r delivery.Record, version int, values []delivery.Preparation) (delivery.Record, error) {
 	if len(r.Batches()) != 0 {
+		if r.SchemaVersion() != deliveryVersion(version) {
+			return delivery.Record{}, &Error{"invalid_delivery"}
+		}
 		return r.Prepare(values...)
 	}
 	next, err := delivery.NewRecord(values...)
 	if err != nil {
 		return delivery.Record{}, err
 	}
-	if version == 3 {
-		return next.MigrateRecovery()
-	}
-	return next, nil
+	return adoptDeliveryFormat(next, version)
 }

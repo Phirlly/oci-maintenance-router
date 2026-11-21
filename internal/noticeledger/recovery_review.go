@@ -5,7 +5,7 @@ import "strings"
 // ReviewFingerprint binds retained target state and supplied configuration/component
 // context. It cannot verify that those contexts are current or authorize an action.
 func (r Record) ReviewFingerprint(kind ActionKind, target, generation, component string) (string, error) {
-	if r.data == nil || r.data.SchemaVersion != 3 {
+	if r.data == nil || !recoveryVersion(r.data.SchemaVersion) {
 		return "", &Error{"recovery_migration_required"}
 	}
 	q := RecoveryRequest{RequestID: "review", Kind: kind, TargetID: target, RoutingGeneration: generation,

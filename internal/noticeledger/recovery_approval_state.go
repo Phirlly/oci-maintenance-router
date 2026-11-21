@@ -36,7 +36,7 @@ func invalidateApprovals(d *recordData, reason string) {
 }
 
 func syncApprovalInvalidation(previous *recordData, d *recordData) {
-	if d.SchemaVersion != 3 {
+	if !recoveryVersion(d.SchemaVersion) {
 		return
 	}
 	changed := ""

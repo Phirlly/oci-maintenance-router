@@ -45,7 +45,7 @@ func (r Record) RejectRecovery(req RecoveryRequest, reason string, at time.Time)
 }
 
 func (r Record) recoveryLookup(req RecoveryRequest) (int, string, error) {
-	if r.data == nil || r.data.SchemaVersion != 3 || r.data.Recovery == nil {
+	if r.data == nil || !recoveryVersion(r.data.SchemaVersion) || r.data.Recovery == nil {
 		return -1, "", &Error{"recovery_migration_required"}
 	}
 	if !validRecoveryRequest(req) {

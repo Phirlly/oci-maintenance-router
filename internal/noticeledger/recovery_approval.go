@@ -55,7 +55,7 @@ func (o *Observer) ApproveRecovery(r Record, req RecoveryRequest, n notices.Noti
 		return Record{}, RecoveryAction{}, err
 	}
 	d.UpdatedAt = stamp
-	d.delivery, err = prepareDeliveries(d.delivery, 3, values)
+	d.delivery, err = prepareDeliveries(d.delivery, d.SchemaVersion, values)
 	if err != nil {
 		return Record{}, RecoveryAction{}, err
 	}
@@ -72,7 +72,7 @@ func (o *Observer) ApproveRecovery(r Record, req RecoveryRequest, n notices.Noti
 
 // BeginApproved proposes an automatic attempt only for a retained approval member.
 func (r Record) BeginApproved(requestID, batchID, component string, c delivery.AttemptContext) (Record, delivery.AttemptRef, error) {
-	if r.data == nil || r.data.SchemaVersion != 3 {
+	if r.data == nil || !recoveryVersion(r.data.SchemaVersion) {
 		return Record{}, delivery.AttemptRef{}, &Error{"recovery_migration_required"}
 	}
 	a, ok := recoveryApproval(r.data, batchID)

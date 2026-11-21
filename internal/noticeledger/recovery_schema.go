@@ -2,6 +2,8 @@ package noticeledger
 
 import "time"
 
+func recoveryVersion(version int) bool { return version == 3 || version == 4 }
+
 // MigrateRecovery proposes one explicit notice2/delivery1 to notice3/delivery2
 // transition. It neither persists the proposal nor authorizes an action.
 func (r Record) MigrateRecovery(at time.Time) (Record, error) {

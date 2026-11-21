@@ -31,11 +31,7 @@ func Decode(data []byte, environmentID, noticeID string) (Record, error) {
 	if !bytes.Equal(w.Delivery, []byte("null")) {
 		var err error
 		w.delivery, err = delivery.DecodeRecord(w.Delivery, environmentID, noticeID)
-		version := 1
-		if w.SchemaVersion == 3 {
-			version = 2
-		}
-		if err != nil || w.delivery.SchemaVersion() != version {
+		if err != nil || w.delivery.SchemaVersion() != deliveryVersion(w.SchemaVersion) {
 			return Record{}, &Error{"invalid_delivery"}
 		}
 	}

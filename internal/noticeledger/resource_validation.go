@@ -5,8 +5,8 @@ import (
 	"oci-maintenance-router/internal/routing"
 )
 
-func validResource(d Resource, v Revision, hold delivery.Reason, closed bool) bool {
-	if (d.ResourceID != "" && !dbPattern.MatchString(d.ResourceID)) || (d.Region != "" && !regionPattern.MatchString(d.Region)) || (d.DestinationID != "" && !destinationPattern.MatchString(d.DestinationID)) || (d.BatchID != "" && !digestPattern.MatchString(d.BatchID)) {
+func validResource(d Resource, v Revision, hold delivery.Reason, closed bool, version int) bool {
+	if (d.ResourceID != "" && !validResourceID(d.ResourceID, version)) || (d.Region != "" && !regionPattern.MatchString(d.Region)) || (d.DestinationID != "" && !destinationPattern.MatchString(d.DestinationID)) || (d.BatchID != "" && !digestPattern.MatchString(d.BatchID)) {
 		return false
 	}
 	complete := d.ResourceID != "" && d.Region != "" && d.DestinationID != ""

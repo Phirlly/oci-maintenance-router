@@ -4,7 +4,7 @@ import "oci-maintenance-router/internal/delivery"
 
 // Complete only the currently consumed attempt. Previous results are immutable.
 func syncRecoveryOutcomes(d *recordData) error {
-	if d.SchemaVersion != 3 {
+	if !recoveryVersion(d.SchemaVersion) {
 		return nil
 	}
 	for i, a := range d.Recovery.Actions {

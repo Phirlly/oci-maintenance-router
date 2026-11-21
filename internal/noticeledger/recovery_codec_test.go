@@ -46,7 +46,7 @@ func TestRecoveryCodecRejectsWrongVersionAndPresence(t *testing.T) {
 	golden := recoveryGolden(t)
 	for _, change := range [][2]string{
 		{`"schemaVersion":3`, `"schemaVersion":2`},
-		{`"schemaVersion":3`, `"schemaVersion":4`},
+		{`"schemaVersion":3`, `"schemaVersion":5`},
 		{`,"recovery":{"actions":[]}`, ``},
 		{`"recovery":{"actions":[]}`, `"recovery":null`},
 		{`"actions":[]`, `"actions":null`},

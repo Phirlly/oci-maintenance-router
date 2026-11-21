@@ -12,7 +12,7 @@ func (r Record) observationTime(environmentID, noticeID string, at time.Time) (s
 	if r.data != nil && (r.data.EnvironmentID != environmentID || r.data.NoticeID != noticeID) {
 		return "", &Error{"identity_mismatch"}
 	}
-	if r.data != nil && r.data.SchemaVersion != 2 && r.data.SchemaVersion != 3 {
+	if r.data != nil && r.data.SchemaVersion != 2 && !recoveryVersion(r.data.SchemaVersion) {
 		return "", &Error{"migration_required"}
 	}
 	return r.operationTime(at)

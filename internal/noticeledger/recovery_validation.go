@@ -3,7 +3,7 @@ package noticeledger
 import "oci-maintenance-router/internal/delivery"
 
 func validRecovery(d *recordData) bool {
-	if d.SchemaVersion != 3 {
+	if !recoveryVersion(d.SchemaVersion) {
 		return d.Recovery == nil
 	}
 	if d.Recovery == nil || d.Recovery.Actions == nil || d.SourceOutcome == nil {
