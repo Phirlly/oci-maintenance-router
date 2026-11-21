@@ -12,6 +12,7 @@ module "configuration" {
     environment_name        = var.environment_name
     tenancy_ocid            = var.tenancy_ocid
     region                  = var.region
+    resource_types          = local.resource_type_ids
     mysql_regions           = var.mysql_regions
     mysql_compartments      = var.mysql_compartments
     ownership_kind          = var.ownership_kind
@@ -44,7 +45,7 @@ module "configuration" {
 resource "oci_ons_notification_topic" "intake" {
   compartment_id = var.compartment_ocid
   name           = "${local.name}-intake"
-  description    = "MySQL maintenance wake-ups; automatic processing runs only in LIVE."
+  description    = "Selected-service announcement wake-ups; automatic processing runs only in LIVE."
 }
 resource "oci_ons_notification_topic" "operator" {
   compartment_id = var.compartment_ocid

@@ -19,7 +19,6 @@ locals {
     deploymentRegion = local.s.region
     regionMap        = { for region in distinct(local.s.mysql_regions) : region => lookup(var.catalog.regions, region, "") }
     compartmentIds   = sort(local.s.mysql_compartments)
-    mysqlServices    = sort(var.catalog.mysqlServices)
     ownership = merge(
       { kind = local.s.ownership_kind, key = local.s.ownership_key },
       local.s.ownership_kind == "defined" ? { namespace = local.s.ownership_namespace } : {}
@@ -30,7 +29,7 @@ locals {
     intakeTopicId   = var.topics.intake
     operatorTopicId = var.topics.operator
     mode            = local.s.mode
-  }, local.closure_enabled ? { recovery = local.closure_request } : {}, local.recovery_enabled ? { recovery = local.recovery_request } : {})
+  }, jsondecode(local.selected_scope ? jsonencode({ resourceTypes = sort(local.s.resource_types) }) : jsonencode({ mysqlServices = sort(var.catalog.mysqlServices) })), local.closure_enabled ? { recovery = local.closure_request } : {}, local.recovery_enabled ? { recovery = local.recovery_request } : {})
   legacy_configuration = merge(local.common_configuration, { schemaVersion = 7 }, contains(["TEST", "LIVE"], local.s.mode) ? {
     diagnostic = merge({
       requestId     = local.diagnostic_request_id
@@ -44,8 +43,9 @@ locals {
       endpoint       = local.s.operator_email
     }, local.s.operator_receipt_code != "" ? { receiptCode = local.s.operator_receipt_code } : {})
   } : {})
-  configuration_json = local.schema8 ? jsonencode(local.setup_configuration) : jsonencode(local.legacy_configuration)
-  catalog_json       = jsonencode(var.catalog)
+  configuration_json = local.saved_setup ? jsonencode(local.setup_configuration) : jsonencode(local.legacy_configuration)
+  # Strict runtime schemas reject extra/null attributes; never encode the input object.
+  catalog_json = local.selected_scope ? jsonencode({ schemaVersion = 1, regions = var.catalog.regions, resourceServices = var.catalog.resourceServices }) : jsonencode({ regions = var.catalog.regions, mysqlServices = var.catalog.mysqlServices })
   # Count UTF-8 octets, not Terraform's Unicode character/grapheme count.
   object_base64 = [base64encode(local.configuration_json), base64encode(local.catalog_json)]
   # Double encoding conservatively includes JSON escaping and RM serialization.

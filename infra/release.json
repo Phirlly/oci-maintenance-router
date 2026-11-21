@@ -1,18 +1,24 @@
 {
-  "purpose": "guarded-maintenance-activation",
+  "purpose": "guarded-announcement-activation",
   "runtime": {
     "name": "ol9",
     "version": "0.1.20",
     "osVersion": "9.8",
     "architecture": "X86"
   },
-  "mysqlServices": [
-    "Oracle Cloud Infrastructure HeatWave MySQL",
-    "Oracle Cloud Infrastructure MySQL HeatWave",
-    "Oracle HeatWave MySQL"
-  ],
-  "mysqlSubscriptionServices": [
-    "Oracle Cloud Infrastructure MySQL HeatWave",
-    "Oracle HeatWave MySQL"
-  ]
+  "resourceServices": {
+    "mysqldbsystem": [
+      "Oracle Cloud Infrastructure HeatWave MySQL",
+      "Oracle Cloud Infrastructure MySQL HeatWave",
+      "Oracle HeatWave MySQL"
+    ],
+    "instance": ["Oracle Cloud Infrastructure Compute"]
+  },
+  "subscriptionServices": {
+    "mysqldbsystem": [
+      "Oracle Cloud Infrastructure MySQL HeatWave",
+      "Oracle HeatWave MySQL"
+    ],
+    "instance": ["Oracle Cloud Infrastructure Compute"]
+  }
 }

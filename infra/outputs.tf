@@ -1,13 +1,13 @@
 output "installation_status" {
-  description = "Historical deployment check; not current health, human receipt or maintenance-delivery readiness."
+  description = "Historical deployment check; not current health, human receipt or announcement-delivery readiness."
   value       = try(jsondecode(oci_functions_invoke_function.deployment_check.content).status, "not-ready")
 }
 output "sending_enabled" {
-  description = "LIVE activation verified by this Apply. Not current health, automatic invocation or observed maintenance delivery."
+  description = "LIVE activation verified by this Apply. Not current health, automatic invocation or observed announcement delivery."
   value       = local.live_check_verified
 }
 output "function_id" {
-  description = "Function for maintenance preparation, explicit tests and guarded LIVE processing."
+  description = "Function for announcement preparation, explicit tests and guarded LIVE processing."
   value       = oci_functions_function.router.id
 }
 output "state_bucket" {
@@ -23,7 +23,7 @@ output "configured_mode" {
   value       = local.mode
 }
 output "routing_state" {
-  description = "Configured maintenance routing. See sending_enabled for activation verified by the last Apply."
+  description = "Configured announcement routing. See sending_enabled for activation verified by the last Apply."
   value       = var.routing_state
 }
 output "test_submission_status" {
@@ -65,10 +65,10 @@ locals {
   )
 }
 output "test_receipt_confirmed" {
-  description = "Receipt code verified by the last completed TEST confirmation check. Not current health or maintenance activation."
+  description = "Receipt code verified by the last completed TEST confirmation check. Not current health or routing activation."
   value       = local.receipt_check_verified
 }
 output "operator_receipt_confirmed" {
-  description = "Operator email code verified by the last completed TEST confirmation check. Not current health or maintenance activation."
+  description = "Operator email code verified by the last completed TEST confirmation check. Not current health or routing activation."
   value       = local.operator_test_enabled && local.receipt_check_verified
 }

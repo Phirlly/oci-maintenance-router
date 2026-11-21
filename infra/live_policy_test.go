@@ -9,12 +9,15 @@ import (
 	"testing"
 )
 
-func TestLivePolicyGrantsOnlySelectedResourcesAndState(t *testing.T) {
+func livePolicy(t *testing.T, types []string) []string {
+	t.Helper()
 	source := readChecksumSource(t, "identity_live.tf")
 	if !regexp.MustCompile(`compartment_id\s*=\s*var.tenancy_ocid`).MatchString(source) || !regexp.MustCompile(`provider\s*=\s*oci.home`).MatchString(source) {
 		t.Fatal("cross-compartment scope requires home tenancy policy")
 	}
+	selected, _ := json.Marshal(types)
 	expression := strings.NewReplacer(
+		"local.resource_type_ids", string(selected),
 		"oci_identity_dynamic_group.router.id", `"group"`, "var.compartment_ocid", `"router-compartment"`, "oci_objectstorage_bucket.state.name", `"router-bucket"`,
 		"var.mysql_compartments", `["ocid1.tenancy.oc1..root", "ocid1.compartment.oc1..selected"]`,
 		"var.mysql_regions", `["us-ashburn-1", "us-phoenix-1"]`, "local.catalog.regions", `{"us-ashburn-1"="iad", "us-phoenix-1"="phx"}`,
@@ -27,6 +30,11 @@ func TestLivePolicyGrantsOnlySelectedResourcesAndState(t *testing.T) {
 	if err != nil || json.Unmarshal(output, &encoded) != nil || json.Unmarshal([]byte(encoded), &got) != nil {
 		t.Fatalf("LIVE policy: %s (%v)", output, err)
 	}
+	return got
+}
+
+func TestLivePolicyGrantsOnlySelectedResourcesAndState(t *testing.T) {
+	got := livePolicy(t, []string{"mysqldbsystem"})
 	object := "Allow dynamic-group id group to manage objects in compartment id router-compartment where all {target.bucket.name = 'router-bucket', "
 	want := []string{
 		object + "target.object.name = 'control/selected-baseline.json', any {request.permission = 'OBJECT_READ', request.permission = 'OBJECT_CREATE', request.permission = 'OBJECT_OVERWRITE'}}",
@@ -42,6 +50,39 @@ func TestLivePolicyGrantsOnlySelectedResourcesAndState(t *testing.T) {
 	}
 	if !regexp.MustCompile(`depends_on\s*=\s*\[[^]]*oci_identity_policy.live`).MatchString(readChecksumSource(t, "deployment_check.tf")) {
 		t.Fatal("activation must follow LIVE permissions")
+	}
+}
+
+func TestLivePolicySelectsOnlyRequiredOwnershipReaders(t *testing.T) {
+	mysql := livePolicy(t, []string{"mysqldbsystem"})
+	compute := "Allow dynamic-group id group to read instances in tenancy where all {request.operation = 'GetInstance', request.permission = 'INSTANCE_READ', any {target.compartment.id = 'ocid1.tenancy.oc1..root', target.compartment.id = 'ocid1.compartment.oc1..selected'}, any {request.region = 'iad', request.region = 'phx'}}"
+	for _, types := range [][]string{{"instance"}, {"instance", "mysqldbsystem"}} {
+		want := append([]string{}, mysql[:2]...)
+		if len(types) == 2 {
+			want = append(want, mysql[2])
+		}
+		want = append(want, compute)
+		want = append(want, mysql[3:]...)
+		if got := livePolicy(t, types); !reflect.DeepEqual(got, want) {
+			t.Fatalf("selected grants %q differ: %q", types, got)
+		}
+	}
+}
+
+func TestSelectedOwnershipAuthorityChangesStartupGeneration(t *testing.T) {
+	var first string
+	for _, types := range [][]string{{"mysqldbsystem"}, {"instance"}, {"instance", "mysqldbsystem"}} {
+		iam := startupIAMFixture()
+		iam["live"].([]any)[0].(map[string]any)["statements"] = livePolicy(t, types)
+		generation := startupGeneration(t, iam)
+		if first == "" {
+			first = generation
+		} else if generation == first {
+			t.Fatal("changed ownership authority failed to renew wait")
+		}
+		if startupGeneration(t, iam) != generation {
+			t.Fatal("identical selected authority caused wait churn")
+		}
 	}
 }
 

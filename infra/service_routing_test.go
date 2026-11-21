@@ -29,7 +29,7 @@ func renderReleaseCatalog(t *testing.T, catalog map[string]any) (map[string]stri
 
 func TestReleaseCatalogRoutesCurrentAndHistoricalServiceNames(t *testing.T) {
 	catalog := catalogFixture()
-	catalog["mysqlServices"] = releaseMetadata(t)["mysqlServices"]
+	catalog["mysqlServices"] = releaseMetadata(t)["resourceServices"].(map[string]any)["mysqldbsystem"]
 	values, decoded, _ := renderReleaseCatalog(t, catalog)
 	policy, err := routing.New([]byte(values["configuration"]), decoded)
 	if err != nil {
@@ -65,7 +65,7 @@ func TestReleaseCatalogRoutesCurrentAndHistoricalServiceNames(t *testing.T) {
 func TestReleaseServiceExpansionPreservesEnvironmentButChangesRouting(t *testing.T) {
 	_, _, old := renderReleaseCatalog(t, catalogFixture())
 	expanded := catalogFixture()
-	expanded["mysqlServices"] = releaseMetadata(t)["mysqlServices"]
+	expanded["mysqlServices"] = releaseMetadata(t)["resourceServices"].(map[string]any)["mysqldbsystem"]
 	_, _, current := renderReleaseCatalog(t, expanded)
 	location := configuration.LedgerLocation{Namespace: "example", Bucket: "ledger"}
 	oldEnvironment, err := old.EnvironmentID(location)

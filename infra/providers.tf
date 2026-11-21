@@ -15,8 +15,9 @@ data "oci_objectstorage_namespace" "tenancy" {
 locals {
   home_region = one([for r in data.oci_identity_region_subscriptions.tenancy.region_subscriptions : r.region_name if r.is_home_region])
   catalog = {
-    regions       = { for r in data.oci_identity_region_subscriptions.tenancy.region_subscriptions : r.region_name => lower(r.region_key) if r.state == "READY" }
-    mysqlServices = jsondecode(file("${path.module}/release.json")).mysqlServices
+    regions          = { for r in data.oci_identity_region_subscriptions.tenancy.region_subscriptions : r.region_name => lower(r.region_key) if r.state == "READY" }
+    mysqlServices    = local.release.resourceServices.mysqldbsystem
+    resourceServices = local.release.resourceServices
   }
   name = "omr-${var.environment_name}-${substr(sha256("${var.compartment_ocid}:${var.region}"), 0, 10)}"
 }

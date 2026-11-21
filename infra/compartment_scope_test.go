@@ -79,9 +79,9 @@ func TestTerraformRejectsInvalidRootCompartmentScope(t *testing.T) {
 		name, tenancy, message string
 		scope                  []string
 	}{
-		{"foreign root", root, "MySQL compartments", []string{"ocid1.tenancy.oc1..another"}},
-		{"duplicate root", root, "MySQL compartments", []string{root, root}},
-		{"nonexact root", root, "MySQL compartments", []string{"ocid1.tenancy.oc1...example"}},
+		{"foreign root", root, "Compartments", []string{"ocid1.tenancy.oc1..another"}},
+		{"duplicate root", root, "Compartments", []string{root, root}},
+		{"nonexact root", root, "Compartments", []string{"ocid1.tenancy.oc1...example"}},
 		{"invalid matching tenancy", "ocid1.tenancy.oc2..example", "OC1 tenancy", []string{"ocid1.tenancy.oc2..example"}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

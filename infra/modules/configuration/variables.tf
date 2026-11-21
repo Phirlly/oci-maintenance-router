@@ -3,6 +3,7 @@ variable "settings" {
     environment_name        = string
     tenancy_ocid            = string
     region                  = string
+    resource_types          = optional(list(string))
     mysql_regions           = list(string)
     mysql_compartments      = list(string)
     ownership_kind          = string
@@ -29,7 +30,7 @@ variable "settings" {
     recovery_confirm        = optional(bool, false)
   })
   nullable    = false
-  description = "Routing and explicit nonproduction test choices; no secret contents or maintenance-delivery authority."
+  description = "Routing and explicit nonproduction test choices; no secret contents or delivery authority."
 }
 variable "operator_subscription_id" {
   type        = string
@@ -38,7 +39,11 @@ variable "operator_subscription_id" {
   description = "Deployment-owned EMAIL subscription; omitted when operator setup is not requested."
 }
 variable "catalog" {
-  type        = object({ regions = map(string), mysqlServices = list(string) })
+  type = object({
+    regions          = map(string)
+    mysqlServices    = list(string)
+    resourceServices = optional(map(list(string)))
+  })
   nullable    = false
   description = "Independent deployment-owned region and service catalog."
 }

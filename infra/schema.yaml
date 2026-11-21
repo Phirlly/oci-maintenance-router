@@ -1,12 +1,12 @@
 schemaVersion: "1.1.0"
 title: OCI Maintenance Router
-description: Route HeatWave MySQL maintenance notices by ownership tag.
+description: Route announcements for selected MySQL and Compute resources by ownership tag.
 informationalText: Development package; production acceptance remains incomplete. Do not use for production. Apply waits 5 minutes after IAM changes, then checks deployment.
 variableGroups:
   - title: Deployment
     variables: ["${environment_name}", "${compartment_ocid}", "${create_network}", "${network_cidr}", "${network_compartment_ocid}", "${existing_vcn_ocid}", "${existing_subnet_ocid}"]
-  - title: Resources to monitor (MySQL)
-    variables: ["${mysql_regions}", "${mysql_compartments}"]
+  - title: Resources to monitor
+    variables: ["${resource_types}", "${mysql_regions}", "${mysql_compartments}"]
   - title: Tags and PagerDuty
     variables: ["${ownership_kind}", "${ownership_namespace}", "${ownership_key}", "${pagerduty_region}", "${secret_compartment_ocid}", "${destinations}", "${routes}"]
   - title: Router notifications
@@ -33,13 +33,13 @@ variables:
   compartment_ocid:
     type: oci:identity:compartment:id
     title: Router compartment
-    description: Create the router here. Select existing MySQL locations below, in this same tenancy. No database is created.
+    description: Create the router here. Select existing resource locations below, in this same tenancy. Monitored resources are not changed.
     required: true
   routing_state:
     type: enum
     enum: [Paused, Enabled]
     default: Paused
-    title: Maintenance routing
+    title: Announcement routing
     description: Start Paused to prepare history and set up notifications. Enable after confirming both tests. Pause before changing routing or scope; scheduled checks continue without sending.
     required: true
   setup_action:
@@ -104,7 +104,7 @@ variables:
   operator_email:
     type: string
     title: Router operator email
-    description: Receives router problems separately from maintenance alerts. Required to enable routing. Apply while Paused with Setup action None, then confirm OCI's subscription email before sending tests. Without an email, testing checks PagerDuty only and cannot enable routing.
+    description: Receives router problems separately from resource alerts. Required to enable routing. Apply while Paused with Setup action None, then confirm OCI's subscription email before sending tests. Without an email, testing checks PagerDuty only and cannot enable routing.
     default: ""
     required: false
   operator_receipt_code:
@@ -160,27 +160,36 @@ variables:
     default: false
     required: false
     visible: true
+  resource_types:
+    type: enum
+    title: Resource types
+    description: Route all announcements affecting matching resources of these types. Regions, compartments and ownership tags below apply to every selected type.
+    enum: [HeatWave MySQL, Compute instances]
+    additionalProps:
+      allowMultiple: true
+    default: HeatWave MySQL
+    required: true
   mysql_regions:
     type: list
     valueType: mysql_region
-    title: MySQL regions
+    title: Regions
     description: Add each subscribed region to include.
     required: true
   mysql_region:
     type: oci:identity:region:name
-    title: MySQL region
-    description: Select a region containing databases to include. Use Add Item for another region.
+    title: Region
+    description: Select a region containing resources to include. Use Add Item for another region.
     required: true
     visible: false
   mysql_compartments:
     type: list
     valueType: mysql_compartment
-    title: MySQL compartments
+    title: Compartments
     description: Add each compartment to include. Child compartments are not automatically included.
     required: true
   mysql_compartment:
     type: oci:identity:compartment:id
-    title: MySQL compartment
+    title: Compartment
     description: Select child compartments separately. When editing, reselect all intended compartments if saved rows appear blank. Check Review before saving.
     required: true
     visible: false
@@ -189,7 +198,7 @@ variables:
     enum: [defined, freeform]
     default: defined
     title: Tag type
-    description: Match the tag on your databases. Defined tags have a namespace; freeform tags do not.
+    description: Match the tag on your resources. Defined tags have a namespace; freeform tags do not.
     required: true
   ownership_namespace:
     type: string
@@ -277,7 +286,7 @@ variables:
   existing_subnet_ocid:
     type: oci:core:subnet:id
     title: Existing private regional subnet
-    description: Must permit DNS and HTTPS to Announcements, Object Storage, Vault and selected regional MySQL control APIs. Tests and Enabled routing need events.pagerduty.com (US) or events.eu.pagerduty.com (EU) and Notifications control and topic data endpoints. Shared routes and security rules are not changed.
+    description: Must permit DNS and HTTPS to Announcements, Object Storage, Vault and selected regional MySQL or Compute APIs. Tests and Enabled routing need events.pagerduty.com (US) or events.eu.pagerduty.com (EU) and Notifications control and topic data endpoints. Shared routes and security rules are not changed.
     required: true
     visible:
       not: ["${create_network}"]
@@ -313,7 +322,7 @@ outputs:
     title: Last operator test (API acceptance only)
   routing_state:
     type: string
-    title: Configured maintenance routing
+    title: Configured announcement routing
   configured_mode:
     type: string
     visible: false

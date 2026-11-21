@@ -23,7 +23,7 @@ resource "oci_identity_policy" "announcements" {
   provider       = oci.home
   compartment_id = var.tenancy_ocid
   name           = "${local.name}-announcements"
-  description    = "Only this Function may read tenancy announcements for maintenance preparation."
+  description    = "Only this Function may read tenancy announcements for announcement preparation."
   statements = [
     "Allow dynamic-group id ${oci_identity_dynamic_group.router.id} to read announcements in tenancy",
   ]

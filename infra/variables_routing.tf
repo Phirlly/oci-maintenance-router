@@ -1,12 +1,30 @@
+variable "resource_types" {
+  type        = list(string)
+  nullable    = false
+  default     = ["HeatWave MySQL"]
+  description = "Resource types whose announcements are routed using the shared location and ownership-tag settings."
+  validation {
+    condition     = length(var.resource_types) > 0 && length(distinct(var.resource_types)) == length(var.resource_types) && alltrue([for choice in var.resource_types : contains(["HeatWave MySQL", "Compute instances"], choice)])
+    error_message = "Resource types: select HeatWave MySQL, Compute instances, or both, without duplicates."
+  }
+}
+locals {
+  resource_type_ids = sort([for choice in var.resource_types : lookup({
+    "HeatWave MySQL"    = "mysqldbsystem"
+    "Compute instances" = "instance"
+  }, choice, "")])
+}
+
+# Keep the original variable names so saved stack settings remain compatible.
 variable "mysql_regions" {
   type        = list(string)
   nullable    = false
-  description = "Explicit subscribed regions to include in MySQL routing."
+  description = "Explicit subscribed regions containing the selected resources."
 }
 variable "mysql_compartments" {
   type        = list(string)
   nullable    = false
-  description = "Explicit MySQL compartments; child compartments are not implicit."
+  description = "Explicit resource compartments; child compartments are not implicit."
 }
 variable "ownership_kind" {
   type        = string

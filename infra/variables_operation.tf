@@ -2,7 +2,7 @@ variable "routing_state" {
   type        = string
   nullable    = false
   default     = "Paused"
-  description = "Paused prepares history without maintenance delivery. Enabled requires saved confirmation of both setup tests."
+  description = "Paused prepares history without announcement delivery. Enabled requires saved confirmation of both setup tests."
   validation {
     condition     = contains(["Paused", "Enabled"], var.routing_state)
     error_message = "Routing must be Paused or Enabled."
