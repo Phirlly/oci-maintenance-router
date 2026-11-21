@@ -53,7 +53,7 @@ func recoveryInput(t *testing.T, f *processingFixture, mode string, q map[string
 
 func recoveryOnlyProcessor(t *testing.T, f *processingFixture, mode string, q map[string]any) *MaintenanceProcessor {
 	t.Helper()
-	p, err := NewMaintenanceProcessor(recoveryInput(t, f, mode, q), []byte(preparationCatalog), candidateLocation(), strings.Repeat("b", 64), nil, f.live.objects, nil, nil, nil)
+	p, err := NewMaintenanceProcessor(recoveryInput(t, f, mode, q), []byte(preparationCatalog), candidateLocation(), strings.Repeat("b", 64), nil, f.live.objects, nil, nil, OwnershipClients{})
 	if err != nil || p == nil {
 		t.Fatal("explicit recovery without sending clients rejected", err)
 	}

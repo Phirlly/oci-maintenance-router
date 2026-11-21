@@ -23,7 +23,7 @@ func readSetupControls(configBytes, catalogBytes []byte, location configuration.
 		return setupControls{}, invalid
 	}
 	c, err := configuration.Decode(configBytes, catalog)
-	if err != nil || c.SchemaVersion != 8 || c.OperatorChannel == nil {
+	if err != nil || (c.SchemaVersion != 8 && c.SchemaVersion != 9) || c.OperatorChannel == nil {
 		return setupControls{}, invalid
 	}
 	env, err := c.EnvironmentID(location)
@@ -45,7 +45,7 @@ func (c setupControls) requested(release string) (DiagnosticIntent, OperatorInte
 }
 
 func (c setupControls) diagnosticInput(intent DiagnosticIntent, code string) diagnosticControls {
-	return diagnosticControls{intent, c.current, 8, c.config.Mode, code}
+	return diagnosticControls{intent, c.current, c.config.SchemaVersion, c.config.Mode, code}
 }
 
 func (c setupControls) operatorInput(intent OperatorIntent, code string) operatorControls {

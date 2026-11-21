@@ -13,7 +13,7 @@ func liveProcessingOperation(operation string) bool {
 
 func matchesSendingRecovery(c configuration.Config, request command) bool {
 	q := c.Recovery
-	return (c.SchemaVersion == 7 || c.SchemaVersion == 8) && c.Mode == "LIVE" && q != nil &&
+	return (c.SchemaVersion == 7 || c.SchemaVersion == 8 || c.SchemaVersion == 9) && c.Mode == "LIVE" && q != nil &&
 		(q.Kind == "RETRY_BATCH" || q.Kind == "APPROVE_REVISION") && q.RequestID == request.recoveryRequestID
 }
 

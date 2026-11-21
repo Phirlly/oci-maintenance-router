@@ -17,6 +17,7 @@ type Discovery struct {
 	objects                 ocistorage.NoticeObjects
 	configHash, catalogHash [32]byte
 	scope                   discoveryScope
+	announcementFormat      bool
 	wait                    func(context.Context, time.Duration) error
 	now                     func() time.Time
 }
@@ -68,7 +69,7 @@ func NewDiscovery(configBytes, catalogBytes []byte, location configuration.Ledge
 	if err != nil {
 		return nil, &DiscoveryError{Code: "invalid_request"}
 	}
-	return &Discovery{collector: collector, objects: objects, configHash: sha256.Sum256(configBytes), catalogHash: sha256.Sum256(catalogBytes), scope: baselineScope(config), wait: pause, now: time.Now}, nil
+	return &Discovery{collector: collector, objects: objects, configHash: sha256.Sum256(configBytes), catalogHash: sha256.Sum256(catalogBytes), scope: baselineScope(config), announcementFormat: config.SchemaVersion == 9, wait: pause, now: time.Now}, nil
 }
 
 // Run durably records a complete bounded discovery. Partial confirmed writes

@@ -7,7 +7,6 @@ import (
 	"oci-maintenance-router/internal/configuration"
 	"oci-maintenance-router/internal/ociannouncements"
 	"oci-maintenance-router/internal/ocinotifications"
-	"oci-maintenance-router/internal/ociownership"
 	"oci-maintenance-router/internal/ocisecrets"
 	"oci-maintenance-router/internal/reconciliation"
 )
@@ -52,7 +51,7 @@ func composeOperations(s Settings, store Store, p pinnedInputs, operation string
 	location := configuration.LedgerLocation{Namespace: s.Namespace, Bucket: s.Bucket}
 	mode := p.config.Mode
 	if (operation == "reconcile" && mode != "LIVE" || operation == "close-work" && mode == "PAUSED") && p.config.Recovery != nil {
-		processor, err := reconciliation.NewMaintenanceProcessor(p.configBytes, p.catalogBytes, location, s.ReleaseSHA256, nil, objects, nil, nil, nil)
+		processor, err := reconciliation.NewMaintenanceProcessor(p.configBytes, p.catalogBytes, location, s.ReleaseSHA256, nil, objects, nil, nil, reconciliation.OwnershipClients{})
 		if err != nil {
 			return operations{}, err
 		}
@@ -98,7 +97,7 @@ func composeOperations(s Settings, store Store, p pinnedInputs, operation string
 		result.selectLive = selector.Select
 		return result, nil
 	}
-	if mode == "TEST" && p.config.SchemaVersion == 8 {
+	if mode == "TEST" && (p.config.SchemaVersion == 8 || p.config.SchemaVersion == 9) {
 		var vault *ocisecrets.Client
 		if p.config.Setup.Action == "SEND_TEST" {
 			var err error
@@ -136,15 +135,11 @@ func composeOperations(s Settings, store Store, p pinnedInputs, operation string
 		}
 		return result, nil
 	}
-	mysql := make(map[string]*ociownership.Client, len(p.config.RegionMap))
-	for region, regionKey := range p.config.RegionMap {
-		client, err := ociownership.NewMySQL(region, regionKey, s.TenancyID, managed.principal)
-		if err != nil {
-			return operations{}, err
-		}
-		mysql[region] = client
+	clients, err := composeOwnership(p.config, s.TenancyID, managed.principal)
+	if err != nil {
+		return operations{}, err
 	}
-	processor, err := reconciliation.NewMaintenanceProcessor(p.configBytes, p.catalogBytes, location, s.ReleaseSHA256, announcements, objects, channel, vault, mysql)
+	processor, err := reconciliation.NewMaintenanceProcessor(p.configBytes, p.catalogBytes, location, s.ReleaseSHA256, announcements, objects, channel, vault, clients)
 	if err != nil {
 		return operations{}, err
 	}

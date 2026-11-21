@@ -18,6 +18,10 @@ type discoveryScope struct{ regions, compartments, resourceTypes []string }
 
 func baselineScope(config configuration.Config) discoveryScope {
 	scope := discoveryScope{compartments: slices.Clone(config.CompartmentIDs), resourceTypes: []string{baselineMySQL}}
+	if config.SchemaVersion == 9 {
+		scope.resourceTypes = slices.Clone(config.ResourceTypes)
+		slices.Sort(scope.resourceTypes)
+	}
 	for region := range config.RegionMap {
 		scope.regions = append(scope.regions, region)
 	}

@@ -7,7 +7,6 @@ import (
 	"oci-maintenance-router/internal/configuration"
 	"oci-maintenance-router/internal/noticeledger"
 	"oci-maintenance-router/internal/ociannouncements"
-	"oci-maintenance-router/internal/ociownership"
 	"oci-maintenance-router/internal/ocistorage"
 	"oci-maintenance-router/internal/reconciliation"
 )
@@ -34,15 +33,11 @@ func composeRecoveryReview(s Settings, store Store, objects operationalObjects, 
 			if err != nil {
 				return nil, operationFailure("announcement_configuration")
 			}
-			mysql := make(map[string]*ociownership.Client, len(p.config.RegionMap))
-			for region, key := range p.config.RegionMap {
-				client, err := ociownership.NewMySQL(region, key, s.TenancyID, managed.principal)
-				if err != nil {
-					return nil, operationFailure("mysql_configuration")
-				}
-				mysql[region] = client
+			clients, err := composeOwnership(p.config, s.TenancyID, managed.principal)
+			if err != nil {
+				return nil, operationFailure("ownership_configuration")
 			}
-			reviewer, err := reconciliation.NewRecoveryReviewer(p.configBytes, p.catalogBytes, configuration.LedgerLocation{Namespace: s.Namespace, Bucket: s.Bucket}, source, saved, mysql)
+			reviewer, err := reconciliation.NewRecoveryReviewer(p.configBytes, p.catalogBytes, configuration.LedgerLocation{Namespace: s.Namespace, Bucket: s.Bucket}, source, saved, clients)
 			if err != nil {
 				return nil, operationFailure("recovery_review_configuration")
 			}
@@ -51,14 +46,14 @@ func composeRecoveryReview(s Settings, store Store, objects operationalObjects, 
 				return nil, err
 			}
 		}
-		return projectRecoveryReview(s, view, request)
+		return projectRecoveryReview(s, view, request, p.config.SchemaVersion == 9)
 	}}, nil
 }
 
-func projectRecoveryReview(s Settings, view reconciliation.RecoveryReview, request command) (*RecoveryReviewPage, error) {
+func projectRecoveryReview(s Settings, view reconciliation.RecoveryReview, request command, announcement bool) (*RecoveryReviewPage, error) {
 	// The same in-memory legacy migration supplies saved context; no closure
 	// eligibility or projected observation timestamp is presented as saved work.
-	record, err := projectClosureRecord(view.Saved)
+	record, err := projectClosureRecord(view.Saved, announcement)
 	if err != nil {
 		return nil, operationFailure("recovery_projection_failed")
 	}

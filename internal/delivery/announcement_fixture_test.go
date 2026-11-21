@@ -13,8 +13,8 @@ import (
 const announcementDB = "ocid1.mysqldbsystem.oc1.iad.example"
 const announcementInstance = "ocid1.instance.oc1.iad.example"
 
-// Exercise the private producer needed by future routing. Public Build still
-// independently requires the existing MySQL scheduled-maintenance policy.
+// Exercise payload packing independently with a legacy policy. Public Build's
+// broader category/type admission is covered by the selected-policy tests.
 func announcementFixture(t *testing.T, category, reference string, ids ...string) (*Builder, notices.Record, routing.Plan, []routing.Group) {
 	t.Helper()
 	data, err := os.ReadFile("testdata/config.json")

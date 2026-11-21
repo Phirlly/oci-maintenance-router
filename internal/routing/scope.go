@@ -3,29 +3,39 @@ package routing
 import "regexp"
 
 // Supported safe OCID shapes, not a claim to validate the service's full grammar.
-var (
-	dbID          = regexp.MustCompile(`^ocid1\.mysqldbsystem\.oc1\.([a-z0-9][a-z0-9-]*)\.([A-Za-z0-9_-]*\.)?[A-Za-z0-9_-]+$`)
-	compartmentID = regexp.MustCompile(`^ocid1\.compartment\.oc1\.\.([A-Za-z0-9_-]*\.)?[A-Za-z0-9_-]+$`)
-)
+var compartmentID = regexp.MustCompile(`^ocid1\.compartment\.oc1\.\.([A-Za-z0-9_-]*\.)?[A-Za-z0-9_-]+$`)
 
-func (p *Policy) scope(index int, id string) Decision {
+func (p *Policy) scope(index int, id string, services []string) Decision {
 	d := Decision{Index: index, Disposition: Unresolved, Reason: ReasonResourceID}
-	parts := dbID.FindStringSubmatch(id)
-	if parts == nil {
+	kind, region := resourceIdentity(id)
+	if kind == "" || ((p == nil || p.selected == nil) && kind != "mysqldbsystem") {
 		return d // Do not echo malformed or unsupported input.
 	}
 	d.ResourceID = id
 	if p != nil {
-		d.Region = p.regions[parts[1]]
+		d.Region = p.regions[region]
 	}
 	if d.Region == "" {
 		d.Reason = ReasonUnknownRegion
 	} else if !p.allowed[d.Region] {
 		d.Disposition, d.Reason = OutOfScope, ReasonRegionScope
+	} else if p.selected != nil && p.selected[kind] == nil {
+		d.Disposition, d.Reason = OutOfScope, ReasonResourceTypeScope
+	} else if p.selected != nil && !matchesService(p.selected[kind], services) {
+		d.Reason = ReasonService
 	} else {
 		d.Reason = ReasonLookupMissing
 	}
 	return d
+}
+
+func matchesService(approved map[string]bool, labels []string) bool {
+	for _, label := range labels {
+		if approved[label] {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *Policy) resolveResource(d Decision, lookup Lookup) Decision {

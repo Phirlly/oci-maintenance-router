@@ -114,7 +114,7 @@ func TestAnnouncementPackingExactByteBoundary(t *testing.T) {
 	}
 }
 
-func TestPublicBuilderStillRejectsBroaderAnnouncements(t *testing.T) {
+func TestLegacyPublicBuilderStillRejectsBroaderAnnouncements(t *testing.T) {
 	for _, tc := range []struct{ category, id string }{{"ACTION_REQUIRED", announcementDB}, {"SCHEDULED_MAINTENANCE", announcementInstance}} {
 		b, r, _, _ := announcementFixture(t, tc.category, "", tc.id)
 		platform := "IAAS"

@@ -34,6 +34,7 @@ type setupRuntimeFixture struct {
 	config                         []byte
 	diagnosticSends, operatorSends int
 	result                         SetupResult
+	resourceTypes                  []string
 }
 
 func setupRuntimeFixtureFor(t *testing.T) *setupRuntimeFixture {
@@ -58,12 +59,17 @@ func (f *setupRuntimeFixture) configure(t *testing.T, action string, attempt int
 		}}, changes...)
 	}
 	cfg := setupRuntimeConfig(t, "TEST", action, attempt, changes...)
+	catalog := []byte(preparationCatalog)
+	if f.resourceTypes != nil {
+		cfg, catalog = resourceConfig(t, cfg, f.resourceTypes...), []byte(resourceCatalogWire)
+		f.objects.seed("configuration/catalog.json", catalog)
+	}
 	f.objects.seed("configuration/router.json", cfg)
 	var vault *ocisecrets.Client
 	if action == "SEND_TEST" {
 		vault = diagnosticVault(t)
 	}
-	c, err := NewSetupCoordinator(cfg, []byte(preparationCatalog), candidateLocation(), strings.Repeat("b", 64), f.objects, operatorClient(t), vault)
+	c, err := NewSetupCoordinator(cfg, catalog, candidateLocation(), strings.Repeat("b", 64), f.objects, operatorClient(t), vault)
 	if err != nil {
 		t.Fatal(err)
 	}

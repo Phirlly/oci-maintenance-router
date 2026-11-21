@@ -87,7 +87,7 @@ func (h *Handler) run(ctx context.Context, in io.Reader) (result response) {
 	if request.operation == "review-recovery" && p.config.Mode != "LIVE" {
 		return rejected("recovery_review_requires_live")
 	}
-	if p.config.SchemaVersion == 7 || p.config.SchemaVersion == 8 {
+	if p.config.SchemaVersion == 7 || p.config.SchemaVersion == 8 || p.config.SchemaVersion == 9 {
 		// Delayed automatic requests must not prepare a baseline, execute saved
 		// recovery or run tests while the installation is not LIVE.
 		if request.automatic && p.config.Mode != "LIVE" {

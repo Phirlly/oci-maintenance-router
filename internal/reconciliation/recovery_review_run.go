@@ -64,7 +64,7 @@ func (r *RecoveryReviewer) Review(ctx context.Context, id string, kind noticeled
 	if failure != nil {
 		return RecoveryReview{}, reviewFailure(ctx, "record_invalid")
 	}
-	projected, failure := migrateReviewRecord(saved, at)
+	projected, failure := migrateReviewRecord(saved, at, r.config.SchemaVersion == 9)
 	if failure != nil {
 		return RecoveryReview{}, reviewFailure(ctx, "projection_failed")
 	}

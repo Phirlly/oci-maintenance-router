@@ -16,9 +16,10 @@ type Observation struct {
 }
 
 type observationData struct {
-	EnvironmentID string   `json:"environmentId"`
-	NoticeID      string   `json:"noticeId"`
-	Revision      Revision `json:"revision"`
+	EnvironmentID      string   `json:"environmentId"`
+	NoticeID           string   `json:"noticeId"`
+	Revision           Revision `json:"revision"`
+	AnnouncementFormat bool     `json:"announcementFormat,omitempty"`
 }
 
 // Capture retains a potential candidate before complete relevance is known.
@@ -29,7 +30,8 @@ func (o *Observer) Capture(n notices.Notice) (Observation, error) {
 	}
 	d := observationData{
 		EnvironmentID: strings.Clone(o.environmentID), NoticeID: strings.Clone(n.Key().NoticeID),
-		Revision: projectRevision(n, o.policy.Resolve(n, true, nil)),
+		Revision:           projectRevision(n, o.policy.Resolve(n, true, nil)),
+		AnnouncementFormat: o.announcementFormat,
 	}
 	// These fixed fields contain only JSON-supported scalar/struct/slice types.
 	b, _ := json.Marshal(d)
@@ -53,9 +55,9 @@ func (o Observation) Apply(previous Record, at time.Time) (Record, error) {
 	if o.data == nil {
 		return Record{}, &Error{"invalid_observation"}
 	}
-	stamp, err := previous.observationTime(o.data.EnvironmentID, o.data.NoticeID, at)
+	stamp, err := previous.observationTime(o.data.EnvironmentID, o.data.NoticeID, o.data.AnnouncementFormat, at)
 	if err != nil {
 		return Record{}, err
 	}
-	return previous.mergeObservation(o.data.EnvironmentID, o.data.NoticeID, o.data.Revision, stamp, at)
+	return previous.mergeObservation(o.data.EnvironmentID, o.data.NoticeID, o.data.Revision, o.data.AnnouncementFormat, stamp, at)
 }

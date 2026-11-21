@@ -15,7 +15,7 @@ func (p *Policy) Targets(n notices.Notice, knownCandidate bool) (Assessment, []T
 	var targets []Target
 	if a.State == SupportedShape {
 		for i, resource := range r.Resources {
-			d := p.scope(i, resource.ResourceID)
+			d := p.scope(i, resource.ResourceID, r.Services)
 			if d.Reason == ReasonLookupMissing {
 				targets = append(targets, Target{d.ResourceID, d.Region})
 			}
@@ -38,7 +38,7 @@ func (p *Policy) Resolve(n notices.Notice, knownCandidate bool, lookups map[stri
 		return plan
 	}
 	for i, resource := range r.Resources {
-		d := p.scope(i, resource.ResourceID)
+		d := p.scope(i, resource.ResourceID, r.Services)
 		if a.State != SupportedShape {
 			d.Disposition, d.Reason = HeldForReview, a.Reason
 		} else if d.Reason == ReasonLookupMissing {

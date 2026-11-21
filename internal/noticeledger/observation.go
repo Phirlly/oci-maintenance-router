@@ -14,6 +14,7 @@ type Observer struct {
 	policy              *routing.Policy
 	environmentID       string
 	configurationDigest string
+	announcementFormat  bool
 }
 
 func New(data []byte, catalog configuration.Catalog, location configuration.LedgerLocation) (*Observer, error) {
@@ -30,7 +31,7 @@ func New(data []byte, catalog configuration.Catalog, location configuration.Ledg
 		return nil, err
 	}
 	hash := sha256.Sum256(data)
-	return &Observer{policy: p, environmentID: env, configurationDigest: hex.EncodeToString(hash[:])}, nil
+	return &Observer{policy: p, environmentID: env, configurationDigest: hex.EncodeToString(hash[:]), announcementFormat: c.SchemaVersion == 9}, nil
 }
 
 // Observe recomputes provisional routing. knownCandidate is a discovery fact,
@@ -39,7 +40,7 @@ func (o *Observer) Observe(r Record, n notices.Notice, knownCandidate bool, look
 	if o == nil || o.policy == nil || n.Key().NoticeID == "" {
 		return Record{}, &Error{"invalid_observation"}
 	}
-	stamp, err := r.observationTime(o.environmentID, n.Key().NoticeID, at)
+	stamp, err := r.observationTime(o.environmentID, n.Key().NoticeID, o.announcementFormat, at)
 	if err != nil {
 		return Record{}, err
 	}
@@ -47,5 +48,5 @@ func (o *Observer) Observe(r Record, n notices.Notice, knownCandidate bool, look
 	if plan.Assessment.State == routing.Unrelated {
 		return Record{}, &Error{"unrelated"}
 	}
-	return r.mergeObservation(o.environmentID, n.Key().NoticeID, projectRevision(n, plan), stamp, at)
+	return r.mergeObservation(o.environmentID, n.Key().NoticeID, projectRevision(n, plan), o.announcementFormat, stamp, at)
 }

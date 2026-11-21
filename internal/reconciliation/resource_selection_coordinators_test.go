@@ -7,12 +7,13 @@ import (
 	"oci-maintenance-router/internal/configuration"
 )
 
-func TestResourceSelectionCoordinatorsKeepVersionBoundary(t *testing.T) {
+func TestResourceSelectionCoordinatorsAdmitWithoutOperations(t *testing.T) {
 	f := setupRuntimeFixtureFor(t)
 	_, catalogWire, cat := selectionInputs(t)
 	location, release := candidateLocation(), strings.Repeat("b", 64)
 	source := processingEmptySource()
 	channel, vault, clients := operatorClient(t), diagnosticVault(t), processingMySQL(t)
+	clients.Compute = processingCompute(t).Compute
 	constructors := []struct {
 		name, mode, action string
 		build              func([]byte, []byte) (bool, error)
@@ -68,8 +69,8 @@ func TestResourceSelectionCoordinatorsKeepVersionBoundary(t *testing.T) {
 			if _, err := configuration.Decode(cfg, cat); err != nil {
 				t.Fatal("selected input invalid before admission", err)
 			}
-			if valid, err := tc.build(cfg, catalogWire); valid || err == nil {
-				t.Fatal("unsupported selection admitted", err)
+			if valid, err := tc.build(cfg, catalogWire); !valid || err != nil {
+				t.Fatal("selected-resource coordinator rejected", err)
 			}
 			if len(f.objects.calls) != before || f.diagnosticSends != 0 || f.operatorSends != 0 {
 				t.Fatal("constructor performed operations")

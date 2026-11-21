@@ -24,6 +24,7 @@ type BaselinePreparation struct {
 	installation, mode string
 	initialize         bool
 	services           []string
+	resourceServices   map[string][]string
 }
 
 func NewBaselinePreparation(configBytes, catalogBytes []byte, location configuration.LedgerLocation, announcements AnnouncementSource, objects PreparationObjects) (*BaselinePreparation, error) {
@@ -33,7 +34,7 @@ func NewBaselinePreparation(configBytes, catalogBytes []byte, location configura
 		return nil, &PreparationError{Code: "invalid_request"}
 	}
 	config, err := configuration.Decode(configBytes, catalog)
-	if err != nil || (config.SchemaVersion != 2 && config.SchemaVersion != 3 && config.SchemaVersion != 4 && config.SchemaVersion != 5 && config.SchemaVersion != 6 && config.SchemaVersion != 7 && config.SchemaVersion != 8) {
+	if err != nil || (config.SchemaVersion != 2 && config.SchemaVersion != 3 && config.SchemaVersion != 4 && config.SchemaVersion != 5 && config.SchemaVersion != 6 && config.SchemaVersion != 7 && config.SchemaVersion != 8 && config.SchemaVersion != 9) {
 		return nil, &PreparationError{Code: "invalid_request"}
 	}
 	discovery, err := NewDiscovery(configBytes, catalogBytes, location, announcements, objects)
@@ -42,7 +43,11 @@ func NewBaselinePreparation(configBytes, catalogBytes []byte, location configura
 	}
 	services := slices.Clone(config.MySQLServices)
 	slices.Sort(services)
-	return &BaselinePreparation{discovery: discovery, objects: objects, installation: config.InstallationID, mode: config.Mode, initialize: config.Preparation.Initialize, services: services}, nil
+	selected := config.ResourceServices
+	for _, labels := range selected {
+		slices.Sort(labels)
+	}
+	return &BaselinePreparation{discovery: discovery, objects: objects, installation: config.InstallationID, mode: config.Mode, initialize: config.Preparation.Initialize, services: services, resourceServices: selected}, nil
 }
 
 var _ PreparationObjects = (*ocistorage.Client)(nil)

@@ -57,7 +57,11 @@ func (r *processingRun) recoveryStart() (bool, error) {
 }
 
 func (r *processingRun) migrateRecovery(saved ocistorage.StoredNotice) (ocistorage.StoredNotice, error) {
-	for saved.Record().Snapshot().SchemaVersion != 3 {
+	target := 3
+	if r.owner.config.SchemaVersion == 9 {
+		target = 4
+	}
+	for saved.Record().Snapshot().SchemaVersion != target {
 		var next noticeledger.Record
 		var err error
 		switch saved.Record().Snapshot().SchemaVersion {
@@ -65,6 +69,8 @@ func (r *processingRun) migrateRecovery(saved ocistorage.StoredNotice) (ocistora
 			next, err = saved.Record().MigrateSourceOutcome(r.lease.manager.now())
 		case 2:
 			next, err = saved.Record().MigrateRecovery(r.lease.manager.now())
+		case 3:
+			next, err = saved.Record().MigrateAnnouncements(r.lease.manager.now())
 		default:
 			return saved, &ProcessingError{Code: "unsupported_notice_schema"}
 		}

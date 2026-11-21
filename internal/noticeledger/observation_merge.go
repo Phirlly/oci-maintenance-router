@@ -8,18 +8,21 @@ import (
 	"oci-maintenance-router/internal/delivery"
 )
 
-func (r Record) observationTime(environmentID, noticeID string, at time.Time) (string, error) {
+func (r Record) observationTime(environmentID, noticeID string, announcement bool, at time.Time) (string, error) {
 	if r.data != nil && (r.data.EnvironmentID != environmentID || r.data.NoticeID != noticeID) {
 		return "", &Error{"identity_mismatch"}
 	}
-	if r.data != nil && r.data.SchemaVersion != 2 && !recoveryVersion(r.data.SchemaVersion) {
+	if r.data != nil && ((announcement && r.data.SchemaVersion != 4) || (r.data.SchemaVersion != 2 && !recoveryVersion(r.data.SchemaVersion))) {
 		return "", &Error{"migration_required"}
 	}
 	return r.operationTime(at)
 }
 
-func (r Record) mergeObservation(environmentID, noticeID string, v Revision, stamp string, at time.Time) (Record, error) {
+func (r Record) mergeObservation(environmentID, noticeID string, v Revision, announcement bool, stamp string, at time.Time) (Record, error) {
 	d := recordData{SchemaVersion: 2, EnvironmentID: environmentID, NoticeID: noticeID, Revisions: []Revision{}}
+	if announcement {
+		d.SchemaVersion, d.Recovery = 4, &recoveryData{Actions: []RecoveryAction{}}
+	}
 	if r.data != nil {
 		d = r.data.copy()
 	}
@@ -35,7 +38,10 @@ func (r Record) mergeObservation(environmentID, noticeID string, v Revision, sta
 		}
 		for j, old := range previous.Resources {
 			if old.BatchID != "" || old.Disposition == "CLOSED" {
-				if old.ResourceID != v.Resources[j].ResourceID {
+				// The normalized revision/index already binds the original source.
+				// A legacy closed, unassigned row may have redacted its now-supported ID.
+				redactedClosed := announcement && old.Disposition == "CLOSED" && old.BatchID == "" && old.ResourceID == ""
+				if old.ResourceID != v.Resources[j].ResourceID && !redactedClosed {
 					return Record{}, &Error{"source_mismatch"}
 				}
 				v.Resources[j] = old

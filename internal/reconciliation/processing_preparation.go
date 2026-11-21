@@ -14,19 +14,19 @@ func (r *processingRun) prepare(saved ocistorage.StoredNotice, n notices.Notice,
 	if plan.Assessment.State != routing.SupportedShape {
 		return saved, r.issue(ProcessingIssue{NoticeID: n.Key().NoticeID, RevisionDigest: n.Key().Digest, Code: string(plan.Assessment.Reason)})
 	}
-	assigned := map[string]bool{}
+	assigned := map[int]bool{}
 	for _, revision := range saved.Record().Snapshot().Revisions {
 		if revision.Digest == n.Key().Digest {
 			for _, row := range revision.Resources {
 				if row.BatchID != "" || row.Disposition == "CLOSED" {
-					assigned[row.ResourceID] = true
+					assigned[row.Index] = true
 				}
 			}
 		}
 	}
 	selected := []string{}
 	for _, d := range plan.Decisions {
-		if assigned[d.ResourceID] {
+		if assigned[d.Index] {
 			continue
 		}
 		if d.Disposition == routing.Ready {
@@ -96,7 +96,7 @@ func (r *processingRun) prepare(saved ocistorage.StoredNotice, n notices.Notice,
 
 func (r *processingRun) suppressed(revision notices.RevisionKey, d routing.Decision, lookups map[string]routing.Lookup) bool {
 	metadata := lookups[d.ResourceID].Metadata
-	return metadata.CompartmentID != nil && r.baseline.Suppresses("mysqldbsystem", d.Region, *metadata.CompartmentID, revision)
+	return metadata.CompartmentID != nil && r.baseline.Suppresses(routing.ResourceType(d.ResourceID), d.Region, *metadata.CompartmentID, revision)
 }
 
 func (r *processingRun) currentVersion(id string) (int64, string, error) {

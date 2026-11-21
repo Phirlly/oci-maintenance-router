@@ -26,13 +26,13 @@ func NewLiveBaselineSelector(configBytes, catalogBytes []byte, location configur
 		return nil, invalid
 	}
 	c, err := configuration.Decode(configBytes, catalog)
-	if err != nil || (c.SchemaVersion != 6 && c.SchemaVersion != 7 && c.SchemaVersion != 8) {
+	if err != nil || (c.SchemaVersion != 6 && c.SchemaVersion != 7 && c.SchemaVersion != 8 && c.SchemaVersion != 9) {
 		return nil, invalid
 	}
 	if c.Mode != "LIVE" {
 		return nil, &LiveSelectionError{Code: "intent_required"}
 	}
-	if c.SchemaVersion == 8 {
+	if c.SchemaVersion == 8 || c.SchemaVersion == 9 {
 		v, err := newSetupReadiness(configBytes, catalogBytes, location, objects, client)
 		if err != nil || !leaseDigest.MatchString(releaseSHA256) {
 			return nil, invalid

@@ -15,6 +15,9 @@ func (r *processingRun) recoverLive(works []processingNoticeWork) error {
 	if err != nil {
 		return err
 	}
+	if err = r.admitNotice(saved.Record()); err != nil {
+		return err
+	}
 	_, exists, err := saved.Record().LookupRecovery(q)
 	if err != nil {
 		return &ProcessingError{Code: "recovery_intent_conflict"}
@@ -118,6 +121,9 @@ func (r *processingRun) rejectCurrentRecovery(reason string) error {
 	}
 	saved, err := r.store.Load(r.ctx, r.owner.config.Recovery.NoticeID)
 	if err != nil {
+		return err
+	}
+	if err = r.admitNotice(saved.Record()); err != nil {
 		return err
 	}
 	return r.rejectRecovery(saved, reason)

@@ -41,14 +41,14 @@ func recoveryReviewItems(record noticeledger.Record, view reconciliation.Recover
 			}
 		}
 	}
-	excluded := map[string]bool{}
+	excluded := map[int]bool{}
 	for _, v := range s.Revisions {
 		if request.kind != "" && v.Digest != revision {
 			continue
 		}
 		items = append(items, recoveryRevisionItem{"SAVED_REVISION", v.Digest, string(v.Assessment), string(v.AssessmentReason), len(v.Resources), v.FirstSeenAt, v.LastSeenAt})
 		for _, row := range v.Resources {
-			excluded[row.ResourceID] = row.BatchID != "" || row.Disposition == "CLOSED"
+			excluded[row.Index] = row.BatchID != "" || row.Disposition == "CLOSED"
 		}
 		if request.kind != "" {
 			for i, stamp := range v.Source.Times {
@@ -76,7 +76,7 @@ func recoveryReviewItems(record noticeledger.Record, view reconciliation.Recover
 		if request.kind == "RETRY_BATCH" && !batchMembers[d.ResourceID] {
 			continue
 		}
-		eligible := d.Disposition == routing.Ready && (request.kind == "RETRY_BATCH" || !excluded[d.ResourceID])
+		eligible := d.Disposition == routing.Ready && (request.kind == "RETRY_BATCH" || !excluded[d.Index])
 		items = append(items, recoveryRouteItem{"CURRENT_ROUTING", d.ResourceID, d.Region, string(d.Disposition), string(d.Reason), d.DestinationID, eligible})
 	}
 	if view.Blocker != "" {

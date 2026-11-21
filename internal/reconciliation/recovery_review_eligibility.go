@@ -20,17 +20,17 @@ func (r *RecoveryReviewer) reviewEligibility(record noticeledger.Record, n notic
 	if plan.Assessment.State != routing.SupportedShape {
 		return "no_eligible_work"
 	}
-	excluded := map[string]bool{}
+	excluded := map[int]bool{}
 	for _, revision := range record.Snapshot().Revisions {
 		if revision.Digest == target {
 			for _, row := range revision.Resources {
-				excluded[row.ResourceID] = row.BatchID != "" || row.Disposition == "CLOSED"
+				excluded[row.Index] = row.BatchID != "" || row.Disposition == "CLOSED"
 			}
 		}
 	}
 	selected := []string{}
 	for _, d := range plan.Decisions {
-		if d.Disposition == routing.Ready && !excluded[d.ResourceID] {
+		if d.Disposition == routing.Ready && !excluded[d.Index] {
 			selected = append(selected, d.ResourceID)
 		}
 	}

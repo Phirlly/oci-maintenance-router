@@ -25,7 +25,7 @@ func selectedRecoveryFixture(t *testing.T, id string, count int) (savedReviewFix
 	if err != nil {
 		t.Fatal(err)
 	}
-	record, err := projectClosureRecord(f.record)
+	record, err := projectClosureRecord(f.record, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,9 +34,9 @@ func selectedRecoveryFixture(t *testing.T, id string, count int) (savedReviewFix
 }
 
 func bindRecoveryView(f savedReviewFixture, view *reconciliation.RecoveryReview) {
-	f.h.compose = func(s Settings, _ Store, _ pinnedInputs, _ string) (operations, error) {
+	f.h.compose = func(s Settings, _ Store, p pinnedInputs, _ string) (operations, error) {
 		return operations{recoveryReview: func(_ context.Context, q command) (*RecoveryReviewPage, error) {
-			return projectRecoveryReview(s, *view, q)
+			return projectRecoveryReview(s, *view, q, p.config.SchemaVersion == 9)
 		}}, nil
 	}
 }

@@ -8,11 +8,13 @@ import (
 	"oci-maintenance-router/internal/delivery"
 	"oci-maintenance-router/internal/noticeledger"
 	"oci-maintenance-router/internal/notices"
-	"oci-maintenance-router/internal/ociownership"
 	"oci-maintenance-router/internal/routing"
 )
 
-func migrateReviewRecord(record noticeledger.Record, at time.Time) (noticeledger.Record, error) {
+func migrateReviewRecord(record noticeledger.Record, at time.Time, announcement bool) (noticeledger.Record, error) {
+	if !announcement && record.Snapshot().SchemaVersion == 4 {
+		return noticeledger.Record{}, &RecoveryReviewError{Code: "unsupported_notice_schema"}
+	}
 	var err error
 	if record.Snapshot().SchemaVersion == 1 {
 		record, err = record.MigrateSourceOutcome(at)
@@ -21,7 +23,13 @@ func migrateReviewRecord(record noticeledger.Record, at time.Time) (noticeledger
 		}
 	}
 	if record.Snapshot().SchemaVersion == 2 {
-		return record.MigrateRecovery(at)
+		record, err = record.MigrateRecovery(at)
+		if err != nil {
+			return noticeledger.Record{}, err
+		}
+	}
+	if announcement && record.Snapshot().SchemaVersion == 3 {
+		return record.MigrateAnnouncements(at)
 	}
 	return record, nil
 }
@@ -62,7 +70,7 @@ func (r *RecoveryReviewer) currentLookups(ctx context.Context, n notices.Notice)
 		if err := r.before(ctx); err != nil {
 			return nil, err
 		}
-		get := r.mysql[target.Region]
+		get := r.reader(target)
 		if get == nil {
 			return nil, reviewFailure(ctx, "lookup_configuration")
 		}
@@ -70,19 +78,7 @@ func (r *RecoveryReviewer) currentLookups(ctx context.Context, n notices.Notice)
 		if ctx.Err() != nil {
 			return nil, reviewFailure(ctx, "canceled")
 		}
-		lookup := routing.Lookup{State: routing.Found, Metadata: metadata}
-		if err != nil {
-			lookup = routing.Lookup{State: routing.Unavailable}
-			if e, ok := err.(*ociownership.Error); ok && e != nil && e.Code == ociownership.Service {
-				if e.Status == 401 || e.Status == 403 {
-					lookup.State = routing.Denied
-				}
-				if e.Status == 404 {
-					lookup.State = routing.NotFound
-				}
-			}
-		}
-		lookups[target.ResourceID] = lookup
+		lookups[target.ResourceID] = ownershipResult(metadata, err)
 	}
 	return lookups, nil
 }

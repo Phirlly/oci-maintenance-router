@@ -29,7 +29,7 @@ func validResource(d Resource, v Revision, hold delivery.Reason, closed bool, ve
 	case "READY":
 		return complete && d.Reason == ""
 	case "OUT_OF_SCOPE":
-		return d.ResourceID != "" && d.Region != "" && d.DestinationID == "" && (d.Reason == string(routing.ReasonRegionScope) || d.Reason == string(routing.ReasonCompartmentScope))
+		return d.ResourceID != "" && d.Region != "" && d.DestinationID == "" && (d.Reason == string(routing.ReasonRegionScope) || d.Reason == string(routing.ReasonCompartmentScope) || (version == 4 && d.Reason == string(routing.ReasonResourceTypeScope)))
 	case "UNRESOLVED":
 		if d.DestinationID != "" {
 			return false
@@ -39,6 +39,9 @@ func validResource(d Resource, v Revision, hold delivery.Reason, closed bool, ve
 		}
 		if d.Region == "" {
 			return d.Reason == string(routing.ReasonUnknownRegion)
+		}
+		if version == 4 && d.Reason == string(routing.ReasonService) {
+			return true
 		}
 		switch routing.Reason(d.Reason) {
 		case routing.ReasonLookupMissing, routing.ReasonLookupDenied, routing.ReasonLookupNotFound, routing.ReasonLookupUnavailable, routing.ReasonIdentityMismatch, routing.ReasonCompartment, routing.ReasonTagMissing, routing.ReasonTagAmbiguous, routing.ReasonTagInvalid, routing.ReasonMetadataLimit, routing.ReasonOwnerUnmapped:

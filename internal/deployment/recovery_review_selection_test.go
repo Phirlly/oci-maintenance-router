@@ -20,7 +20,7 @@ func TestRecoveryReviewKeepsSelectedBatchAndCurrentOwnershipSeparate(t *testing.
 		// Prepared batches are ineligible for a manual retry; preserve the blocker
 		// supplied by the domain reviewer instead of using closure eligibility.
 		view.Blocker = "target_not_review_required"
-		page, err := projectRecoveryReview(f.s, view, q)
+		page, err := projectRecoveryReview(f.s, view, q, false)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -58,11 +58,11 @@ func TestRecoveryReviewKeepsSelectedBatchAndCurrentOwnershipSeparate(t *testing.
 			t.Fatal("lost selected evidence", action, batches, routes)
 		}
 	}
-	if page, err := projectRecoveryReview(f.s, reconciliation.RecoveryReview{}, command{}); err == nil || page != nil {
+	if page, err := projectRecoveryReview(f.s, reconciliation.RecoveryReview{}, command{}, false); err == nil || page != nil {
 		t.Fatal("empty record projected")
 	}
 	view.Blocker, view.Fingerprint = "", ""
-	if page, err := projectRecoveryReview(f.s, view, command{kind: "APPROVE_REVISION", targetID: f.notice.Key().Digest}); err == nil || page != nil {
+	if page, err := projectRecoveryReview(f.s, view, command{kind: "APPROVE_REVISION", targetID: f.notice.Key().Digest}, false); err == nil || page != nil {
 		t.Fatal("missing fingerprint became authority")
 	}
 }

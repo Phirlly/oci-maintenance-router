@@ -9,7 +9,6 @@ import (
 	"oci-maintenance-router/internal/delivery"
 	"oci-maintenance-router/internal/noticeledger"
 	"oci-maintenance-router/internal/ocinotifications"
-	"oci-maintenance-router/internal/ociownership"
 	"oci-maintenance-router/internal/ocisecrets"
 	"oci-maintenance-router/internal/ocistorage"
 	"oci-maintenance-router/internal/pagerduty"
@@ -40,16 +39,16 @@ type MaintenanceProcessor struct {
 	observer      *noticeledger.Observer
 	policy        *routing.Policy
 	builder       *delivery.Builder
-	mysql         map[string]func(context.Context, string) (routing.Metadata, error)
-	current       func(context.Context, string) (maintenanceCredential, error)
-	version       func(context.Context, string, int64) (maintenanceCredential, error)
-	senders       map[string]func(context.Context, []byte, []byte) (pagerduty.Response, error)
-	wait          func(context.Context, time.Duration) error
-	jitter        func(time.Duration) time.Duration
-	token         func() string
+	ownershipReaders
+	current func(context.Context, string) (maintenanceCredential, error)
+	version func(context.Context, string, int64) (maintenanceCredential, error)
+	senders map[string]func(context.Context, []byte, []byte) (pagerduty.Response, error)
+	wait    func(context.Context, time.Duration) error
+	jitter  func(time.Duration) time.Duration
+	token   func() string
 }
 
-func NewMaintenanceProcessor(configBytes, catalogBytes []byte, location configuration.LedgerLocation, releaseSHA256 string, announcements AnnouncementSource, objects MaintenanceObjects, notifications *ocinotifications.Client, vault *ocisecrets.Client, mysql map[string]*ociownership.Client) (*MaintenanceProcessor, error) {
+func NewMaintenanceProcessor(configBytes, catalogBytes []byte, location configuration.LedgerLocation, releaseSHA256 string, announcements AnnouncementSource, objects MaintenanceObjects, notifications *ocinotifications.Client, vault *ocisecrets.Client, clients OwnershipClients) (*MaintenanceProcessor, error) {
 	invalid := &ProcessingError{Code: "invalid_request"}
 	configBytes, catalogBytes = bytes.Clone(configBytes), bytes.Clone(catalogBytes)
 	catalog, err := configuration.DecodeCatalog(catalogBytes)
@@ -57,7 +56,7 @@ func NewMaintenanceProcessor(configBytes, catalogBytes []byte, location configur
 		return nil, invalid
 	}
 	c, err := configuration.Decode(configBytes, catalog)
-	if err != nil || (c.SchemaVersion != 6 && c.SchemaVersion != 7 && c.SchemaVersion != 8) {
+	if err != nil || (c.SchemaVersion != 6 && c.SchemaVersion != 7 && c.SchemaVersion != 8 && c.SchemaVersion != 9) {
 		return nil, invalid
 	}
 	if c.Mode != "LIVE" && c.Recovery == nil {
@@ -87,13 +86,9 @@ func NewMaintenanceProcessor(configBytes, catalogBytes []byte, location configur
 	if err != nil {
 		return nil, invalid
 	}
-	lookups := make(map[string]func(context.Context, string) (routing.Metadata, error), len(c.RegionMap))
-	for region := range c.RegionMap {
-		client := mysql[region]
-		if client == nil {
-			return nil, invalid
-		}
-		lookups[region] = client.Get
+	lookups, valid := bindOwnership(c, clients)
+	if !valid {
+		return nil, invalid
 	}
 	// The shared decoded inputs and trusted location were validated above.
 	observer, _ := noticeledger.New(configBytes, catalog, location)
@@ -105,7 +100,7 @@ func NewMaintenanceProcessor(configBytes, catalogBytes []byte, location configur
 		senders[region] = client.Send
 	}
 	p.discovery, p.selector = discovery, selector
-	p.observer, p.policy, p.builder, p.mysql = observer, policy, builder, lookups
+	p.observer, p.policy, p.builder, p.ownershipReaders = observer, policy, builder, lookups
 	p.current = func(ctx context.Context, id string) (maintenanceCredential, error) { return vault.GetCurrent(ctx, id) }
 	p.version = func(ctx context.Context, id string, version int64) (maintenanceCredential, error) {
 		return vault.GetVersion(ctx, id, version)

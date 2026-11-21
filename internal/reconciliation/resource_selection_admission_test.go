@@ -1,7 +1,6 @@
 package reconciliation
 
 import (
-	"errors"
 	"os"
 	"testing"
 
@@ -32,31 +31,29 @@ func selectionInputs(t *testing.T) ([]byte, []byte, configuration.Catalog) {
 	return data, wire, cat
 }
 
-func TestResourceSelectionPolicyConsumersRefuseUntilIntegrated(t *testing.T) {
+func TestResourceSelectionPolicyConsumersAdmitWithoutOperations(t *testing.T) {
 	data, wire, cat := selectionInputs(t)
 	location := candidateLocation()
-	refused := func(name string, empty bool, err error) {
+	accepted := func(name string, empty bool, err error) {
 		t.Helper()
-		var detail *configuration.Error
-		if !empty || !errors.As(err, &detail) || detail.Field != "schemaVersion" || detail.Code != "routing_unsupported" {
-			t.Fatalf("%s accepted incomplete selection or wrong refusal: %v", name, err)
+		if empty || err != nil {
+			t.Fatalf("%s rejected selected resources: %v", name, err)
 		}
 	}
 	p, err := routing.New(data, cat)
-	refused("policy", p == nil, err)
+	accepted("policy", p == nil, err)
 	b, err := delivery.New(data, cat, location)
-	refused("builder", b == nil, err)
+	accepted("builder", b == nil, err)
 	o, err := noticeledger.New(data, cat, location)
-	refused("observer", o == nil, err)
+	accepted("observer", o == nil, err)
 	c, err := NewCandidates(data, cat, location)
-	refused("candidates", c == nil, err)
+	accepted("candidates", c == nil, err)
 	a, s := detailSources(t, nil, nil)
 	collector, err := NewCollector(data, cat, location, a, s)
-	refused("collector", collector == nil, err)
+	accepted("collector", collector == nil, err)
 	objects := &discoveryObjects{objects: map[string]ocistorage.Object{}}
 	d, err := NewDiscovery(data, wire, location, a, objects)
-	var failure *DiscoveryError
-	if d != nil || !errors.As(err, &failure) || failure.Code != "invalid_request" || len(objects.calls) != 0 {
-		t.Fatal("discovery admitted incomplete selection", err)
+	if d == nil || err != nil || len(objects.calls) != 0 {
+		t.Fatal("discovery rejected selection or performed operations", err)
 	}
 }

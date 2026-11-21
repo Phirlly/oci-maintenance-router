@@ -10,6 +10,7 @@ type Policy struct {
 	allowed      map[string]bool
 	compartments map[string]bool
 	services     map[string]bool
+	selected     map[string]map[string]bool
 	owner        configuration.Ownership
 	routes       map[string]string
 }
@@ -20,11 +21,6 @@ func New(data []byte, catalog configuration.Catalog) (*Policy, error) {
 	c, err := configuration.Decode(data, catalog)
 	if err != nil {
 		return nil, err
-	}
-	// Parsing the selected-resource contract is not runtime support. Keep all
-	// policy consumers closed until routing and persisted writers adopt it together.
-	if c.SchemaVersion == 9 {
-		return nil, &configuration.Error{Field: "schemaVersion", Code: "routing_unsupported"}
 	}
 	generation, err := c.RoutingGeneration()
 	if err != nil {
@@ -51,6 +47,15 @@ func New(data []byte, catalog configuration.Catalog) (*Policy, error) {
 	}
 	for _, service := range c.MySQLServices {
 		p.services[service] = true
+	}
+	if c.SchemaVersion == 9 {
+		p.selected = map[string]map[string]bool{}
+		for kind, labels := range c.ResourceServices {
+			p.selected[kind] = map[string]bool{}
+			for _, label := range labels {
+				p.selected[kind][label], p.services[label] = true, true
+			}
+		}
 	}
 	for _, route := range c.Routes {
 		p.routes[route.OwnerValue] = route.DestinationID

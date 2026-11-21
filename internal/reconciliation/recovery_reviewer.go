@@ -10,7 +10,6 @@ import (
 	"oci-maintenance-router/internal/configuration"
 	"oci-maintenance-router/internal/delivery"
 	"oci-maintenance-router/internal/noticeledger"
-	"oci-maintenance-router/internal/ociownership"
 	"oci-maintenance-router/internal/routing"
 )
 
@@ -36,13 +35,13 @@ type RecoveryReviewer struct {
 	observer  *noticeledger.Observer
 	policy    *routing.Policy
 	builder   *delivery.Builder
-	mysql     map[string]func(context.Context, string) (routing.Metadata, error)
-	wait      func(context.Context, time.Duration) error
+	ownershipReaders
+	wait func(context.Context, time.Duration) error
 }
 
 var recoveryReviewNoticeID = regexp.MustCompile(`^ocid1\.announcement\.oc1\.\.([A-Za-z0-9_-]*\.)?[A-Za-z0-9_-]+$`)
 
-func NewRecoveryReviewer(data, catalogBytes []byte, location configuration.LedgerLocation, source AnnouncementSource, saved SavedNoticeSource, mysql map[string]*ociownership.Client) (*RecoveryReviewer, error) {
+func NewRecoveryReviewer(data, catalogBytes []byte, location configuration.LedgerLocation, source AnnouncementSource, saved SavedNoticeSource, clients OwnershipClients) (*RecoveryReviewer, error) {
 	invalid := &RecoveryReviewError{Code: "invalid_request"}
 	for _, source := range []any{source, saved} {
 		if source == nil {
@@ -62,20 +61,16 @@ func NewRecoveryReviewer(data, catalogBytes []byte, location configuration.Ledge
 		return nil, invalid
 	}
 	c, err := configuration.Decode(data, catalog)
-	if err != nil || (c.SchemaVersion != 7 && c.SchemaVersion != 8) || c.Mode != "LIVE" {
+	if err != nil || (c.SchemaVersion != 7 && c.SchemaVersion != 8 && c.SchemaVersion != 9) || c.Mode != "LIVE" {
 		return nil, invalid
 	}
 	collector, err := NewCollector(data, catalog, location, source, saved)
 	if err != nil {
 		return nil, invalid
 	}
-	lookups := make(map[string]func(context.Context, string) (routing.Metadata, error), len(c.RegionMap))
-	for region := range c.RegionMap {
-		client := mysql[region]
-		if client == nil {
-			return nil, invalid
-		}
-		lookups[region] = client.Get
+	lookups, valid := bindOwnership(c, clients)
+	if !valid {
+		return nil, invalid
 	}
 	observer, _ := noticeledger.New(data, catalog, location)
 	policy, _ := routing.New(data, catalog)

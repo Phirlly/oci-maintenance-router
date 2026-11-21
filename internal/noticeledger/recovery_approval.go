@@ -11,6 +11,9 @@ import (
 
 // ApproveRecovery proposes a one-shot approval for exact newly prepared work.
 func (o *Observer) ApproveRecovery(r Record, req RecoveryRequest, n notices.Notice, knownCandidate bool, lookups map[string]routing.Lookup, at time.Time, values ...delivery.Preparation) (Record, RecoveryAction, error) {
+	if o != nil && o.announcementFormat && r.data != nil && r.data.SchemaVersion != 4 {
+		return Record{}, RecoveryAction{}, &Error{"migration_required"}
+	}
 	i, digest, err := r.recoveryLookup(req)
 	if err != nil {
 		return Record{}, RecoveryAction{}, err

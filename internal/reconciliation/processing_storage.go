@@ -13,7 +13,20 @@ func sameNotice(a, b noticeledger.Record) bool {
 	return bytes.Equal(x, y)
 }
 
+// Normal processing adopts only records whose explicit Discovery migrations
+// completed. Older controls must not perform business transitions on notice4.
+func (r *processingRun) admitNotice(record noticeledger.Record) error {
+	v := record.Snapshot().SchemaVersion
+	if (r.owner.config.SchemaVersion == 9 && v != 4) || (r.owner.config.SchemaVersion != 9 && v == 4) {
+		return &ProcessingError{Code: "unsupported_notice_schema"}
+	}
+	return nil
+}
+
 func (r *processingRun) save(previous ocistorage.StoredNotice, next noticeledger.Record) (ocistorage.StoredNotice, error) {
+	if r.owner.config.SchemaVersion != 9 && (previous.Record().Snapshot().SchemaVersion == 4 || next.Snapshot().SchemaVersion == 4) {
+		return ocistorage.StoredNotice{}, &ProcessingError{Code: "unsupported_notice_schema"}
+	}
 	if err := r.guard(); err != nil {
 		return ocistorage.StoredNotice{}, err
 	}

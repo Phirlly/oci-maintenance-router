@@ -13,6 +13,9 @@ func (r *processingRun) process(work processingNoticeWork) error {
 	if err != nil {
 		return err
 	}
+	if err = r.admitNotice(saved.Record()); err != nil {
+		return err
+	}
 	if savedMembership(saved.Record()) != work.membership {
 		return &ProcessingError{Code: "membership_changed"}
 	}

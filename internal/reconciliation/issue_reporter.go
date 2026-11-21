@@ -39,7 +39,7 @@ func NewIssueReporter(configBytes, catalogBytes []byte, location configuration.L
 		return nil, &ReportingError{"live_required"}
 	}
 	d := &IssueReporter{objects: objects, token: newLeaseToken}
-	if config.SchemaVersion == 8 {
+	if config.SchemaVersion == 8 || config.SchemaVersion == 9 {
 		v, err := newSetupReadiness(configBytes, catalogBytes, location, objects, client)
 		if err != nil {
 			return nil, &ReportingError{"receipt_required"}

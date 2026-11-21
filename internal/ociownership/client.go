@@ -15,6 +15,11 @@ type Client struct {
 	transport                            *http.Transport
 }
 
+// BoundTo verifies a fixed reader's public identity without reading credentials.
+func (c *Client) BoundTo(kind, region, regionKey, tenancy string) bool {
+	return c != nil && c.resourceType == kind && c.region == region && c.regionKey == regionKey && c.tenancy == tenancy && c.signer != nil && c.transport != nil
+}
+
 // NewMySQL binds one regional OC1 GetDbSystem reader.
 func NewMySQL(region, regionKey, tenancy string, provider common.KeyProvider) (*Client, error) {
 	c, err := newClient(region, regionKey, tenancy, provider)

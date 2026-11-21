@@ -3,7 +3,6 @@ package reconciliation
 import (
 	"oci-maintenance-router/internal/delivery"
 	"oci-maintenance-router/internal/notices"
-	"oci-maintenance-router/internal/ociownership"
 	"oci-maintenance-router/internal/ocistorage"
 	"oci-maintenance-router/internal/routing"
 )
@@ -39,23 +38,15 @@ func (r *processingRun) fresh(work processingNoticeWork, saved ocistorage.Stored
 		if err = r.before(); err != nil {
 			return saved, n, nil, false, err
 		}
-		metadata, failure := r.owner.mysql[target.Region](r.ctx, target.ResourceID)
+		get := r.owner.reader(target)
+		if get == nil {
+			return saved, n, nil, false, &ProcessingError{Code: "lookup_configuration"}
+		}
+		metadata, failure := get(r.ctx, target.ResourceID)
 		if r.ctx.Err() != nil {
 			return saved, n, nil, false, processingFailure(r.ctx, nil)
 		}
-		lookup := routing.Lookup{State: routing.Found, Metadata: metadata}
-		if failure != nil {
-			lookup = routing.Lookup{State: routing.Unavailable}
-			if e, ok := failure.(*ociownership.Error); ok && e != nil && e.Code == ociownership.Service {
-				if e.Status == 401 || e.Status == 403 {
-					lookup.State = routing.Denied
-				}
-				if e.Status == 404 {
-					lookup.State = routing.NotFound
-				}
-			}
-		}
-		lookups[target.ResourceID] = lookup
+		lookups[target.ResourceID] = ownershipResult(metadata, failure)
 	}
 	next, err := r.owner.observer.Observe(saved.Record(), n, true, lookups, r.lease.manager.now())
 	if err != nil {
@@ -122,6 +113,9 @@ func (r *processingRun) changedSource(work processingNoticeWork, saved ocistorag
 			other, readErr := r.store.Load(r.ctx, id)
 			if readErr != nil {
 				return readErr
+			}
+			if err = r.admitNotice(other.Record()); err != nil {
+				return err
 			}
 			held, holdErr := other.Record().Hold(delivery.ReasonSourceChanged, r.lease.manager.now())
 			if holdErr != nil {

@@ -26,6 +26,7 @@ const (
 	ReasonResourceID        Reason = "unsupported_resource_id"
 	ReasonUnknownRegion     Reason = "unknown_region"
 	ReasonRegionScope       Reason = "region_out_of_scope"
+	ReasonResourceTypeScope Reason = "resource_type_out_of_scope"
 	ReasonLookupMissing     Reason = "lookup_missing"
 	ReasonLookupDenied      Reason = "lookup_denied"
 	ReasonLookupNotFound    Reason = "lookup_not_found"

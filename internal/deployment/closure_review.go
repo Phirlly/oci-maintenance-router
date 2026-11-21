@@ -20,7 +20,7 @@ func composeClosureReview(s Settings, objects operationalObjects, p pinnedInputs
 			return nil, operationFailure("closure_notice_read")
 		}
 		original := saved.Record()
-		projected, err := projectClosureRecord(original)
+		projected, err := projectClosureRecord(original, p.config.SchemaVersion == 9)
 		if err != nil {
 			return nil, operationFailure("closure_projection_failed")
 		}
@@ -35,8 +35,11 @@ func composeClosureReview(s Settings, objects operationalObjects, p pinnedInputs
 	}}, nil
 }
 
-func projectClosureRecord(record noticeledger.Record) (noticeledger.Record, error) {
+func projectClosureRecord(record noticeledger.Record, announcement bool) (noticeledger.Record, error) {
 	saved := record.Snapshot()
+	if !announcement && saved.SchemaVersion == 4 {
+		return noticeledger.Record{}, operationFailure("unsupported_notice_schema")
+	}
 	at, err := time.Parse(time.RFC3339Nano, saved.UpdatedAt)
 	if err != nil {
 		return noticeledger.Record{}, err
@@ -48,7 +51,13 @@ func projectClosureRecord(record noticeledger.Record) (noticeledger.Record, erro
 		}
 	}
 	if record.Snapshot().SchemaVersion == 2 {
-		return record.MigrateRecovery(at)
+		record, err = record.MigrateRecovery(at)
+		if err != nil {
+			return noticeledger.Record{}, err
+		}
+	}
+	if announcement && record.Snapshot().SchemaVersion == 3 {
+		return record.MigrateAnnouncements(at)
 	}
 	return record, nil
 }

@@ -43,7 +43,7 @@ func TestRecoveryPagingRejectsChangedObservedOrSavedContext(t *testing.T) {
 			f, view := selectedRecoveryFixture(t, "ocid1.announcement.oc1..paging", 80)
 			bindRecoveryView(f, &view)
 			q := command{operation: "review-recovery", noticeID: f.notice.Key().NoticeID, kind: "APPROVE_REVISION", targetID: f.notice.Key().Digest}
-			first, err := projectRecoveryReview(f.s, view, q)
+			first, err := projectRecoveryReview(f.s, view, q, false)
 			if err != nil || first.NextCursor == "" {
 				t.Fatal(err)
 			}
@@ -69,7 +69,7 @@ func TestRecoveryPagingRejectsChangedObservedOrSavedContext(t *testing.T) {
 			case "blocker":
 				view.Blocker = "source_changed"
 			}
-			page, err := projectRecoveryReview(f.s, view, q)
+			page, err := projectRecoveryReview(f.s, view, q, false)
 			if page != nil || err == nil || operationCode(operationalContext(t), err) != "review_changed" {
 				t.Fatal("drift continued review", kind, err)
 			}

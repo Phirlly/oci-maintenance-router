@@ -23,15 +23,9 @@ func (r *discoveryRun) persist(work *discoveryWork) error {
 		if savedMembership(saved.Record()) != work.saved.membership {
 			return &DiscoveryError{Code: "membership_changed"}
 		}
-		if saved.Record().Snapshot().SchemaVersion == 1 {
-			next, err := saved.Record().MigrateSourceOutcome(r.owner.now())
-			if err != nil {
-				return &DiscoveryError{Code: "transition_failed"}
-			}
-			saved, err = r.save(saved, next)
-			if err != nil {
-				return err
-			}
+		saved, err = r.migrate(saved)
+		if err != nil {
+			return err
 		}
 	}
 	for _, observation := range work.observations {
@@ -64,6 +58,37 @@ func (r *discoveryRun) persist(work *discoveryWork) error {
 		}
 	}
 	return nil
+}
+
+func (r *discoveryRun) migrate(saved ocistorage.StoredNotice) (ocistorage.StoredNotice, error) {
+	for {
+		version := saved.Record().Snapshot().SchemaVersion
+		if !r.owner.announcementFormat && version == 4 {
+			return saved, &DiscoveryError{Code: "unsupported_notice_schema"}
+		}
+		if version == 4 || (!r.owner.announcementFormat && version >= 2) {
+			return saved, nil
+		}
+		var next noticeledger.Record
+		var err error
+		switch version {
+		case 1:
+			next, err = saved.Record().MigrateSourceOutcome(r.owner.now())
+		case 2:
+			next, err = saved.Record().MigrateRecovery(r.owner.now())
+		case 3:
+			next, err = saved.Record().MigrateAnnouncements(r.owner.now())
+		default:
+			return saved, &DiscoveryError{Code: "unsupported_notice_schema"}
+		}
+		if err != nil {
+			return saved, &DiscoveryError{Code: "transition_failed"}
+		}
+		saved, err = r.save(saved, next)
+		if err != nil {
+			return saved, err
+		}
+	}
 }
 
 func recoveryComponentChanged(record noticeledger.Record, component string) bool {

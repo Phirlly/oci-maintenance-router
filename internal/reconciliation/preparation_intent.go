@@ -17,5 +17,13 @@ func preparationIntent(environment, predecessor string, scope discoveryScope, se
 	return body
 }
 func (p *BaselinePreparation) targetID(h PreparedHistory) string {
+	if p.resourceServices != nil {
+		var parent any
+		if h.BaselineDigest() != "" {
+			parent = h.BaselineDigest()
+		}
+		body, _ := json.Marshal([]any{"baseline-intent-v2", h.EnvironmentID(), parent, p.discovery.scope.regions, p.discovery.scope.compartments, p.resourceServices})
+		return fmt.Sprintf("p2-%x", sha256.Sum256(body))
+	}
 	return fmt.Sprintf("p1-%x", sha256.Sum256(preparationIntent(h.EnvironmentID(), h.BaselineDigest(), p.discovery.scope, p.services)))
 }
