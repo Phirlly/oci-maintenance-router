@@ -47,7 +47,10 @@ func TestAcceptanceSignedAnnouncementReachesRecipientSpecificProjections(t *test
 				t.Fatal(err)
 			}
 			wire["description"] = "private-description-marker"
-			wire["affectedResources"] = append(wire["affectedResources"].([]any), map[string]any{"resourceId": b, "additionalProperties": []any{map[string]any{"name": "private-property-marker", "value": "private-value-marker"}}})
+			wire["affectedResources"] = append(wire["affectedResources"].([]any), map[string]any{"resourceId": b, "additionalProperties": []any{
+				map[string]any{"name": "private-property-marker", "value": "private-value-marker"},
+				map[string]any{"name": "private-null-property-marker", "value": nil},
+			}})
 			if !publication {
 				delete(wire, "timeCreated")
 				delete(wire, "timeUpdated")
@@ -80,7 +83,7 @@ func TestAcceptanceSignedAnnouncementReachesRecipientSpecificProjections(t *test
 			if err != nil {
 				t.Fatal(err)
 			}
-			for _, raw := range []string{"private-description-marker", "private-property-marker", "private-value-marker"} {
+			for _, raw := range []string{"private-description-marker", "private-property-marker", "private-value-marker", "private-null-property-marker"} {
 				if bytes.Contains(encoded, []byte(raw)) {
 					t.Fatal("unapproved raw source field persisted")
 				}

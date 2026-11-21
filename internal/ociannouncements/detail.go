@@ -50,7 +50,12 @@ func decodeResources(values []any, valid *bool) []notices.Resource {
 		r := notices.Resource{ResourceID: f.nonempty("resourceId"), ResourceName: f.text("resourceName", false), RegionDisplay: f.text("region", false)}
 		for _, property := range f.array("additionalProperties", false) {
 			p := objectFields(property, valid, "name", "value")
-			r.AdditionalProperties = append(r.AdditionalProperties, notices.Property{Name: p.text("name", true), Value: p.text("value", true)})
+			// OCI can return explicit null descriptive values. Preserve them,
+			// but do not treat an omitted required field as a valid response.
+			if _, present := p.object["value"]; !present {
+				*valid = false
+			}
+			r.AdditionalProperties = append(r.AdditionalProperties, notices.Property{Name: p.text("name", true), Value: p.text("value", false)})
 		}
 		resources = append(resources, r)
 	}

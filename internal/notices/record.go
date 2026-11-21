@@ -37,7 +37,7 @@ type Resource struct {
 
 type Property struct {
 	Name  *string
-	Value *string
+	Value *string // An explicit null descriptive value remains nil, distinct from empty.
 }
 
 type RevisionKey struct {

@@ -63,15 +63,9 @@ func TestRequiredFieldsAndAnnouncementShape(t *testing.T) {
 	input = sample()
 	input.Resources[0].ResourceID = ""
 	wantError(t, input, "resources.resourceId", "required")
-	for _, field := range []string{"name", "value"} {
-		input = sample()
-		if field == "name" {
-			input.Resources[0].AdditionalProperties[0].Name = nil
-		} else {
-			input.Resources[0].AdditionalProperties[0].Value = nil
-		}
-		wantError(t, input, "resources.additionalProperties."+field, "required")
-	}
+	input = sample()
+	input.Resources[0].AdditionalProperties[0].Name = nil
+	wantError(t, input, "resources.additionalProperties.name", "required")
 	input = sample()
 	input.Resources[0].AdditionalProperties = []Property{{text(""), text("")}}
 	normalized(t, input)

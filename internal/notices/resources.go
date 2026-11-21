@@ -6,12 +6,21 @@ import (
 	"strings"
 )
 
-// The caller owns the copy and has already validated required property pointers.
+// The caller owns the copy and has already validated required property names.
 func normalizeResources(resources []Resource) ([]Resource, error) {
 	for i := range resources {
 		slices.SortFunc(resources[i].AdditionalProperties, func(a, b Property) int {
 			if order := strings.Compare(*a.Name, *b.Name); order != 0 {
 				return order
+			}
+			if a.Value == nil {
+				if b.Value == nil {
+					return 0
+				}
+				return -1
+			}
+			if b.Value == nil {
+				return 1
 			}
 			return strings.Compare(*a.Value, *b.Value)
 		})

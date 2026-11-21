@@ -94,7 +94,7 @@ func validateInput(r Record) error {
 				return c.err
 			}
 			c.texts(textField{"resources.additionalProperties.name", property.Name, true},
-				textField{"resources.additionalProperties.value", property.Value, true})
+				textField{"resources.additionalProperties.value", property.Value, false})
 		}
 	}
 	return c.err

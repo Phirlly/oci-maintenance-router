@@ -66,7 +66,7 @@ func TestDetailRejectsInvalidConsumedFieldsWithoutPartialNotice(t *testing.T) {
 		`,"affectedResources":[{}]`, `,"affectedResources":[{"resourceId":""}]`, `,"affectedResources":[{"resourceId":false}]`,
 		`,"affectedResources":[{"resourceId":"r","resourceName":1}]`, `,"affectedResources":[{"resourceId":"r","Region":"iad"}]`,
 		`,"affectedResources":[{"resourceId":"r","additionalProperties":{}}]`, `,"affectedResources":[{"resourceId":"r","additionalProperties":[null]}]`,
-		`,"affectedResources":[{"resourceId":"r","additionalProperties":[{}]}]`, `,"affectedResources":[{"resourceId":"r","additionalProperties":[{"name":"x","value":null}]}]`,
+		`,"affectedResources":[{"resourceId":"r","additionalProperties":[{}]}]`, `,"affectedResources":[{"resourceId":"r","additionalProperties":[{"name":"x"}]}]`,
 		`,"affectedResources":[{"resourceId":"r","additionalProperties":[{"Name":"x","value":"v"}]}]`, `,"timeOneValue":"2026-01-01"`, `,"timeUpdated":"2026-01-01T00:00:00-00:00"`,
 		`,"Summary":"wrong casing"`,
 	} {
