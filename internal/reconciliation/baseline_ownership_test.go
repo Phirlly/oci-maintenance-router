@@ -23,7 +23,7 @@ func TestBaselineSnapshotsAndConcurrentReadsOwnTheirValues(t *testing.T) {
 			layers[0].Revisions[0].Digest = "caller change"
 			layers[0].CompletedAt = "caller change"
 			body, err := b.Encode()
-			if err != nil || !bytes.Equal(body, want) || !b.Covers(r) || !b.Suppresses("us-ashburn-1", baselineCompartment, n.Key()) {
+			if err != nil || !bytes.Equal(body, want) || !b.Covers(r) || !b.Suppresses("mysqldbsystem", "us-ashburn-1", baselineCompartment, n.Key()) {
 				t.Error("concurrent snapshot changed baseline")
 			}
 			clear(body)

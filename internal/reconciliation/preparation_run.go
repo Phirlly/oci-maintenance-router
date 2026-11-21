@@ -29,7 +29,7 @@ func (r *preparationRun) prepare() (Baseline, error) {
 	}
 	h := saved.History()
 	previous := Baseline{}
-	var existing map[BaselineCell]int
+	var existing map[baselineCellKey]int
 	if h.BaselineID() != "" {
 		previous, err = r.baselines.Load(r.ctx, h.BaselineID())
 		if err != nil {

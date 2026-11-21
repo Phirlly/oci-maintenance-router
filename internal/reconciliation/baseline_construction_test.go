@@ -46,7 +46,7 @@ func TestBaselineIncludesOnlyCurrentCandidatePairs(t *testing.T) {
 	if len(layers) != 1 || len(layers[0].Revisions) != 1 || layers[0].Revisions[0].Digest != changed.Key().Digest {
 		t.Fatal("baseline relabeled unrelated or saved history as current")
 	}
-	if !b.Suppresses("us-ashburn-1", baselineCompartment, changed.Key()) || b.Suppresses("us-phoenix-1", baselineCompartment, changed.Key()) || b.Suppresses("us-ashburn-1", baselineOtherCompartment, changed.Key()) || b.Suppresses("us-ashburn-1", baselineCompartment, a.Key()) {
+	if !b.Suppresses("mysqldbsystem", "us-ashburn-1", baselineCompartment, changed.Key()) || b.Suppresses("mysqldbsystem", "us-phoenix-1", baselineCompartment, changed.Key()) || b.Suppresses("mysqldbsystem", "us-ashburn-1", baselineOtherCompartment, changed.Key()) || b.Suppresses("mysqldbsystem", "us-ashburn-1", baselineCompartment, a.Key()) {
 		t.Fatal("suppression crossed exact cell/revision boundary")
 	}
 }

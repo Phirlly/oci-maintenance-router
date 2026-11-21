@@ -20,7 +20,7 @@ func TestBaselineFailedDiscoveryCannotProduceAProposal(t *testing.T) {
 	if bytes, err := (Baseline{}).Encode(); err == nil || bytes != nil {
 		t.Fatal("zero baseline encoded")
 	}
-	if (Baseline{}).Suppresses("us-ashburn-1", baselineCompartment, notices.RevisionKey{}) {
+	if (Baseline{}).Suppresses("mysqldbsystem", "us-ashburn-1", baselineCompartment, notices.RevisionKey{}) {
 		t.Fatal("zero baseline suppresses")
 	}
 }
@@ -58,7 +58,7 @@ func TestBaselineRoutingOnlyChangeDoesNotResetHistory(t *testing.T) {
 	old := baselineResult(t, []notices.Notice{n}, nil, nil, nil)
 	b := buildBaseline(t, "initial", old)
 	changed := baselineResult(t, []notices.Notice{n}, nil, nil, nil, func(c map[string]any) { c["ownership"] = map[string]string{"kind": "freeform", "key": "team"} })
-	if !b.Covers(changed) || !b.Suppresses("us-ashburn-1", baselineCompartment, n.Key()) {
+	if !b.Covers(changed) || !b.Suppresses("mysqldbsystem", "us-ashburn-1", baselineCompartment, n.Key()) {
 		t.Fatal("routing-only change reset baseline")
 	}
 	got, err := b.Extend("routing-change", changed)

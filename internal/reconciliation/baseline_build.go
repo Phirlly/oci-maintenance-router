@@ -62,7 +62,7 @@ func (r DiscoveryResult) baselineWith(id string, previous []BaselineLayer, cells
 	pairs = slices.Compact(pairs)
 	stamp := r.completedAt.UTC().Truncate(time.Millisecond).Format(leaseTimeFormat)
 	layers := append(slices.Clone(previous), BaselineLayer{CompletedAt: stamp, Cells: cells, Revisions: pairs})
-	d := &baselineData{SchemaVersion: 1, EnvironmentID: r.environmentID, BaselineID: id, CompletedAt: stamp, Layers: layers}
+	d := &baselineData{SchemaVersion: baselineSchema(layers), EnvironmentID: r.environmentID, BaselineID: id, CompletedAt: stamp, Layers: layers}
 	if !baselineFits(d) {
 		return Baseline{}, &BaselineError{Code: "too_large"}
 	}

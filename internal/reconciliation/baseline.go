@@ -15,6 +15,8 @@ type Baseline struct{ data *baselineData }
 type BaselineCell struct {
 	Region        string `json:"region"`
 	CompartmentID string `json:"compartmentId"`
+	// Empty preserves the original MySQL wire representation.
+	ResourceType string `json:"resourceType,omitempty"`
 }
 type BaselineRevision struct {
 	NoticeID string `json:"noticeId"`
@@ -35,7 +37,7 @@ type baselineData struct {
 	BaselineID    string          `json:"baselineId"`
 	CompletedAt   string          `json:"completedAt"`
 	Layers        []BaselineLayer `json:"layers"`
-	cells         map[BaselineCell]int
+	cells         map[baselineCellKey]int
 	revisions     []map[BaselineRevision]bool
 }
 
@@ -78,11 +80,11 @@ func (b Baseline) Encode() ([]byte, error) {
 
 // Suppresses applies only within the layer owning this exact cell. It neither
 // validates current resource metadata nor authorizes activation or sending.
-func (b Baseline) Suppresses(region, compartment string, revision notices.RevisionKey) bool {
+func (b Baseline) Suppresses(resourceType, region, compartment string, revision notices.RevisionKey) bool {
 	if b.data == nil {
 		return false
 	}
-	layer, ok := b.data.cells[BaselineCell{region, compartment}]
+	layer, ok := b.data.cells[baselineCellKey{resourceType, region, compartment}]
 	return ok && b.data.revisions[layer][BaselineRevision{revision.NoticeID, revision.Digest}]
 }
 
@@ -92,13 +94,15 @@ func (b Baseline) Covers(r DiscoveryResult) bool {
 	if b.data == nil || !r.baselineUsable() || b.data.EnvironmentID != r.environmentID {
 		return false
 	}
-	if len(r.scope.regions) > len(b.data.cells)/len(r.scope.compartments) {
+	if len(r.scope.regions) > len(b.data.cells)/len(r.scope.compartments)/len(r.scope.resourceTypes) {
 		return false
 	}
 	for _, region := range r.scope.regions {
 		for _, compartment := range r.scope.compartments {
-			if _, ok := b.data.cells[BaselineCell{region, compartment}]; !ok {
-				return false
+			for _, kind := range r.scope.resourceTypes {
+				if _, ok := b.data.cells[baselineCellKey{kind, region, compartment}]; !ok {
+					return false
+				}
 			}
 		}
 	}

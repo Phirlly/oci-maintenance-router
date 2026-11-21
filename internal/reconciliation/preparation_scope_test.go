@@ -17,7 +17,7 @@ func TestPreparationPersistsInitialAndReturnsCoveredHistoryWithoutScanning(t *te
 	b := prepareSuccessfully(t, p, l)
 	body, _ := b.Encode()
 	h := preparationHead(t, s, l)
-	if !b.Suppresses("us-ashburn-1", baselineCompartment, n.Key()) || h.BaselineID() != b.ID() || h.BaselineDigest() != referenceForBaseline(b).Digest {
+	if !b.Suppresses("mysqldbsystem", "us-ashburn-1", baselineCompartment, n.Key()) || h.BaselineID() != b.ID() || h.BaselineDigest() != referenceForBaseline(b).Digest {
 		t.Fatal("confirmed baseline/head do not preserve discovery")
 	}
 	before := preparationCalls(s, "LIST", "")
@@ -38,7 +38,7 @@ func TestPreparationScopeExpansionDoesNotRebaselineOldCells(t *testing.T) {
 	expandedConfig := preparationConfig(t, func(c map[string]any) { c["compartmentIds"] = []string{baselineOtherCompartment, baselineCompartment} })
 	p = preparationFor(t, s, expandedConfig, []notices.Notice{old, arrived})
 	next := prepareSuccessfully(t, p, l)
-	if len(next.Layers()) != 2 || !reflect.DeepEqual(first.Layers()[0], next.Layers()[0]) || next.Suppresses("us-ashburn-1", baselineCompartment, arrived.Key()) || !next.Suppresses("us-ashburn-1", baselineOtherCompartment, arrived.Key()) {
+	if len(next.Layers()) != 2 || !reflect.DeepEqual(first.Layers()[0], next.Layers()[0]) || next.Suppresses("mysqldbsystem", "us-ashburn-1", baselineCompartment, arrived.Key()) || !next.Suppresses("mysqldbsystem", "us-ashburn-1", baselineOtherCompartment, arrived.Key()) {
 		t.Fatal("expansion reset old history or omitted new cells")
 	}
 	body, _ := next.Encode()

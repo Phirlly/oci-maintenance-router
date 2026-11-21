@@ -20,7 +20,7 @@ func TestBaselineExpansionPreservesOldScopeAndSpanningNoticeEligibility(t *testi
 	if !reflect.DeepEqual(base.Layers()[0], expanded.Layers()[0]) || len(base.Layers()) != 1 || len(expanded.Layers()) != 2 {
 		t.Fatal("old layer changed during expansion")
 	}
-	if !expanded.Covers(current) || expanded.Suppresses("us-ashburn-1", baselineCompartment, arrived.Key()) || !expanded.Suppresses("us-ashburn-1", baselineOtherCompartment, arrived.Key()) {
+	if !expanded.Covers(current) || expanded.Suppresses("mysqldbsystem", "us-ashburn-1", baselineCompartment, arrived.Key()) || !expanded.Suppresses("mysqldbsystem", "us-ashburn-1", baselineOtherCompartment, arrived.Key()) {
 		t.Fatal("new scope pairs suppressed existing scope")
 	}
 	removed := baselineResult(t, []notices.Notice{arrived}, nil, []string{baselineOtherCompartment}, nil)
@@ -31,7 +31,7 @@ func TestBaselineExpansionPreservesOldScopeAndSpanningNoticeEligibility(t *testi
 	baselineFailure(t, got, err, "no_new_scope")
 	got, err = expanded.Extend("readded", current)
 	baselineFailure(t, got, err, "no_new_scope")
-	if expanded.Suppresses("us-ashburn-1", baselineCompartment, arrived.Key()) {
+	if expanded.Suppresses("mysqldbsystem", "us-ashburn-1", baselineCompartment, arrived.Key()) {
 		t.Fatal("readding scope reset original history")
 	}
 }

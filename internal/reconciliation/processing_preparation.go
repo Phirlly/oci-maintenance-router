@@ -96,7 +96,7 @@ func (r *processingRun) prepare(saved ocistorage.StoredNotice, n notices.Notice,
 
 func (r *processingRun) suppressed(revision notices.RevisionKey, d routing.Decision, lookups map[string]routing.Lookup) bool {
 	metadata := lookups[d.ResourceID].Metadata
-	return metadata.CompartmentID != nil && r.baseline.Suppresses(d.Region, *metadata.CompartmentID, revision)
+	return metadata.CompartmentID != nil && r.baseline.Suppresses("mysqldbsystem", d.Region, *metadata.CompartmentID, revision)
 }
 
 func (r *processingRun) currentVersion(id string) (int64, string, error) {

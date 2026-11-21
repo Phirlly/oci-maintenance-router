@@ -18,7 +18,7 @@ func TestPreparationServiceExpansionRetainsUnrecognizedResourceHistory(t *testin
 		t.Fatal(err)
 	}
 	first := prepareSuccessfully(t, p, lease)
-	if !first.Suppresses("us-ashburn-1", baselineCompartment, old.Key()) {
+	if !first.Suppresses("mysqldbsystem", "us-ashburn-1", baselineCompartment, old.Key()) {
 		t.Fatal("unrecognized service with MySQL resource was omitted from initial history")
 	}
 	body, err := first.Encode()

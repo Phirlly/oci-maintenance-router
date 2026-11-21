@@ -11,14 +11,14 @@ var baselineCompartmentID = regexp.MustCompile(`^ocid1\.(compartment|tenancy)\.o
 var baselineNoticeID = regexp.MustCompile(`^ocid1\.announcement\.oc1\.\.([A-Za-z0-9_-]*\.)?[A-Za-z0-9_-]+$`)
 
 func validateBaseline(d *baselineData) error {
-	if d.SchemaVersion != 1 || !leaseDigest.MatchString(d.EnvironmentID) || !baselineID.MatchString(d.BaselineID) || len(d.Layers) == 0 {
+	if (d.SchemaVersion != 1 && d.SchemaVersion != 2) || !leaseDigest.MatchString(d.EnvironmentID) || !baselineID.MatchString(d.BaselineID) || len(d.Layers) == 0 {
 		return &BaselineError{Code: "invalid_schema"}
 	}
 	completed, ok := leaseTimestamp(d.CompletedAt)
 	if !ok {
 		return &BaselineError{Code: "invalid_time"}
 	}
-	d.cells = map[BaselineCell]int{}
+	d.cells = map[baselineCellKey]int{}
 	d.revisions = make([]map[BaselineRevision]bool, 0, len(d.Layers))
 	var previous time.Time
 	entries := len(d.Layers)
@@ -36,13 +36,16 @@ func validateBaseline(d *baselineData) error {
 			return &BaselineError{Code: "invalid_scope"}
 		}
 		for j, cell := range layer.Cells {
+			if cell.ResourceType != "" && (d.SchemaVersion != 2 || cell.ResourceType != baselineInstance) {
+				return &BaselineError{Code: "invalid_scope"}
+			}
 			if !baselineRegion.MatchString(cell.Region) || !baselineCompartmentID.MatchString(cell.CompartmentID) || (j > 0 && compareBaselineCells(layer.Cells[j-1], cell) >= 0) {
 				return &BaselineError{Code: "invalid_scope"}
 			}
-			if _, exists := d.cells[cell]; exists {
+			if _, exists := d.cells[cell.key()]; exists {
 				return &BaselineError{Code: "overlapping_scope"}
 			}
-			d.cells[cell] = i
+			d.cells[cell.key()] = i
 		}
 		pairs := map[BaselineRevision]bool{}
 		for j, pair := range layer.Revisions {
@@ -55,6 +58,9 @@ func validateBaseline(d *baselineData) error {
 	}
 	if !previous.Equal(completed) {
 		return &BaselineError{Code: "invalid_time"}
+	}
+	if d.SchemaVersion != baselineSchema(d.Layers) {
+		return &BaselineError{Code: "invalid_schema"}
 	}
 	return nil
 }
