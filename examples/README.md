@@ -1,5 +1,8 @@
 # Inspect saved work
 
+These instructions apply to the current development stack. For the published
+v0.0.3 package, use its [deployment walkthrough](../docs/deployment-walkthrough.md).
+
 Invoke the deployed development Function with [list-notices.json](list-notices.json)
 to find retained announcement IDs. Invocation permission is required. A successful
 response has `status: "listed"` and `savedNotices.evidence: "RETAINED_IDS"`.
@@ -24,8 +27,8 @@ Inspection sends no alerts and performs no recovery or business-record writes.
 It briefly acquires the worker lease; `coalesced` means another worker owns it.
 Retry inspection later. Other unsuccessful results must not be treated as an
 empty review or empty inventory. Listing validates saved identities, not current
-issues; inspect each relevant ID separately. Automatic operator notifications
-remain under development.
+issues; inspect each relevant ID separately. Automatic operator reporting is
+implemented; this inspection does not establish its current health.
 
 ## Close saved work without sending
 
@@ -36,8 +39,9 @@ remain under development.
    `kind: "CLOSE_BATCH"` and the batch ID. Start without a cursor. Read every page;
    the final `CLOSURE` item contains the code for an eligible target. On
    `review_changed`, restart. Missing or blocked targets have no usable code.
-3. In the RM stack, select **PAUSED**. Paste the code under **Saved-work closure**,
-   enter a request number, and select **Close this saved work without sending**.
+3. In the RM stack, select **Maintenance routing: Paused** and **Setup action: None**.
+   Paste the code under **Advanced: close saved work**, enter a request number,
+   and select **Close this saved work without sending**.
    Review Plan, then Apply. `closure_completed: true` confirms that exact request.
 
 Closure is permanent. Closing a revision closes its unfinished work, including
@@ -49,8 +53,7 @@ If Apply fails or its outcome is uncertain, inspect `closure_result` or run the
 review again. Retry with the **same code and number**. For a rejected request or
 changed intent, review again and use a new number. Number conflicts are enforced
 within each notice; another notice has separate history. To remove configured
-intent, clear the confirmation checkbox and **Apply**; PAUSED alone does not cancel
+intent, clear the confirmation checkbox and **Apply**; Paused alone does not cancel
 it. Clearing inputs or rolling back a package never reopens closed work.
 
-This development interface has offline validation. Native RM persistence and
-managed closure acceptance are still pending.
+Production acceptance for the development stack remains unfinished.
