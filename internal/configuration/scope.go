@@ -6,7 +6,7 @@ import (
 )
 
 func validateCatalog(c Catalog) error {
-	if len(c.Regions) == 0 || len(c.MySQLServices) == 0 {
+	if len(c.Regions) == 0 {
 		return &Error{"catalog", "invalid"}
 	}
 	keys := map[string]bool{}
@@ -16,7 +16,17 @@ func validateCatalog(c Catalog) error {
 		}
 		keys[key] = true
 	}
-	if !uniqueNonempty(c.MySQLServices) {
+	switch c.SchemaVersion {
+	case 0:
+		if c.ResourceServices != nil || !uniqueNonempty(c.MySQLServices) {
+			return &Error{"catalog", "invalid"}
+		}
+	case 1:
+		if c.MySQLServices != nil || len(c.ResourceServices) != 2 ||
+			!uniqueNonempty(c.ResourceServices[resourceMySQL]) || !uniqueNonempty(c.ResourceServices[resourceInstance]) {
+			return &Error{"catalog", "invalid"}
+		}
+	default:
 		return &Error{"catalog", "invalid"}
 	}
 	return nil
@@ -25,6 +35,9 @@ func validateCatalog(c Catalog) error {
 func (c Config) validateScope(catalog Catalog) error {
 	if err := validateCatalog(catalog); err != nil {
 		return err
+	}
+	if (c.SchemaVersion == 9 && catalog.SchemaVersion != 1) || (c.SchemaVersion != 9 && catalog.SchemaVersion != 0) {
+		return &Error{"catalog", "incompatible"}
 	}
 	if !namePattern.MatchString(c.EnvironmentName) {
 		return &Error{"environmentName", "invalid"}
@@ -50,6 +63,9 @@ func (c Config) validateScope(catalog Catalog) error {
 		if id != c.TenancyID && !globalOCID(id, "compartment") {
 			return &Error{"compartmentIds", "invalid"}
 		}
+	}
+	if c.SchemaVersion == 9 {
+		return c.validateResourceSelection()
 	}
 	if !uniqueNonempty(c.MySQLServices) {
 		return &Error{"mysqlServices", "invalid"}

@@ -11,9 +11,13 @@ func Decode(data []byte, catalog Catalog) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	selectionField := "mysqlServices"
+	if version == 9 {
+		selectionField = "resourceTypes"
+	}
 	required := []string{
 		"schemaVersion", "environmentName", "tenancyId", "deploymentRegion", "regionMap",
-		"compartmentIds", "mysqlServices", "ownership", "destinations", "routes",
+		"compartmentIds", selectionField, "ownership", "destinations", "routes",
 		"pagerDutyRegion", "intakeTopicId", "operatorTopicId",
 	}
 	optional := []string{"mode", "activeBaselineId", "replay"}
@@ -30,7 +34,7 @@ func Decode(data []byte, catalog Catalog) (Config, error) {
 	if version == 7 {
 		optional = append(optional, "recovery")
 	}
-	if version == 8 {
+	if version == 8 || version == 9 {
 		required = append(required, "mode", "installationId", "preparation", "setup")
 		optional = []string{"operatorChannel", "recovery"}
 	}
@@ -42,9 +46,14 @@ func Decode(data []byte, catalog Catalog) (Config, error) {
 		SchemaVersion: version, EnvironmentName: r.text("environmentName"),
 		TenancyID: r.text("tenancyId"), DeploymentRegion: r.text("deploymentRegion"),
 		RegionMap: r.stringMap("regionMap"), CompartmentIDs: r.strings("compartmentIds"),
-		MySQLServices: r.strings("mysqlServices"), PagerDutyRegion: r.text("pagerDutyRegion"),
-		IntakeTopicID: r.text("intakeTopicId"), OperatorTopicID: r.text("operatorTopicId"),
+		PagerDutyRegion: r.text("pagerDutyRegion"),
+		IntakeTopicID:   r.text("intakeTopicId"), OperatorTopicID: r.text("operatorTopicId"),
 		Mode: "PREVIEW",
+	}
+	if version == 9 {
+		config.ResourceTypes = r.strings(selectionField)
+	} else {
+		config.MySQLServices = r.strings(selectionField)
 	}
 	config.readRouting(r)
 	config.readControls(r)
@@ -59,6 +68,9 @@ func Decode(data []byte, catalog Catalog) (Config, error) {
 	}
 	if err = config.validateControls(catalog); err != nil {
 		return Config{}, err
+	}
+	if version == 9 {
+		config.bindSelectedServices(catalog)
 	}
 	return config, nil
 }
@@ -88,7 +100,7 @@ func (c *Config) readControls(r objectReader) {
 	if _, ok := r.values["mode"]; ok {
 		c.Mode = r.text("mode")
 	}
-	if c.SchemaVersion == 8 {
+	if c.SchemaVersion == 8 || c.SchemaVersion == 9 {
 		c.readPreparation(r)
 		c.readSetup(r)
 		c.readRecovery(r)

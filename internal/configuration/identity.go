@@ -9,7 +9,7 @@ import (
 	"unicode/utf8"
 )
 
-// Routing meaning is unchanged across outer configuration schemas1 through7.
+// Routing meaning is unchanged across outer configuration schemas1 through8.
 // Preserve this projection's original bytes for saved delivery compatibility.
 const routingProjectionVersion = 1
 
@@ -60,12 +60,20 @@ func (c Config) canonicalRouting() ([]byte, error) {
 	if c.Ownership.Kind == "defined" {
 		owner["namespace"] = c.Ownership.Namespace
 	}
-	return json.Marshal(map[string]any{
+	projection := map[string]any{
 		"schemaVersion": routingProjectionVersion, "tenancyId": c.TenancyID,
 		"deploymentRegion": c.DeploymentRegion, "regionMap": c.RegionMap,
-		"compartmentIds": compartments, "mysqlServices": services, "ownership": owner,
+		"compartmentIds": compartments, "ownership": owner,
 		"destinations": destinationValues, "routes": routeValues, "pagerDutyRegion": c.PagerDutyRegion,
-	})
+	}
+	if c.SchemaVersion == 9 {
+		// Schema9 means all announcement categories for selected resource types.
+		projection["schemaVersion"] = 2
+		projection["resourceServices"] = c.canonicalSelectedServices()
+	} else {
+		projection["mysqlServices"] = services
+	}
+	return json.Marshal(projection)
 }
 
 func digest(data []byte) string {

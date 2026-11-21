@@ -21,6 +21,11 @@ func New(data []byte, catalog configuration.Catalog) (*Policy, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Parsing the selected-resource contract is not runtime support. Keep all
+	// policy consumers closed until routing and persisted writers adopt it together.
+	if c.SchemaVersion == 9 {
+		return nil, &configuration.Error{Field: "schemaVersion", Code: "routing_unsupported"}
+	}
 	generation, err := c.RoutingGeneration()
 	if err != nil {
 		return nil, err

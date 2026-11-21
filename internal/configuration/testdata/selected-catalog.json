@@ -1,0 +1,1 @@
+{"schemaVersion":1,"regions":{"us-ashburn-1":"iad","us-phoenix-1":"phx"},"resourceServices":{"mysqldbsystem":["Oracle HeatWave MySQL","Oracle Cloud Infrastructure MySQL HeatWave"],"instance":["Oracle Cloud Infrastructure Compute"]}}

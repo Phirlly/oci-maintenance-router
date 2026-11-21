@@ -27,7 +27,7 @@ func TestRecoveryControlsRejectExtraFieldsAndEarlierSchemas(t *testing.T) {
 
 func TestRecoveryControlsRetainStrictJSON(t *testing.T) {
 	wire := string(encoded(t, recoverySettings(t, "RETRY_BATCH")))
-	for _, version := range []string{"9", "7.0", "7e0", `"7"`} {
+	for _, version := range []string{"10", "7.0", "7e0", `"7"`} {
 		wantError(t, []byte(strings.Replace(wire, `"schemaVersion":7`, `"schemaVersion":`+version, 1)), "schemaVersion", "unsupported")
 	}
 	for _, key := range []string{`requestId`, `request\u0049d`} {

@@ -4,8 +4,12 @@
 package configuration
 
 type Catalog struct {
-	Regions       map[string]string
-	MySQLServices []string
+	// Zero denotes the original unversioned MySQL catalog; one is the first
+	// explicitly versioned, closed MySQL/Compute catalog.
+	SchemaVersion    int
+	Regions          map[string]string
+	MySQLServices    []string
+	ResourceServices map[string][]string
 }
 
 type Config struct {
@@ -16,6 +20,10 @@ type Config struct {
 	RegionMap        map[string]string
 	CompartmentIDs   []string
 	MySQLServices    []string
+	ResourceTypes    []string
+	// ResourceServices is derived from the independent catalog, never read
+	// from customer JSON. It owns only the selected types' complete label lists.
+	ResourceServices map[string][]string
 	Ownership        Ownership
 	Destinations     []Destination
 	Routes           []Route

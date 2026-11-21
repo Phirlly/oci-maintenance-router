@@ -1,7 +1,7 @@
 package configuration
 
 func (c Config) validateControls(catalog Catalog) error {
-	if c.SchemaVersion == 8 {
+	if c.SchemaVersion == 8 || c.SchemaVersion == 9 {
 		return c.validateSetup(catalog)
 	}
 	if c.SchemaVersion == 2 {

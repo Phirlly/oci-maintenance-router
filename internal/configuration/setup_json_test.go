@@ -12,7 +12,7 @@ func TestSetupStrictJSONAndIndependentOwnedControls(t *testing.T) {
 		body := strings.Replace(wire, `"action":"SEND_TEST"`, `"action":"SEND_TEST","`+key+`":"NONE"`, 1)
 		wantError(t, []byte(body), "configuration", "duplicate_key")
 	}
-	for _, version := range []string{"8.0", "8e0", `"8"`, "9"} {
+	for _, version := range []string{"8.0", "8e0", `"8"`, "10"} {
 		wantError(t, []byte(strings.Replace(wire, `"schemaVersion":8`, `"schemaVersion":`+version, 1)), "schemaVersion", "unsupported")
 	}
 	for _, value := range []any{nil, true, "private", []any{}} {

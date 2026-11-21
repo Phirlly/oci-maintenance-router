@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 9,
+  "environmentName": "example",
+  "tenancyId": "ocid1.tenancy.oc1..example",
+  "deploymentRegion": "us-ashburn-1",
+  "regionMap": {"us-ashburn-1": "iad", "us-phoenix-1": "phx"},
+  "compartmentIds": ["ocid1.compartment.oc1..example"],
+  "resourceTypes": ["mysqldbsystem", "instance"],
+  "ownership": {"kind": "defined", "namespace": "Operations", "key": "Owner"},
+  "destinations": [{"id": "payments", "secretId": "ocid1.vaultsecret.oc1.iad.example"}],
+  "routes": [{"ownerValue": "payments", "destinationId": "payments"}, {"ownerValue": "billing", "destinationId": "payments"}],
+  "pagerDutyRegion": "US",
+  "intakeTopicId": "ocid1.onstopic.oc1.iad.intake",
+  "operatorTopicId": "ocid1.onstopic.oc1.iad.operator",
+  "mode": "PREVIEW",
+  "installationId": "example-installation",
+  "preparation": {"initialize": false},
+  "setup": {"action": "NONE"}
+}
