@@ -11,6 +11,11 @@ func NewRecord(preparations ...Preparation) (Record, error) {
 	}
 	s := preparations[0].Draft.snapshot
 	r := Record{data: &recordData{SchemaVersion: 1, EnvironmentID: s.EnvironmentID, NoticeID: s.Revision.NoticeID}}
+	for _, p := range preparations {
+		if p.Draft.announcementFormat {
+			r.data.SchemaVersion = 3
+		}
+	}
 	return r.Prepare(preparations...)
 }
 
@@ -37,8 +42,11 @@ func (r Record) Prepare(preparations ...Preparation) (Record, error) {
 			return Record{}, &Error{"preparation", "identity_mismatch"}
 		}
 		if !seen[s.BatchID] {
+			if p.Draft.announcementFormat && d.SchemaVersion < 3 {
+				return Record{}, &Error{"preparation", "migration_required"}
+			}
 			b := savedBatch{Message: saveMessage(s), SecretVersion: p.SecretVersion, State: Prepared}
-			if d.SchemaVersion == 2 {
+			if d.SchemaVersion >= 2 {
 				kind := AttemptKind("")
 				b.AttemptKind = &kind
 			}

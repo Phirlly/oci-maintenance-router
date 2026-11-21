@@ -15,7 +15,7 @@ func validState(b savedBatch, version int) bool {
 		if b.OwnerToken != "" || b.FirstAttemptAt != nil || b.LastAttemptAt != nil || b.AttemptExpiresAt != nil || b.NextAttemptAt != nil || b.AcceptedAt != nil || b.Ambiguous {
 			return false
 		}
-		return (b.State == Prepared && b.UpdatedAt == nil && b.Reason == "") || (b.State == ReviewRequired && b.UpdatedAt != nil && holdReason(b.Reason)) || (version == 2 && b.State == Closed && b.UpdatedAt != nil && b.Reason == ReasonOperator)
+		return (b.State == Prepared && b.UpdatedAt == nil && b.Reason == "") || (b.State == ReviewRequired && b.UpdatedAt != nil && holdReason(b.Reason)) || (version >= 2 && b.State == Closed && b.UpdatedAt != nil && b.Reason == ReasonOperator)
 	}
 	if !recordOwner.MatchString(b.OwnerToken) || b.FirstAttemptAt == nil || b.LastAttemptAt == nil || b.AttemptExpiresAt == nil || b.UpdatedAt == nil {
 		return false
@@ -28,7 +28,7 @@ func validState(b savedBatch, version int) bool {
 	firstUnambiguous := b.AttemptCount > 1 || !b.Ambiguous
 	switch b.State {
 	case Closed:
-		return version == 2 && b.NextAttemptAt == nil && b.AcceptedAt == nil && b.Reason == ReasonOperator
+		return version >= 2 && b.NextAttemptAt == nil && b.AcceptedAt == nil && b.Reason == ReasonOperator
 	case Sending:
 		return updated.Equal(last) && b.NextAttemptAt == nil && b.AcceptedAt == nil && b.Reason == "" && firstUnambiguous
 	case APIAccepted:

@@ -48,7 +48,7 @@ func (r Record) begin(id string, c AttemptContext, kind AttemptKind) (Record, At
 		return Record{}, AttemptRef{}, &Error{"attempt", "count_exhausted"}
 	}
 	b.AttemptCount++
-	if r.data.SchemaVersion == 2 {
+	if r.data.SchemaVersion >= 2 {
 		b.AttemptKind = &kind
 	}
 	if b.FirstAttemptAt == nil {

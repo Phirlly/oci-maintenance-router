@@ -44,7 +44,7 @@ func TestRecoveryCodecRequiresVersionSpecificKind(t *testing.T) {
 		{`"attemptKind":""`, `"AttemptKind":""`},
 		{`"attemptKind":""`, `"attemptKind":"","attemptKind":""`},
 		{`"schemaVersion":2`, `"schemaVersion":1`},
-		{`"schemaVersion":2`, `"schemaVersion":3`},
+		{`"schemaVersion":2`, `"schemaVersion":4`},
 	} {
 		body := bytes.Replace(v2, []byte(change[0]), []byte(change[1]), 1)
 		if bytes.Equal(body, v2) {

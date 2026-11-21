@@ -4,7 +4,7 @@ import "time"
 
 // Close proposes terminal closure without claiming acceptance or operator intent.
 func (r Record) Close(id string, at time.Time) (Record, error) {
-	if r.data == nil || r.data.SchemaVersion != 2 {
+	if r.data == nil || r.data.SchemaVersion < 2 {
 		return Record{}, &Error{"closure", "migration_required"}
 	}
 	i, err := r.index(id)

@@ -57,7 +57,7 @@ func (r Record) Unassigned(revision notices.RevisionKey, candidates []string) ([
 	seen := map[string]bool{}
 	var result []string
 	for _, id := range candidates {
-		if seen[id] || !recordDBID.MatchString(id) {
+		if seen[id] || !validResourceID(id, r.data.SchemaVersion) {
 			return nil, &Error{"selection", "invalid"}
 		}
 		seen[id] = true

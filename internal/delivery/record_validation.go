@@ -10,7 +10,7 @@ var (
 )
 
 func validateRecord(d *recordData) error {
-	if (d.SchemaVersion != 1 && d.SchemaVersion != 2) || !recordDigest.MatchString(d.EnvironmentID) || !recordNoticeID.MatchString(d.NoticeID) || len(d.Batches) == 0 {
+	if (d.SchemaVersion != 1 && d.SchemaVersion != 2 && d.SchemaVersion != 3) || !recordDigest.MatchString(d.EnvironmentID) || !recordNoticeID.MatchString(d.NoticeID) || len(d.Batches) == 0 {
 		return &Error{"record", "invalid_schema"}
 	}
 	previous := ""
@@ -42,7 +42,7 @@ func validateMessage(d *recordData, b savedBatch) error {
 	}
 	previous := ""
 	for _, r := range m.Resources {
-		if r.ResourceID <= previous || !recordDBID.MatchString(r.ResourceID) || !recordRegion.MatchString(r.Region) {
+		if r.ResourceID <= previous || !validResourceID(r.ResourceID, d.SchemaVersion) || !recordRegion.MatchString(r.Region) {
 			return &Error{"resources", "invalid"}
 		}
 		previous = r.ResourceID
@@ -51,7 +51,7 @@ func validateMessage(d *recordData, b savedBatch) error {
 	if m.BatchID != batchID(d.EnvironmentID, s.Revision, m.DestinationID, s.Resources) || m.DedupKey != "omr1:"+m.BatchID {
 		return &Error{"message", "identity_mismatch"}
 	}
-	if len(m.Payload) > maxEnvelopeBytes || m.PayloadDigest != digest([]byte(m.Payload)) || !validSavedPayload(s) {
+	if len(m.Payload) > maxEnvelopeBytes || m.PayloadDigest != digest([]byte(m.Payload)) || !validSavedPayload(s, d.SchemaVersion) {
 		return &Error{"message", "invalid_payload"}
 	}
 	return nil

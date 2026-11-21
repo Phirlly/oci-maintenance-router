@@ -7,7 +7,7 @@ import (
 	"oci-maintenance-router/internal/routing"
 )
 
-// Private versioned wire schema: timestamps remain explicit in both versions.
+// Private versioned wire schema: timestamps remain explicit in every version.
 // No caller receives its mutable collections or pointers.
 type recordData struct {
 	SchemaVersion int          `json:"schemaVersion"`

@@ -16,8 +16,10 @@ type savedContext struct {
 		Source    string  `json:"source"`
 		Timestamp *string `json:"timestamp"`
 		Details   struct {
-			Reference *string `json:"reference"`
-			Times     []struct {
+			FormatVersion    *int    `json:"formatVersion"`
+			AnnouncementType *string `json:"announcementType"`
+			Reference        *string `json:"reference"`
+			Times            []struct {
 				Slot  int     `json:"slot"`
 				Type  *string `json:"type"`
 				Title *string `json:"title"`
@@ -27,7 +29,7 @@ type savedContext struct {
 	} `json:"payload"`
 }
 
-func validSavedPayload(s Snapshot) bool {
+func validSavedPayload(s Snapshot, version int) bool {
 	var context savedContext
 	if json.Unmarshal(s.PayloadWithoutRoutingKey, &context) != nil {
 		return false
@@ -38,6 +40,19 @@ func validSavedPayload(s Snapshot) bool {
 		return false
 	}
 	r := notices.Record{NoticeID: s.Revision.NoticeID, AnnouncementType: "SCHEDULED_MAINTENANCE", Reference: p.Details.Reference, TimeUpdated: p.Timestamp}
+	encode := payload
+	if p.Details.FormatVersion != nil {
+		if version != 3 || *p.Details.FormatVersion != 2 || p.Details.AnnouncementType == nil {
+			return false
+		}
+		r.AnnouncementType = *p.Details.AnnouncementType
+		if legacyAnnouncement(r.AnnouncementType, s.Resources) {
+			return false
+		}
+		encode = announcementPayload
+	} else if !legacyAnnouncement(r.AnnouncementType, s.Resources) {
+		return false
+	}
 	for i, v := range p.Details.Times {
 		if v.Slot != i+1 {
 			return false
@@ -49,5 +64,5 @@ func validSavedPayload(s Snapshot) bool {
 	if err != nil {
 		return false
 	}
-	return bytes.Equal(s.PayloadWithoutRoutingKey, payload(n.Snapshot(), s.Revision, name, s.DedupKey, s.Resources))
+	return bytes.Equal(s.PayloadWithoutRoutingKey, encode(n.Snapshot(), s.Revision, name, s.DedupKey, s.Resources))
 }

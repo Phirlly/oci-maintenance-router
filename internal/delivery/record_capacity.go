@@ -29,7 +29,7 @@ func reservedRecordBytes(d *recordData) (int, error) {
 	size := len(data)
 	stamp := "9999-12-31T23:59:59.999Z"
 	for i, b := range d.Batches {
-		if d.SchemaVersion == 2 {
+		if d.SchemaVersion >= 2 {
 			kind := AutomaticAttempt
 			b.AttemptKind = &kind
 		}

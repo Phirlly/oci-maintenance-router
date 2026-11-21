@@ -16,8 +16,12 @@ func (b *Builder) pack(r notices.Record, plan routing.Plan, groups []routing.Gro
 	var result Result
 	// Check shared content once. Fixed-width dedup identity makes this a lower
 	// bound for every nonempty draft; do not repeatedly encode huge shared text.
-	common := payload(r, plan.Revision, b.environmentName, "omr1:"+strings.Repeat("0", 64), nil)
-	if len(common) > maxEnvelopeBytes {
+	placeholder := "omr1:" + strings.Repeat("0", 64)
+	commonSize := len(announcementPayload(r, plan.Revision, b.environmentName, placeholder, nil))
+	if r.AnnouncementType == "SCHEDULED_MAINTENANCE" {
+		commonSize = min(commonSize, len(payload(r, plan.Revision, b.environmentName, placeholder, nil)))
+	}
+	if commonSize > maxEnvelopeBytes {
 		for _, group := range groups {
 			for _, resource := range group.Resources {
 				result.tooLarge(resource)
@@ -56,8 +60,13 @@ func (b *Builder) pack(r notices.Record, plan routing.Plan, groups []routing.Gro
 func (b *Builder) draft(r notices.Record, plan routing.Plan, destination string, resources []routing.Target) Draft {
 	id := batchID(b.environmentID, plan.Revision, destination, resources)
 	dedup := "omr1:" + id
-	data := payload(r, plan.Revision, b.environmentName, dedup, resources)
-	return Draft{snapshot: Snapshot{
+	modern := !legacyAnnouncement(r.AnnouncementType, resources)
+	encode := payload
+	if modern {
+		encode = announcementPayload
+	}
+	data := encode(r, plan.Revision, b.environmentName, dedup, resources)
+	return Draft{announcementFormat: modern, snapshot: Snapshot{
 		BatchID: id, EnvironmentID: b.environmentID, Revision: plan.Revision,
 		RoutingGeneration: plan.RoutingGeneration, DestinationID: destination,
 		SecretID: b.secrets[destination], PagerDutyRegion: b.pagerDutyRegion,

@@ -5,7 +5,7 @@ import "time"
 // BeginManual proposes one manual attempt; it cannot consume an operator request
 // or authorize dispatch. The enclosing action must be consumed atomically.
 func (r Record) BeginManual(id string, c AttemptContext) (Record, AttemptRef, error) {
-	if r.data == nil || r.data.SchemaVersion != 2 {
+	if r.data == nil || r.data.SchemaVersion < 2 {
 		return Record{}, AttemptRef{}, &Error{"attempt", "migration_required"}
 	}
 	return r.begin(id, c, ManualAttempt)

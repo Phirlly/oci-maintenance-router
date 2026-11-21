@@ -26,7 +26,10 @@ type Snapshot struct {
 	PayloadDigest            string
 }
 
-type Draft struct{ snapshot Snapshot }
+type Draft struct {
+	snapshot           Snapshot
+	announcementFormat bool
+}
 
 func (d Draft) Snapshot() Snapshot {
 	s := d.snapshot
