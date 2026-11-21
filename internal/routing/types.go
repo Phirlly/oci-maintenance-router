@@ -94,7 +94,7 @@ const (
 	Unavailable LookupState = "UNAVAILABLE"
 )
 
-// Metadata is the minimal typed GetDbSystem projection. The adapter must prove
+// Metadata is the minimal typed resource ownership projection. The adapter must prove
 // fresh, authoritative retrieval and reject malformed wire values. Do not mutate
 // input maps/pointers concurrently with Resolve. Nothing here is retained.
 type Metadata struct {

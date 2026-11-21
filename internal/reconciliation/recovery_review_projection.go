@@ -8,7 +8,7 @@ import (
 	"oci-maintenance-router/internal/delivery"
 	"oci-maintenance-router/internal/noticeledger"
 	"oci-maintenance-router/internal/notices"
-	"oci-maintenance-router/internal/ocimysql"
+	"oci-maintenance-router/internal/ociownership"
 	"oci-maintenance-router/internal/routing"
 )
 
@@ -73,7 +73,7 @@ func (r *RecoveryReviewer) currentLookups(ctx context.Context, n notices.Notice)
 		lookup := routing.Lookup{State: routing.Found, Metadata: metadata}
 		if err != nil {
 			lookup = routing.Lookup{State: routing.Unavailable}
-			if e, ok := err.(*ocimysql.Error); ok && e != nil && e.Code == ocimysql.Service {
+			if e, ok := err.(*ociownership.Error); ok && e != nil && e.Code == ociownership.Service {
 				if e.Status == 401 || e.Status == 403 {
 					lookup.State = routing.Denied
 				}

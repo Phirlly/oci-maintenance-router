@@ -7,7 +7,7 @@ import (
 	"oci-maintenance-router/internal/configuration"
 	"oci-maintenance-router/internal/noticeledger"
 	"oci-maintenance-router/internal/ociannouncements"
-	"oci-maintenance-router/internal/ocimysql"
+	"oci-maintenance-router/internal/ociownership"
 	"oci-maintenance-router/internal/ocistorage"
 	"oci-maintenance-router/internal/reconciliation"
 )
@@ -34,9 +34,9 @@ func composeRecoveryReview(s Settings, store Store, objects operationalObjects, 
 			if err != nil {
 				return nil, operationFailure("announcement_configuration")
 			}
-			mysql := make(map[string]*ocimysql.Client, len(p.config.RegionMap))
+			mysql := make(map[string]*ociownership.Client, len(p.config.RegionMap))
 			for region, key := range p.config.RegionMap {
-				client, err := ocimysql.New(region, key, s.TenancyID, managed.principal)
+				client, err := ociownership.NewMySQL(region, key, s.TenancyID, managed.principal)
 				if err != nil {
 					return nil, operationFailure("mysql_configuration")
 				}

@@ -1,4 +1,4 @@
-package ocimysql
+package ociownership
 
 import (
 	"context"
@@ -19,7 +19,7 @@ func wantError(t *testing.T, err error, code Code, status int) {
 	if !errors.As(err, &got) || got.Code != code || got.Status != status {
 		t.Fatalf("error=%v, want %s/%d", err, code, status)
 	}
-	if err.Error() != "mysql metadata read: "+string(code) {
+	if err.Error() != "resource metadata read: "+string(code) {
 		t.Fatal("uncontrolled error")
 	}
 	switch code {
@@ -39,7 +39,7 @@ func wantError(t *testing.T, err error, code Code, status int) {
 }
 
 func TestConstructorFixesEndpointWithoutCredentials(t *testing.T) {
-	c, err := New("us-ashburn-1", "iad", tenancy, unusedProvider{})
+	c, err := NewMySQL("us-ashburn-1", "iad", tenancy, unusedProvider{})
 	if err != nil || c.endpoint != "https://mysql.us-ashburn-1.ocp.oraclecloud.com" || c.region != "us-ashburn-1" || c.regionKey != "iad" || c.tenancy != tenancy {
 		t.Fatal("incorrect regional client")
 	}
@@ -48,18 +48,18 @@ func TestConstructorFixesEndpointWithoutCredentials(t *testing.T) {
 		{"us-x-1", "", tenancy}, {"us-x-1", "IAD", tenancy}, {"us-x-1", "bad-key", tenancy}, {"us-x-1", strings.Repeat("a", 64), tenancy},
 		{"us-x-1", "iad", ""}, {"us-x-1", "iad", "ocid1.compartment.oc1..x"}, {"us-x-1", "iad", "ocid1.tenancy.oc2..x"}, {"us-x-1", "iad", tenancy + strings.Repeat("x", 4096)},
 	} {
-		c, err := New(v[0], v[1], v[2], unusedProvider{})
+		c, err := NewMySQL(v[0], v[1], v[2], unusedProvider{})
 		wantError(t, err, InvalidConfiguration, 0)
 		if c != nil {
 			t.Fatal("partial client")
 		}
 	}
-	_, err = New("us-x-1", "iad", tenancy, nil)
+	_, err = NewMySQL("us-x-1", "iad", tenancy, nil)
 	wantError(t, err, InvalidConfiguration, 0)
 }
 
 func TestInvalidReadNeverSigns(t *testing.T) {
-	c, _ := New("us-ashburn-1", "iad", tenancy, unusedProvider{})
+	c, _ := NewMySQL("us-ashburn-1", "iad", tenancy, unusedProvider{})
 	for _, id := range []string{"", "ocid1.mysqlinstance.oc1.iad.x", "ocid1.mysqldbsystem.oc2.iad.x", "ocid1.mysqldbsystem.oc1.phx.x", "ocid1.mysqldbsystem.oc1.us-phoenix-1.x", "ocid1.mysqldbsystem.oc1..x", dbID + "/path", dbID + "?q", dbID + strings.Repeat("x", 4096)} {
 		m, err := c.Get(budget(t), id)
 		wantError(t, err, InvalidRequest, 0)

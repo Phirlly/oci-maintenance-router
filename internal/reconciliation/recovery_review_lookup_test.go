@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"oci-maintenance-router/internal/noticeledger"
-	"oci-maintenance-router/internal/ocimysql"
+	"oci-maintenance-router/internal/ociownership"
 	"oci-maintenance-router/internal/routing"
 )
 
@@ -30,9 +30,9 @@ func TestRecoveryReviewShowsUnresolvedOwnershipWithoutAuthorizing(t *testing.T) 
 				}
 				switch kind {
 				case "denied":
-					return routing.Metadata{}, &ocimysql.Error{Code: ocimysql.Service, Status: 403}
+					return routing.Metadata{}, &ociownership.Error{Code: ociownership.Service, Status: 403}
 				case "not-found":
-					return routing.Metadata{}, &ocimysql.Error{Code: ocimysql.Service, Status: 404}
+					return routing.Metadata{}, &ociownership.Error{Code: ociownership.Service, Status: 404}
 				case "untagged":
 					return routing.Metadata{ID: chain(id), CompartmentID: chain("ocid1.compartment.oc1..example")}, nil
 				case "canceled":

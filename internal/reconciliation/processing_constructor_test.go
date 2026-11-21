@@ -5,18 +5,18 @@ import (
 	"github.com/oracle/oci-go-sdk/v65/common"
 	"oci-maintenance-router/internal/notices"
 	"oci-maintenance-router/internal/ociannouncements"
-	"oci-maintenance-router/internal/ocimysql"
+	"oci-maintenance-router/internal/ociownership"
 	"strings"
 	"testing"
 )
 
-func processingMySQL(t *testing.T) map[string]*ocimysql.Client {
+func processingMySQL(t *testing.T) map[string]*ociownership.Client {
 	t.Helper()
-	c, err := ocimysql.New("us-ashburn-1", "iad", "ocid1.tenancy.oc1..example", common.NewRawConfigurationProvider("synthetic", "synthetic", "us-ashburn-1", "synthetic", "synthetic", nil))
+	c, err := ociownership.NewMySQL("us-ashburn-1", "iad", "ocid1.tenancy.oc1..example", common.NewRawConfigurationProvider("synthetic", "synthetic", "us-ashburn-1", "synthetic", "synthetic", nil))
 	if err != nil {
 		t.Fatal(err)
 	}
-	return map[string]*ocimysql.Client{"us-ashburn-1": c}
+	return map[string]*ociownership.Client{"us-ashburn-1": c}
 }
 
 func processingEmptySource() announcementDetails {
@@ -50,7 +50,7 @@ func TestMaintenanceConstructorRejectsNonLiveAndMissingClients(t *testing.T) {
 			t.Fatal("non-LIVE accepted")
 		}
 	}
-	for _, clients := range []map[string]*ocimysql.Client{nil, {}, {"us-ashburn-1": nil}} {
+	for _, clients := range []map[string]*ociownership.Client{nil, {}, {"us-ashburn-1": nil}} {
 		p, err := NewMaintenanceProcessor(f.config, []byte(preparationCatalog), candidateLocation(), strings.Repeat("b", 64), processingEmptySource(), f.objects, operatorClient(t), diagnosticVault(t), clients)
 		if p != nil || err == nil {
 			t.Fatal("missing regional client accepted")

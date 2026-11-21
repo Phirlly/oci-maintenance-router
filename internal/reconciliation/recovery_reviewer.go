@@ -10,7 +10,7 @@ import (
 	"oci-maintenance-router/internal/configuration"
 	"oci-maintenance-router/internal/delivery"
 	"oci-maintenance-router/internal/noticeledger"
-	"oci-maintenance-router/internal/ocimysql"
+	"oci-maintenance-router/internal/ociownership"
 	"oci-maintenance-router/internal/routing"
 )
 
@@ -42,7 +42,7 @@ type RecoveryReviewer struct {
 
 var recoveryReviewNoticeID = regexp.MustCompile(`^ocid1\.announcement\.oc1\.\.([A-Za-z0-9_-]*\.)?[A-Za-z0-9_-]+$`)
 
-func NewRecoveryReviewer(data, catalogBytes []byte, location configuration.LedgerLocation, source AnnouncementSource, saved SavedNoticeSource, mysql map[string]*ocimysql.Client) (*RecoveryReviewer, error) {
+func NewRecoveryReviewer(data, catalogBytes []byte, location configuration.LedgerLocation, source AnnouncementSource, saved SavedNoticeSource, mysql map[string]*ociownership.Client) (*RecoveryReviewer, error) {
 	invalid := &RecoveryReviewError{Code: "invalid_request"}
 	for _, source := range []any{source, saved} {
 		if source == nil {

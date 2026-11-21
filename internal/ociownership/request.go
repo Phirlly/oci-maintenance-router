@@ -1,4 +1,4 @@
-package ocimysql
+package ociownership
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 // Success proves neither allowed scope nor send authority. Errors, including404,
 // require caller-visible unresolved handling, never an inference of deletion.
 func (c *Client) Get(ctx context.Context, id string) (routing.Metadata, error) {
-	if c == nil || c.signer == nil || c.transport == nil || ctx == nil || !c.validDBID(id) {
+	if c == nil || c.signer == nil || c.transport == nil || ctx == nil || !c.validResourceID(id) {
 		return routing.Metadata{}, &Error{Code: InvalidRequest}
 	}
 	if ctx.Err() != nil {
@@ -23,7 +23,7 @@ func (c *Client) Get(ctx context.Context, id string) (routing.Metadata, error) {
 	}
 	ctx, cancel := context.WithTimeout(ctx, operationLimit)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.endpoint+"/20190415/dbSystems/"+id, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.endpoint+c.resourcePath+id, nil)
 	if err != nil {
 		return routing.Metadata{}, &Error{Code: InvalidRequest}
 	}

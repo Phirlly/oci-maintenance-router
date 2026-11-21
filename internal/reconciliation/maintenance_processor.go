@@ -8,8 +8,8 @@ import (
 	"oci-maintenance-router/internal/configuration"
 	"oci-maintenance-router/internal/delivery"
 	"oci-maintenance-router/internal/noticeledger"
-	"oci-maintenance-router/internal/ocimysql"
 	"oci-maintenance-router/internal/ocinotifications"
+	"oci-maintenance-router/internal/ociownership"
 	"oci-maintenance-router/internal/ocisecrets"
 	"oci-maintenance-router/internal/ocistorage"
 	"oci-maintenance-router/internal/pagerduty"
@@ -49,7 +49,7 @@ type MaintenanceProcessor struct {
 	token         func() string
 }
 
-func NewMaintenanceProcessor(configBytes, catalogBytes []byte, location configuration.LedgerLocation, releaseSHA256 string, announcements AnnouncementSource, objects MaintenanceObjects, notifications *ocinotifications.Client, vault *ocisecrets.Client, mysql map[string]*ocimysql.Client) (*MaintenanceProcessor, error) {
+func NewMaintenanceProcessor(configBytes, catalogBytes []byte, location configuration.LedgerLocation, releaseSHA256 string, announcements AnnouncementSource, objects MaintenanceObjects, notifications *ocinotifications.Client, vault *ocisecrets.Client, mysql map[string]*ociownership.Client) (*MaintenanceProcessor, error) {
 	invalid := &ProcessingError{Code: "invalid_request"}
 	configBytes, catalogBytes = bytes.Clone(configBytes), bytes.Clone(catalogBytes)
 	catalog, err := configuration.DecodeCatalog(catalogBytes)

@@ -1,4 +1,4 @@
-package ocimysql
+package ociownership
 
 import (
 	"context"
@@ -39,14 +39,19 @@ func generatedKey(t *testing.T) *rsa.PrivateKey {
 
 func tlsClient(t *testing.T, provider common.KeyProvider, handler http.HandlerFunc) (*Client, *httptest.Server) {
 	t.Helper()
+	c, err := NewMySQL("us-ashburn-1", "iad", tenancy, provider)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return bindTLSClient(t, c, handler)
+}
+
+func bindTLSClient(t *testing.T, c *Client, handler http.HandlerFunc) (*Client, *httptest.Server) {
+	t.Helper()
 	server := httptest.NewUnstartedServer(handler)
 	server.EnableHTTP2 = true
 	server.StartTLS()
 	t.Cleanup(server.Close)
-	c, err := New("us-ashburn-1", "iad", tenancy, provider)
-	if err != nil {
-		t.Fatal(err)
-	}
 	// Private test wiring only. No endpoint/TLS override is exposed to callers.
 	c.endpoint = server.URL
 	pool := x509.NewCertPool()

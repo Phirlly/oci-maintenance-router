@@ -6,8 +6,8 @@ import (
 
 	"oci-maintenance-router/internal/configuration"
 	"oci-maintenance-router/internal/ociannouncements"
-	"oci-maintenance-router/internal/ocimysql"
 	"oci-maintenance-router/internal/ocinotifications"
+	"oci-maintenance-router/internal/ociownership"
 	"oci-maintenance-router/internal/ocisecrets"
 	"oci-maintenance-router/internal/reconciliation"
 )
@@ -136,9 +136,9 @@ func composeOperations(s Settings, store Store, p pinnedInputs, operation string
 		}
 		return result, nil
 	}
-	mysql := make(map[string]*ocimysql.Client, len(p.config.RegionMap))
+	mysql := make(map[string]*ociownership.Client, len(p.config.RegionMap))
 	for region, regionKey := range p.config.RegionMap {
-		client, err := ocimysql.New(region, regionKey, s.TenancyID, managed.principal)
+		client, err := ociownership.NewMySQL(region, regionKey, s.TenancyID, managed.principal)
 		if err != nil {
 			return operations{}, err
 		}

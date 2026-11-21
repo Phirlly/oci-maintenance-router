@@ -1,4 +1,4 @@
-package ocimysql
+package ociownership
 
 import (
 	"context"
@@ -50,7 +50,7 @@ func TestEarlierDeadlineStopsStalledBody(t *testing.T) {
 }
 
 func TestExpiredContextNeverConsultsCredentials(t *testing.T) {
-	c, err := New("us-ashburn-1", "iad", tenancy, unusedProvider{})
+	c, err := NewMySQL("us-ashburn-1", "iad", tenancy, unusedProvider{})
 	if err != nil {
 		t.Fatal(err)
 	}

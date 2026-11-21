@@ -4,7 +4,7 @@ import (
 	"context"
 	"oci-maintenance-router/internal/delivery"
 	"oci-maintenance-router/internal/notices"
-	"oci-maintenance-router/internal/ocimysql"
+	"oci-maintenance-router/internal/ociownership"
 	"oci-maintenance-router/internal/routing"
 	"testing"
 	"time"
@@ -59,7 +59,7 @@ func TestMaintenanceLookupFailuresStayUnresolvedAndDoNotInferDeletion(t *testing
 		n := processingNotice(t, 1, processingDB)
 		f := processingFixtureFor(t, n)
 		f.p.mysql["us-ashburn-1"] = func(context.Context, string) (routing.Metadata, error) {
-			return routing.Metadata{}, &ocimysql.Error{Code: ocimysql.Service, Status: status}
+			return routing.Metadata{}, &ociownership.Error{Code: ociownership.Service, Status: status}
 		}
 		s := f.run(t)
 		row := f.saved(t, n.Key().NoticeID).Snapshot().Revisions[0].Resources[0]

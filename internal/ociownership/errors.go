@@ -1,4 +1,4 @@
-package ocimysql
+package ociownership
 
 import "context"
 
@@ -18,13 +18,13 @@ const (
 )
 
 // Error exposes controlled categories and HTTP status, never source contents,
-// headers or provider errors. A 404 is not proof that a DB system is absent.
+// headers or provider errors. A 404 is not proof that a resource is absent.
 type Error struct {
 	Code   Code
 	Status int
 }
 
-func (e *Error) Error() string { return "mysql metadata read: " + string(e.Code) }
+func (e *Error) Error() string { return "resource metadata read: " + string(e.Code) }
 func (e *Error) Unwrap() error {
 	switch e.Code {
 	case Canceled:

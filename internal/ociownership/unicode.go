@@ -1,4 +1,4 @@
-package ocimysql
+package ociownership
 
 import "strconv"
 

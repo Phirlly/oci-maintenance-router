@@ -1,4 +1,4 @@
-package ocimysql
+package ociownership
 
 import (
 	"context"
@@ -60,7 +60,7 @@ func TestAuthenticationErrorsExposeOnlyControlledCategory(t *testing.T) {
 		b, err := c.Get(budget(t), dbID)
 		wantError(t, err, Authentication, 0)
 		wantEmpty(t, b)
-		if err.Error() != "mysql metadata read: authentication" || errors.Unwrap(err) != nil {
+		if err.Error() != "resource metadata read: authentication" || errors.Unwrap(err) != nil {
 			t.Fatal("credential error escaped")
 		}
 	}

@@ -1,4 +1,4 @@
-package ocimysql
+package ociownership
 
 import (
 	"io"
@@ -6,8 +6,28 @@ import (
 	"strings"
 	"testing"
 
+	"oci-maintenance-router/internal/notices"
 	"oci-maintenance-router/internal/routing"
 )
+
+func TestComputeReaderDoesNotEnableComputeRouting(t *testing.T) {
+	p := testPolicy(t, "freeform", []string{compartment})
+	for _, service := range []string{"Oracle HeatWave MySQL", "Oracle Cloud Infrastructure Compute"} {
+		record := testNotice(t, instanceID).Snapshot()
+		record.Services = []string{service}
+		n, err := notices.Normalize(record)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, targets := p.Targets(n, true)
+		id, location := instanceID, compartment
+		m := routing.Metadata{ID: &id, CompartmentID: &location, FreeformTags: map[string]string{"Owner": "payments"}}
+		result := p.Resolve(n, true, map[string]routing.Lookup{id: {State: routing.Found, Metadata: m}})
+		if len(targets) != 0 || len(result.Groups) != 0 {
+			t.Fatal("reader availability enabled Compute routing")
+		}
+	}
+}
 
 func TestFailedReadsCannotProduceReadyWork(t *testing.T) {
 	key := generatedKey(t)

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"oci-maintenance-router/internal/noticeledger"
-	"oci-maintenance-router/internal/ocimysql"
+	"oci-maintenance-router/internal/ociownership"
 )
 
 func TestRecoveryReviewerRequiresLiveConfigurationAndReadBindings(t *testing.T) {
@@ -45,7 +45,7 @@ func TestRecoveryReviewerRequiresLiveConfigurationAndReadBindings(t *testing.T) 
 			case "location":
 				location.Bucket = ""
 			case "mysql":
-				mysql = map[string]*ocimysql.Client{}
+				mysql = map[string]*ociownership.Client{}
 			}
 			got, err := NewRecoveryReviewer(data, catalog, location, source, saved, mysql)
 			if got != nil || err == nil || err.Error() != "recovery review: invalid_request" {
