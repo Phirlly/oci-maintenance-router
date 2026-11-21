@@ -17,6 +17,8 @@ type invocationLog struct {
 	Telemetry      *TelemetryOutcome     `json:"telemetry,omitempty"`
 	InputRejection *inputRejection       `json:"inputRejection,omitempty"`
 	PinnedRead     *pinnedReadDiagnostic `json:"pinnedRead,omitempty"`
+	Worker         *workerDiagnostic     `json:"worker,omitempty"`
+	WorkerCleanup  *workerDiagnostic     `json:"workerCleanup,omitempty"`
 }
 
 func (h *Handler) logResult(result response) {
@@ -30,6 +32,7 @@ func (h *Handler) logResult(result response) {
 		line.Operation, line.Mode, line.Status, line.Code = r.Operation, r.Mode, r.Status, r.Code
 		line.CleanupCode, line.ScanCompleted, line.Processing, line.Reporting = r.CleanupCode, r.ScanCompleted, r.Processing, r.Reporting
 		line.Telemetry = r.Telemetry
+		line.Worker, line.WorkerCleanup = r.worker, r.workerCleanup
 	}
 	body, _ := json.Marshal(line)
 	h.logger.Print(string(body))

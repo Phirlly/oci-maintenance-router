@@ -48,6 +48,7 @@ func (h *Handler) runOperational(original context.Context, started time.Time, s 
 	lease, err := manager.Acquire(ctx)
 	if err != nil {
 		result.Code = "ownership_failed"
+		result.worker = describeWorkerFailure("acquire", err)
 		return result
 	}
 	if lease == nil {
@@ -61,8 +62,9 @@ func (h *Handler) runOperational(original context.Context, started time.Time, s 
 		}
 		cleanup, done := context.WithDeadline(context.WithoutCancel(original), cleanupDeadline)
 		defer done()
-		if lease.Release(cleanup) != nil {
+		if err := lease.Release(cleanup); err != nil {
 			result.Status, result.CleanupCode, result.ScanCompleted = "not-ready", "release_failed", false
+			result.workerCleanup = describeWorkerFailure("release", err)
 			result.Review = nil
 			result.SavedNotices = nil
 			result.ClosureReview = nil
@@ -71,6 +73,7 @@ func (h *Handler) runOperational(original context.Context, started time.Time, s 
 	}()
 	if err := verifyCurrent(ctx, lease, store, s); err != nil {
 		result.Code = err.Error() // Only locally constructed controlled errors.
+		result.worker = describeOwnershipGuard("current_before", err)
 		return result
 	}
 	ops, err := h.compose(s, store, p, request.operation)
@@ -84,6 +87,7 @@ func (h *Handler) runOperational(original context.Context, started time.Time, s 
 	}
 	if err := verifyCurrent(ctx, lease, store, s); err != nil {
 		result.Status, result.Code, result.ScanCompleted = "not-ready", err.Error(), false
+		result.worker = describeOwnershipGuard("current_after", err)
 		result.Review = nil
 		result.SavedNotices = nil
 		result.ClosureReview = nil

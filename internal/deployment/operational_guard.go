@@ -12,7 +12,7 @@ import (
 // Like coordinator checks, it is cooperative, not an atomic configuration fence.
 func verifyCurrent(ctx context.Context, lease *reconciliation.Lease, store Store, s Settings) error {
 	if err := lease.Check(ctx, 10*time.Second); err != nil {
-		return errors.New("ownership_failed")
+		return &ownershipGuardError{cause: err}
 	}
 	for _, expected := range []struct{ name, hash string }{
 		{"configuration/router.json", s.ConfigurationSHA256},
@@ -30,7 +30,7 @@ func verifyCurrent(ctx context.Context, lease *reconciliation.Lease, store Store
 		}
 	}
 	if err := lease.Check(ctx, 10*time.Second); err != nil {
-		return errors.New("ownership_failed")
+		return &ownershipGuardError{cause: err}
 	}
 	return nil
 }

@@ -27,6 +27,8 @@ type OperationalResult struct {
 	SavedNotices        *SavedNoticePage    `json:"savedNotices,omitempty"`
 	ClosureReview       *ClosureReviewPage  `json:"closureReview,omitempty"`
 	RecoveryReview      *RecoveryReviewPage `json:"recoveryReview,omitempty"`
+	worker              *workerDiagnostic
+	workerCleanup       *workerDiagnostic
 }
 
 type TestOutcome struct {

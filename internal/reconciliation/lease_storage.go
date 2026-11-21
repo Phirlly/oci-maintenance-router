@@ -8,7 +8,8 @@ import (
 	"oci-maintenance-router/internal/ocistorage"
 )
 
-func (m *LeaseManager) load(ctx context.Context) (leaseRecord, string, error) {
+func (m *LeaseManager) load(ctx context.Context) (record leaseRecord, tag string, err error) {
+	defer func() { err = leaseRequestEvidence(err, "read", nil) }()
 	object, err := m.objects.Get(ctx, workerLeaseName)
 	if err != nil || ctx.Err() != nil {
 		return leaseRecord{}, "", leaseError(ctx, "read_failed", err)
@@ -16,7 +17,7 @@ func (m *LeaseManager) load(ctx context.Context) (leaseRecord, string, error) {
 	if object.ETag == "" || len(object.ETag) > 1024 {
 		return leaseRecord{}, "", &LeaseError{Code: "invalid_response"}
 	}
-	record, err := decodeLease(object.Body, m.environmentID)
+	record, err = decodeLease(object.Body, m.environmentID)
 	if err != nil {
 		return leaseRecord{}, "", err
 	}
@@ -32,9 +33,13 @@ func (m *LeaseManager) confirm(ctx context.Context, want leaseRecord) (string, e
 	}
 	return tag, nil
 }
-func (m *LeaseManager) write(ctx context.Context, record leaseRecord, previous string) (string, error) {
-	var tag string
-	var err error
+func (m *LeaseManager) write(ctx context.Context, record leaseRecord, previous string) (tag string, err error) {
+	request := "create"
+	if previous != "" {
+		request = "replace"
+	}
+	var prior *LeaseWriteDiagnostic
+	defer func() { err = leaseRequestEvidence(err, request, prior) }()
 	if previous == "" {
 		tag, err = m.objects.Create(ctx, workerLeaseName, record.bytes())
 	} else {
@@ -56,6 +61,8 @@ func (m *LeaseManager) write(ctx context.Context, record leaseRecord, previous s
 		}
 		rejected := detail.Code == ocistorage.Service && detail.Status >= 400 && detail.Status < 500
 		if detail.WriteUncertain && !rejected {
+			request += "_confirmation"
+			prior = uncertainLeaseWrite(detail)
 			return m.confirm(ctx, record)
 		}
 	}

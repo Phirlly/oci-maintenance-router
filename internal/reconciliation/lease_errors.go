@@ -7,10 +7,14 @@ import (
 	"oci-maintenance-router/internal/ocistorage"
 )
 
-// LeaseError excludes tokens, object bytes and provider diagnostics.
+// LeaseError excludes tokens, object bytes and raw provider messages.
 type LeaseError struct {
-	Code       string
-	HTTPStatus int
+	Code            string
+	HTTPStatus      int
+	Request         string
+	StorageCategory string
+	WriteUncertain  bool
+	PriorWrite      *LeaseWriteDiagnostic
 }
 
 func (e *LeaseError) Error() string { return "lease: " + e.Code }
@@ -26,8 +30,12 @@ func (e *LeaseError) Unwrap() error {
 func leaseError(ctx context.Context, code string, err error) *LeaseError {
 	result := &LeaseError{Code: code}
 	var detail *ocistorage.Error
-	if errors.As(err, &detail) && detail != nil && detail.Status >= 100 && detail.Status <= 599 {
-		result.HTTPStatus = detail.Status
+	if errors.As(err, &detail) && detail != nil {
+		result.StorageCategory = leaseStorageCategory(detail.Code)
+		result.WriteUncertain = detail.WriteUncertain
+		if detail.Status >= 100 && detail.Status <= 599 {
+			result.HTTPStatus = detail.Status
+		}
 	}
 	if ctx != nil {
 		switch ctx.Err() {
